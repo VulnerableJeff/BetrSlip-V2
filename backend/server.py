@@ -195,17 +195,16 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         # Create message with image
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(
-            text="""Analyze this betting slip image and provide:
-            1. A win probability percentage (0-100)
-            2. A detailed analysis of why this probability
-            3. Details of the bets you can see (teams, bet types, odds)
-            
-            Format your response as JSON:
-            {
-                "win_probability": <number 0-100>,
-                "analysis": "<your detailed analysis>",
-                "bet_details": "<summary of bets visible>"
-            }""",
+            text="""Analyze this betting slip screenshot and provide a clear assessment.
+
+Return ONLY a JSON object with these fields:
+{
+    "win_probability": <number between 0-100>,
+    "analysis": "<2-3 sentences explaining your probability assessment>",
+    "bet_details": "<brief summary: teams, bet type, odds>"
+}
+
+Be realistic with probabilities. Consider: odds quality, bet type difficulty, number of legs in parlay.""",
             file_contents=[image_content]
         )
         
