@@ -173,20 +173,20 @@ const Dashboard = ({ onLogout }) => {
 
           {/* Results Section */}
           <div>
-            <h2 className="text-3xl font-black text-white mb-6" data-testid="results-section-title">
+            <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="results-section-title">
               Analysis Results
             </h2>
             
             {result ? (
-              <Card className="glass border-slate-800 p-8" data-testid="results-card">
-                <div className="space-y-6">
+              <Card className="glass border-slate-800 p-6 sm:p-8" data-testid="results-card">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Win Probability */}
-                  <div className={`text-center p-8 rounded-sm ${getWinGlow(result.win_probability)}`}>
-                    <p className="text-slate-400 text-sm uppercase tracking-wider mb-2">
+                  <div className={`text-center p-6 sm:p-8 rounded-sm ${getWinGlow(result.win_probability)}`}>
+                    <p className="text-slate-400 text-xs sm:text-sm uppercase tracking-wider mb-2">
                       Win Probability
                     </p>
                     <p
-                      className={`text-6xl font-black ${getWinColor(result.win_probability)}`}
+                      className={`text-5xl sm:text-6xl font-black ${getWinColor(result.win_probability)}`}
                       data-testid="win-probability"
                     >
                       {result.win_probability.toFixed(1)}%
@@ -195,24 +195,24 @@ const Dashboard = ({ onLogout }) => {
 
                   {/* Bet Details */}
                   {result.bet_details && (
-                    <div className="bg-slate-900/50 rounded-sm p-6">
-                      <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-brand-win" />
+                    <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-brand-win" />
                         Bet Details
                       </h3>
-                      <p className="text-slate-300 text-sm whitespace-pre-wrap" data-testid="bet-details">
+                      <p className="text-slate-300 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed" data-testid="bet-details">
                         {result.bet_details}
                       </p>
                     </div>
                   )}
 
                   {/* Analysis */}
-                  <div className="bg-slate-900/50 rounded-sm p-6">
-                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-brand-win" />
+                  <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
+                    <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                      <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-win" />
                       AI Analysis
                     </h3>
-                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap" data-testid="analysis-text">
+                    <p className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap" data-testid="analysis-text">
                       {result.analysis_text}
                     </p>
                   </div>
@@ -220,9 +220,9 @@ const Dashboard = ({ onLogout }) => {
               </Card>
             ) : (
               <Card className="glass border-slate-800 p-8" data-testid="empty-results-card">
-                <div className="text-center py-12">
-                  <BarChart3 className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-500">Upload a betting slip to see analysis</p>
+                <div className="text-center py-8 sm:py-12">
+                  <BarChart3 className="w-12 h-12 sm:w-16 sm:h-16 text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 text-sm">Upload a betting slip to see analysis</p>
                 </div>
               </Card>
             )}
