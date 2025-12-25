@@ -193,12 +193,80 @@ const Dashboard = ({ onLogout }) => {
                     </p>
                   </div>
 
+                  {/* Individual Bets Breakdown */}
+                  {result.individual_bets && result.individual_bets.length > 0 && (
+                    <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-sm sm:text-base">
+                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-win" />
+                        Individual Bet Breakdown
+                      </h3>
+                      <div className="space-y-3">
+                        {result.individual_bets.map((bet, index) => (
+                          <div key={index} className="border-l-2 border-brand-win/30 pl-4 py-2">
+                            <div className="flex items-start justify-between mb-1">
+                              <p className="text-white text-xs sm:text-sm font-semibold">
+                                {bet.description}
+                              </p>
+                              {bet.individual_probability && (
+                                <span className={`text-xs font-bold ${getWinColor(bet.individual_probability)}`}>
+                                  {bet.individual_probability}%
+                                </span>
+                              )}
+                            </div>
+                            {bet.odds && (
+                              <p className="text-slate-400 text-xs mb-1">Odds: {bet.odds}</p>
+                            )}
+                            {bet.reasoning && (
+                              <p className="text-slate-300 text-xs leading-relaxed">{bet.reasoning}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Risk Factors */}
+                  {result.risk_factors && result.risk_factors.length > 0 && (
+                    <div className="bg-red-950/20 border border-red-900/30 rounded-sm p-4 sm:p-6">
+                      <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        Risk Factors
+                      </h3>
+                      <ul className="space-y-2">
+                        {result.risk_factors.map((risk, index) => (
+                          <li key={index} className="flex items-start gap-2 text-xs sm:text-sm text-slate-300">
+                            <span className="text-red-400 mt-0.5">•</span>
+                            <span>{risk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Positive Factors */}
+                  {result.positive_factors && result.positive_factors.length > 0 && (
+                    <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-sm p-4 sm:p-6">
+                      <h3 className="text-emerald-400 font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        Positive Factors
+                      </h3>
+                      <ul className="space-y-2">
+                        {result.positive_factors.map((factor, index) => (
+                          <li key={index} className="flex items-start gap-2 text-xs sm:text-sm text-slate-300">
+                            <span className="text-emerald-400 mt-0.5">•</span>
+                            <span>{factor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* Bet Details */}
                   {result.bet_details && (
                     <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
                       <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
                         <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-brand-win" />
-                        Bet Details
+                        Bet Summary
                       </h3>
                       <p className="text-slate-300 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed" data-testid="bet-details">
                         {result.bet_details}
@@ -210,7 +278,7 @@ const Dashboard = ({ onLogout }) => {
                   <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
                     <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
                       <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-win" />
-                      AI Analysis
+                      Overall Assessment
                     </h3>
                     <p className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap" data-testid="analysis-text">
                       {result.analysis_text}
