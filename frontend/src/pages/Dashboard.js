@@ -109,11 +109,11 @@ const Dashboard = ({ onLogout }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-2 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Upload Section */}
           <div>
-            <h2 className="text-3xl font-black text-white mb-6" data-testid="upload-section-title">
+            <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="upload-section-title">
               Upload Betting Slip
             </h2>
             
