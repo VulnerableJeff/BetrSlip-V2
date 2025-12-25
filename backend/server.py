@@ -334,6 +334,9 @@ async def get_bet_history(current_user: dict = Depends(get_current_user)):
             win_probability=a['win_probability'],
             analysis_text=a['analysis_text'],
             bet_details=a.get('bet_details'),
+            individual_bets=a.get('individual_bets'),
+            risk_factors=a.get('risk_factors'),
+            positive_factors=a.get('positive_factors'),
             image_data=a['image_data'],
             created_at=a['created_at']
         )
