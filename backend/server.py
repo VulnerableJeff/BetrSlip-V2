@@ -84,6 +84,9 @@ class BetAnalysisResponse(BaseModel):
     win_probability: float
     analysis_text: str
     bet_details: Optional[str]
+    individual_bets: Optional[List[dict]] = None
+    risk_factors: Optional[List[str]] = None
+    positive_factors: Optional[List[str]] = None
     created_at: datetime
 
 class BetHistoryResponse(BaseModel):
@@ -91,6 +94,9 @@ class BetHistoryResponse(BaseModel):
     win_probability: float
     analysis_text: str
     bet_details: Optional[str]
+    individual_bets: Optional[List[dict]] = None
+    risk_factors: Optional[List[str]] = None
+    positive_factors: Optional[List[str]] = None
     image_data: str
     created_at: datetime
 
