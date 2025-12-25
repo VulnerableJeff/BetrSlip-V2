@@ -212,18 +212,35 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         # Get AI response
         response = await chat.send_message(user_message)
         
-        # Parse response
+        # Parse response - handle both JSON and plain text
         import json
+        import re
         try:
-            result = json.loads(response)
-            win_probability = float(result.get('win_probability', 50.0))
-            analysis_text = result.get('analysis', 'Analysis completed')
-            bet_details = result.get('bet_details', None)
-        except:
-            # Fallback if JSON parsing fails
+            # Try to extract JSON from response (might be wrapped in markdown)
+            json_match = re.search(r'\{[^{}]*"win_probability"[^{}]*\}', response, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+                win_probability = float(result.get('win_probability', 50.0))
+                analysis_text = result.get('analysis', 'Analysis completed')
+                bet_details = result.get('bet_details', None)
+            else:
+                # If no JSON found, parse plain text response
+                # Look for probability percentage
+                prob_match = re.search(r'(\d+(?:\.\d+)?)\s*%', response)
+                win_probability = float(prob_match.group(1)) if prob_match else 50.0
+                
+                # Clean up the response text
+                analysis_text = response.replace('```json', '').replace('```', '').strip()
+                
+                # Try to extract bet details from text
+                bet_match = re.search(r'bet[s]?\s*[:\-]\s*(.+?)(?:\n|$)', response, re.IGNORECASE)
+                bet_details = bet_match.group(1).strip() if bet_match else None
+        except Exception as e:
+            logging.error(f"Error parsing AI response: {str(e)}")
+            # Fallback to basic extraction
             win_probability = 50.0
-            analysis_text = response
-            bet_details = "Could not extract bet details from image"
+            analysis_text = response.replace('```json', '').replace('```', '').strip()
+            bet_details = None
         
         # Save analysis
         bet_analysis = BetAnalysis(
