@@ -1,0 +1,117 @@
+{
+  "design_system": {
+    "theme_strategy": "Stadium Night Mode",
+    "core_philosophy": "Energetic, Trustworthy, High-Contrast. The UI should feel like a high-end sports analytics suite used by pros. Dark backgrounds to reduce eye strain, with vibrant neon accents to highlight 'wins' and 'action'.",
+    "typography": {
+      "headings": {
+        "font_family": "Chivo, sans-serif",
+        "weights": ["700", "900"],
+        "usage": "Use for all section headers, hero text, and key metrics. Tight tracking (-0.02em) for impact.",
+        "import_url": "https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=Manrope:wght@400;500;600&display=swap"
+      },
+      "body": {
+        "font_family": "Manrope, sans-serif",
+        "weights": ["400", "500", "600"],
+        "usage": "Use for all paragraphs, labels, and data tables. High legibility."
+      }
+    },
+    "colors": {
+      "palette": {
+        "background": "#020617",
+        "foreground": "#f8fafc",
+        "card": "#0f172a",
+        "card_foreground": "#f8fafc",
+        "primary": "#10b981",
+        "primary_foreground": "#020617",
+        "secondary": "#1e293b",
+        "secondary_foreground": "#f8fafc",
+        "muted": "#1e293b",
+        "muted_foreground": "#94a3b8",
+        "accent": "#10b981",
+        "accent_foreground": "#020617",
+        "destructive": "#ef4444",
+        "destructive_foreground": "#f8fafc",
+        "border": "#1e293b",
+        "input": "#1e293b",
+        "ring": "#10b981"
+      },
+      "tailwind_config_extension": {
+        "colors": {
+          "brand": {
+            "dark": "#020617",
+            "card": "#0f172a",
+            "win": "#10b981",
+            "loss": "#ef4444",
+            "neutral": "#94a3b8"
+          }
+        }
+      }
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-slate-900/70 border border-slate-800/50",
+      "gradients": "Radial gradient top-center to simulate stadium lights: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black'",
+      "borders": "1px solid border-slate-800. Active elements get a 'glow' effect using drop-shadow-lg shadow-emerald-500/20",
+      "shadows": "shadow-xl shadow-black/50"
+    },
+    "layout_strategy": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "spacing": "Generous padding (py-20, py-32) for sections. Tight spacing (gap-4) for data grids.",
+      "grid_system": "Bento Grid for dashboard. Asymmetric grid for landing page features."
+    },
+    "components": {
+      "buttons": {
+        "style": "Sharp or slightly rounded (rounded-sm). High contrast. Primary buttons should be 'brand-win' (Green) with black text for maximum visibility.",
+        "hover": "hover:scale-105 transition-transform duration-200"
+      },
+      "cards": {
+        "style": "Dark, flat or glass. No heavy shadows, rely on borders and subtle background differentiation.",
+        "interaction": "Hover: border-emerald-500/50 transition-colors duration-300"
+      }
+    }
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "hero_background",
+        "url": "https://images.pexels.com/photos/186076/pexels-photo-186076.jpeg",
+        "description": "Stadium night lights atmosphere. Use as a darkened background overlay for the Hero section.",
+        "usage": "Hero Section Background (Overlay with opacity-80 black)"
+      },
+      {
+        "category": "social_proof",
+        "url": "https://images.pexels.com/photos/1267295/pexels-photo-1267295.jpeg",
+        "description": "Friends cheering at a bar. Represents the 'Win' feeling.",
+        "usage": "Testimonials or 'Join the Winners' section"
+      },
+      {
+        "category": "feature_context",
+        "url": "https://images.pexels.com/photos/8947145/pexels-photo-8947145.jpeg",
+        "description": "Person holding smartphone. Use to frame the app UI.",
+        "usage": "How it Works section"
+      },
+      {
+        "category": "athlete_energy",
+        "url": "https://images.pexels.com/photos/2770409/pexels-photo-2770409.jpeg",
+        "description": "Athlete celebrating. High energy.",
+        "usage": "Call to Action (CTA) background or side image"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5 or 2. Sharp edges preferred."
+    }
+  },
+  "implementation_instructions": {
+    "step_1_setup": "Update tailwind.config.js with the new color palette and font families. Install 'lucide-react' if missing.",
+    "step_2_global_css": "Inject the CSS variables into src/index.css. Ensure dark mode is default.",
+    "step_3_components": "Customize Shadcn components (Card, Button, Input) to match the 'Stadium Night' theme. Remove rounded-xl, use rounded-sm.",
+    "step_4_pages": "Build Landing Page first using the 'Hero' and 'Feature' assets. Then build Dashboard using the Bento Grid layout.",
+    "universal_rules": [
+      "Do not use gradients for text.",
+      "Ensure all text has sufficient contrast against the dark background.",
+      "Use 'data-testid' for all interactive elements.",
+      "Avoid 'Inter' font for headings. Use 'Chivo'.",
+      "Use 'sonner' for toasts."
+    ]
+  }
+}
