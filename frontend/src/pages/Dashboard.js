@@ -196,8 +196,11 @@ const Dashboard = ({ onLogout }) => {
                   {/* Bet Details */}
                   {result.bet_details && (
                     <div className="bg-slate-900/50 rounded-sm p-6">
-                      <h3 className="text-white font-bold mb-3">Bet Details</h3>
-                      <p className="text-slate-300 text-sm" data-testid="bet-details">
+                      <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-brand-win" />
+                        Bet Details
+                      </h3>
+                      <p className="text-slate-300 text-sm whitespace-pre-wrap" data-testid="bet-details">
                         {result.bet_details}
                       </p>
                     </div>
