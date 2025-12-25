@@ -205,8 +205,11 @@ const Dashboard = ({ onLogout }) => {
 
                   {/* Analysis */}
                   <div className="bg-slate-900/50 rounded-sm p-6">
-                    <h3 className="text-white font-bold mb-3">AI Analysis</h3>
-                    <p className="text-slate-300 text-sm leading-relaxed" data-testid="analysis-text">
+                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-brand-win" />
+                      AI Analysis
+                    </h3>
+                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap" data-testid="analysis-text">
                       {result.analysis_text}
                     </p>
                   </div>
