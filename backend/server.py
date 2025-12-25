@@ -204,16 +204,43 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         # Create message with image
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(
-            text="""Analyze this betting slip screenshot and provide a clear assessment.
+            text="""You are an expert sports betting analyst. Analyze this betting slip in detail.
 
-Return ONLY a JSON object with these fields:
+Provide a comprehensive analysis in JSON format:
 {
-    "win_probability": <number between 0-100>,
-    "analysis": "<2-3 sentences explaining your probability assessment>",
-    "bet_details": "<brief summary: teams, bet type, odds>"
+    "win_probability": <realistic number 0-100>,
+    "bet_type": "<single/parlay/teaser etc>",
+    "total_odds": "<combined odds if visible>",
+    "individual_bets": [
+        {
+            "description": "<team/player and bet type>",
+            "odds": "<odds for this bet>",
+            "individual_probability": <estimated win chance 0-100>,
+            "reasoning": "<brief analysis of this specific bet>"
+        }
+    ],
+    "risk_factors": [
+        "<specific concern 1>",
+        "<specific concern 2>",
+        "<specific concern 3>"
+    ],
+    "positive_factors": [
+        "<strength 1>",
+        "<strength 2>"
+    ],
+    "analysis": "<2-3 sentences overall assessment explaining the win_probability>",
+    "bet_details": "<concise summary: what bets, stakes, potential payout>"
 }
 
-Be realistic with probabilities. Consider: odds quality, bet type difficulty, number of legs in parlay.""",
+Analysis Guidelines:
+- For single bets: 30-70% range is typical
+- For 2-leg parlays: 20-50% range
+- For 3-leg parlays: 10-35% range  
+- For 4+ leg parlays: 5-20% range
+- Underdogs (+odds): lower probability
+- Favorites (-odds): higher probability but consider value
+- Be realistic and specific in your risk/positive factors
+- If you can't read something clearly, note it in bet_details""",
             file_contents=[image_content]
         )
         
