@@ -77,6 +77,9 @@ class BetAnalysis(BaseModel):
     win_probability: float
     analysis_text: str
     bet_details: Optional[str] = None
+    individual_bets: Optional[List[dict]] = None
+    risk_factors: Optional[List[str]] = None
+    positive_factors: Optional[List[str]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BetAnalysisResponse(BaseModel):
