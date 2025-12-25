@@ -289,7 +289,10 @@ Analysis Guidelines:
             image_data=image_base64,
             win_probability=win_probability,
             analysis_text=analysis_text,
-            bet_details=bet_details
+            bet_details=bet_details,
+            individual_bets=individual_bets,
+            risk_factors=risk_factors,
+            positive_factors=positive_factors
         )
         
         analysis_dict = bet_analysis.model_dump()
@@ -301,6 +304,9 @@ Analysis Guidelines:
             win_probability=win_probability,
             analysis_text=analysis_text,
             bet_details=bet_details,
+            individual_bets=individual_bets,
+            risk_factors=risk_factors,
+            positive_factors=positive_factors,
             created_at=bet_analysis.created_at
         )
         
