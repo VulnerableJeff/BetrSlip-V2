@@ -332,41 +332,105 @@ IMPORTANT GUIDELINES:
         # Get AI response
         response = await chat.send_message(user_message)
         
-        # Parse response - handle both JSON and plain text
+        # Parse response and calculate advanced analytics
         import json
         import re
         try:
-            # Try to extract JSON from response (might be wrapped in markdown)
+            # Try to extract JSON from response
             json_match = re.search(r'\{[^{}]*"win_probability"[^{}]*"analysis"[^{}]*\}', response, re.DOTALL)
             if not json_match:
-                # Try to find nested JSON
                 json_match = re.search(r'\{(?:[^{}]|{[^{}]*})*\}', response, re.DOTALL)
             
             if json_match:
                 result = json.loads(json_match.group())
                 win_probability = float(result.get('win_probability', 50.0))
+                confidence_score = int(result.get('confidence_score', 5))
                 analysis_text = result.get('analysis', 'Analysis completed')
                 bet_details = result.get('bet_details', None)
-                individual_bets = result.get('individual_bets', None)
-                risk_factors = result.get('risk_factors', None)
-                positive_factors = result.get('positive_factors', None)
+                individual_bets = result.get('individual_bets', [])
+                risk_factors = result.get('risk_factors', [])
+                positive_factors = result.get('positive_factors', [])
+                total_odds = result.get('total_odds', None)
+                
+                # Calculate advanced analytics
+                decimal_odds = 2.0  # Default
+                if total_odds:
+                    decimal_odds = american_to_decimal(total_odds)
+                elif individual_bets and len(individual_bets) > 0:
+                    # Calculate parlay odds from individual bets
+                    combined_decimal = 1.0
+                    for bet in individual_bets:
+                        if bet.get('odds'):
+                            combined_decimal *= american_to_decimal(bet['odds'])
+                    decimal_odds = combined_decimal
+                
+                # Calculate Expected Value
+                expected_value = calculate_expected_value(win_probability, decimal_odds)
+                
+                # Calculate Kelly Criterion
+                kelly_percentage = calculate_kelly_criterion(win_probability, decimal_odds)
+                
+                # Calculate true odds based on AI probability
+                true_odds = probability_to_american_odds(win_probability)
+                
+                # Get recommendation
+                recommendation = get_bet_recommendation(expected_value, kelly_percentage, confidence_score)
+                
+                # Calculate ROI
+                estimated_roi = expected_value
+                
+                # Parlay vs Straight comparison (if multiple bets)
+                parlay_vs_straight = None
+                if individual_bets and len(individual_bets) > 1:
+                    # Calculate if betting each leg straight
+                    straight_ev_total = 0
+                    parlay_combined_prob = win_probability
+                    
+                    for bet in individual_bets:
+                        if bet.get('individual_probability') and bet.get('odds'):
+                            bet_decimal_odds = american_to_decimal(bet['odds'])
+                            bet_ev = calculate_expected_value(bet['individual_probability'], bet_decimal_odds, 100)
+                            straight_ev_total += bet_ev
+                    
+                    parlay_vs_straight = {
+                        "parlay_ev": round(expected_value, 2),
+                        "straight_bets_ev": round(straight_ev_total, 2),
+                        "recommendation": "Bet individually" if straight_ev_total > expected_value else "Parlay is better",
+                        "difference": round(abs(straight_ev_total - expected_value), 2)
+                    }
+                
             else:
-                # If no JSON found, parse plain text response
+                # Fallback parsing
                 prob_match = re.search(r'(\d+(?:\.\d+)?)\s*%', response)
                 win_probability = float(prob_match.group(1)) if prob_match else 50.0
+                confidence_score = 5
                 analysis_text = response.replace('```json', '').replace('```', '').strip()
                 bet_details = None
-                individual_bets = None
-                risk_factors = None
-                positive_factors = None
+                individual_bets = []
+                risk_factors = []
+                positive_factors = []
+                expected_value = 0.0
+                kelly_percentage = 0.0
+                true_odds = probability_to_american_odds(win_probability)
+                recommendation = "REVIEW"
+                estimated_roi = 0.0
+                parlay_vs_straight = None
+                
         except Exception as e:
             logging.error(f"Error parsing AI response: {str(e)}")
             win_probability = 50.0
+            confidence_score = 5
             analysis_text = response.replace('```json', '').replace('```', '').strip()
             bet_details = None
-            individual_bets = None
-            risk_factors = None
-            positive_factors = None
+            individual_bets = []
+            risk_factors = []
+            positive_factors = []
+            expected_value = 0.0
+            kelly_percentage = 0.0
+            true_odds = "EVEN"
+            recommendation = "REVIEW"
+            estimated_roi = 0.0
+            parlay_vs_straight = None
         
         # Save analysis
         bet_analysis = BetAnalysis(
