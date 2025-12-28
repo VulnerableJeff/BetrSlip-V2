@@ -23,19 +23,19 @@ code {
         --card-foreground: 210 40% 98%;
         --popover: 217 33% 17%;
         --popover-foreground: 210 40% 98%;
-        --primary: 142 71% 45%;
-        --primary-foreground: 222 47% 11%;
+        --primary: 262 83% 58%;
+        --primary-foreground: 0 0% 100%;
         --secondary: 217 33% 17%;
         --secondary-foreground: 210 40% 98%;
         --muted: 217 33% 17%;
         --muted-foreground: 215 20% 65%;
-        --accent: 142 71% 45%;
-        --accent-foreground: 222 47% 11%;
+        --accent: 262 83% 58%;
+        --accent-foreground: 0 0% 100%;
         --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 98%;
         --border: 217 33% 17%;
         --input: 217 33% 17%;
-        --ring: 142 71% 45%;
+        --ring: 262 83% 58%;
         --radius: 0.25rem;
     }
     
@@ -46,19 +46,19 @@ code {
         --card-foreground: 210 40% 98%;
         --popover: 217 33% 17%;
         --popover-foreground: 210 40% 98%;
-        --primary: 142 71% 45%;
-        --primary-foreground: 222 47% 11%;
+        --primary: 262 83% 58%;
+        --primary-foreground: 0 0% 100%;
         --secondary: 217 33% 17%;
         --secondary-foreground: 210 40% 98%;
         --muted: 217 33% 17%;
         --muted-foreground: 215 20% 65%;
-        --accent: 142 71% 45%;
-        --accent-foreground: 222 47% 11%;
+        --accent: 262 83% 58%;
+        --accent-foreground: 0 0% 100%;
         --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 98%;
         --border: 217 33% 17%;
         --input: 217 33% 17%;
-        --ring: 142 71% 45%;
+        --ring: 262 83% 58%;
     }
 }
 
@@ -85,5 +85,9 @@ code {
     
     .glow-loss {
         @apply shadow-lg shadow-red-500/20;
+    }
+    
+    .glow-purple {
+        @apply shadow-lg shadow-violet-500/30;
     }
 }

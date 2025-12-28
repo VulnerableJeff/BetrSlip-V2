@@ -43,6 +43,7 @@ module.exports = {
         brand: {
           dark: "#020617",
           card: "#0f172a",
+          purple: "#8b5cf6",
           win: "#10b981",
           loss: "#ef4444",
           neutral: "#94a3b8",
