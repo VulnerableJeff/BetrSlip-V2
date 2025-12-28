@@ -283,9 +283,34 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"bet_analysis_{uuid.uuid4()}",
-            system_message="You are a sports betting expert analyzer. Analyze betting slips and provide realistic win probability estimates based on the bets shown."
+            system_message="""You are an elite sports betting analyst with access to real-time market data. 
+            
+Your analysis must be:
+1. DATA-DRIVEN: Use real-time odds, line movements, and market indicators provided
+2. REALISTIC: Most bets have negative EV - don't be overly optimistic
+3. SHARP: Consider sharp money indicators, line movement, and market efficiency
+4. DETAILED: Explain WHY a probability is what it is using specific data points
+
+When real-time data is provided, heavily weight it in your analysis."""
         )
         chat.with_model("openai", "gpt-4o")
+        
+        # Try to get enhanced context with real-time data
+        enhanced_context = ""
+        try:
+            # First, do a quick parse to extract bet details
+            quick_parse_msg = UserMessage(
+                text="Extract team names and bet types from this image in one line. Format: 'Team1, Team2, bet types'",
+                file_contents=[ImageContent(image_base64=image_base64)]
+            )
+            quick_response = await chat.send_message(quick_parse_msg)
+            
+            # Get real-time sports data context
+            enhanced_context = await get_enhanced_context_for_analysis([], quick_response)
+            logger.info(f"Enhanced context length: {len(enhanced_context)}")
+        except Exception as e:
+            logger.error(f"Error getting enhanced context: {str(e)}")
+            enhanced_context = ""
         
         # Create message with image
         image_content = ImageContent(image_base64=image_base64)
