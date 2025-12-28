@@ -195,7 +195,105 @@ const Dashboard = ({ onLogout }) => {
                     >
                       {result.win_probability.toFixed(1)}%
                     </p>
+                    {result.confidence_score && (
+                      <p className="text-slate-400 text-xs mt-2">
+                        Confidence: {result.confidence_score}/10
+                      </p>
+                    )}
                   </div>
+
+                  {/* Recommendation Badge */}
+                  {result.recommendation && (
+                    <div className="text-center">
+                      <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg ${
+                        result.recommendation === 'STRONG BET' ? 'bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400' :
+                        result.recommendation === 'BET' ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400' :
+                        result.recommendation === 'SMALL/SKIP' ? 'bg-yellow-500/10 border border-yellow-500/50 text-yellow-400' :
+                        'bg-red-500/10 border border-red-500/50 text-red-400'
+                      }`}>
+                        {result.recommendation}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Advanced Analytics Grid */}
+                  {(result.expected_value !== null || result.kelly_percentage !== null || result.true_odds) && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {/* Expected Value */}
+                      {result.expected_value !== null && (
+                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
+                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Expected Value</p>
+                          <p className={`text-2xl font-black ${result.expected_value > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {result.expected_value > 0 ? '+' : ''}{result.expected_value.toFixed(1)}%
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Kelly Criterion */}
+                      {result.kelly_percentage !== null && (
+                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
+                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Kelly Stake</p>
+                          <p className="text-2xl font-black text-violet-400">
+                            {result.kelly_percentage.toFixed(1)}%
+                          </p>
+                          <p className="text-slate-500 text-xs mt-1">of bankroll</p>
+                        </div>
+                      )}
+
+                      {/* True Odds */}
+                      {result.true_odds && (
+                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
+                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Fair Odds</p>
+                          <p className="text-2xl font-black text-slate-300">
+                            {result.true_odds}
+                          </p>
+                          <p className="text-slate-500 text-xs mt-1">AI estimate</p>
+                        </div>
+                      )}
+
+                      {/* ROI */}
+                      {result.estimated_roi !== null && (
+                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
+                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Est. ROI</p>
+                          <p className={`text-2xl font-black ${result.estimated_roi > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {result.estimated_roi > 0 ? '+' : ''}{result.estimated_roi.toFixed(1)}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Parlay vs Straight Comparison */}
+                  {result.parlay_vs_straight && (
+                    <div className="bg-gradient-to-r from-violet-950/30 to-purple-950/30 border border-violet-500/30 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
+                        Parlay vs Straight Bets
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-slate-400 text-xs mb-1">Parlay EV</p>
+                          <p className={`text-xl font-bold ${result.parlay_vs_straight.parlay_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {result.parlay_vs_straight.parlay_ev}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-xs mb-1">Straight Bets EV</p>
+                          <p className={`text-xl font-bold ${result.parlay_vs_straight.straight_bets_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {result.parlay_vs_straight.straight_bets_ev}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-900/50 rounded px-3 py-2 text-center">
+                        <p className="text-violet-300 text-sm font-semibold">
+                          💡 {result.parlay_vs_straight.recommendation}
+                        </p>
+                        <p className="text-slate-400 text-xs mt-1">
+                          Difference: {result.parlay_vs_straight.difference}% EV
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Individual Bets Breakdown */}
                   {result.individual_bets && result.individual_bets.length > 0 && (
