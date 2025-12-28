@@ -98,7 +98,7 @@ const Auth = ({ onLogin }) => {
             <Button
               type="submit"
               data-testid="auth-submit-btn"
-              className="w-full bg-brand-win hover:bg-emerald-600 text-brand-dark font-bold rounded-sm"
+              className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25"
               disabled={loading}
             >
               {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
