@@ -21,19 +21,19 @@
         "foreground": "#f8fafc",
         "card": "#0f172a",
         "card_foreground": "#f8fafc",
-        "primary": "#10b981",
-        "primary_foreground": "#020617",
+        "primary": "#8b5cf6",
+        "primary_foreground": "#ffffff",
         "secondary": "#1e293b",
         "secondary_foreground": "#f8fafc",
         "muted": "#1e293b",
         "muted_foreground": "#94a3b8",
-        "accent": "#10b981",
-        "accent_foreground": "#020617",
+        "accent": "#8b5cf6",
+        "accent_foreground": "#ffffff",
         "destructive": "#ef4444",
         "destructive_foreground": "#f8fafc",
         "border": "#1e293b",
         "input": "#1e293b",
-        "ring": "#10b981"
+        "ring": "#8b5cf6"
       },
       "tailwind_config_extension": {
         "colors": {
