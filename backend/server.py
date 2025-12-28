@@ -284,19 +284,23 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         # Create message with image
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(
-            text="""You are an expert sports betting analyst. Analyze this betting slip in detail.
+            text="""You are an expert sports betting analyst with deep knowledge of odds, probability, and bankroll management.
 
-Provide a comprehensive analysis in JSON format:
+Analyze this betting slip and provide COMPREHENSIVE analysis in JSON format:
+
 {
     "win_probability": <realistic number 0-100>,
+    "confidence_score": <1-10, how confident in this probability>,
     "bet_type": "<single/parlay/teaser etc>",
-    "total_odds": "<combined odds if visible>",
+    "total_stake": "<stake amount if visible>",
+    "total_odds": "<combined odds>",
+    "potential_payout": "<payout if visible>",
     "individual_bets": [
         {
             "description": "<team/player and bet type>",
-            "odds": "<odds for this bet>",
-            "individual_probability": <estimated win chance 0-100>,
-            "reasoning": "<brief analysis of this specific bet>"
+            "odds": "<American odds format e.g. -140, +200>",
+            "individual_probability": <win chance 0-100>,
+            "reasoning": "<brief analysis>"
         }
     ],
     "risk_factors": [
@@ -308,19 +312,20 @@ Provide a comprehensive analysis in JSON format:
         "<strength 1>",
         "<strength 2>"
     ],
-    "analysis": "<2-3 sentences overall assessment explaining the win_probability>",
-    "bet_details": "<concise summary: what bets, stakes, potential payout>"
+    "analysis": "<2-3 sentences overall assessment>",
+    "bet_details": "<concise summary: stakes, odds, potential payout>",
+    "sharp_analysis": "<is this a sharp bet or square bet and why>"
 }
 
-Analysis Guidelines:
-- For single bets: 30-70% range is typical
-- For 2-leg parlays: 20-50% range
-- For 3-leg parlays: 10-35% range  
-- For 4+ leg parlays: 5-20% range
-- Underdogs (+odds): lower probability
-- Favorites (-odds): higher probability but consider value
-- Be realistic and specific in your risk/positive factors
-- If you can't read something clearly, note it in bet_details""",
+IMPORTANT GUIDELINES:
+- Single bets: 30-70% probability range
+- 2-leg parlays: 20-50% range  
+- 3-leg parlays: 10-35% range
+- 4+ leg parlays: 5-20% range
+- Confidence score: 8-10 = very confident, 5-7 = moderate, 1-4 = low confidence
+- Always include odds in American format (e.g., -140, +200)
+- Be realistic and critical - most bets have negative EV
+- Identify if bet follows sharp money patterns""",
             file_contents=[image_content]
         )
         
