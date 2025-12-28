@@ -46,10 +46,14 @@ const Auth = ({ onLogin }) => {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
-            <TrendingUp className="w-10 h-10 text-brand-win" />
-            <h1 className="text-3xl font-black text-white">BetAnalyzer</h1>
+            <div className="relative">
+              <div className="absolute inset-0 bg-violet-500 blur-xl opacity-50"></div>
+              <div className="relative bg-gradient-to-br from-violet-500 to-purple-600 text-white px-4 py-2 rounded-lg font-black text-2xl">
+                BetrSlip
+              </div>
+            </div>
           </div>
-          <p className="text-slate-400">AI-powered betting slip analysis</p>
+          <p className="text-slate-400">AI Bet Slip Companion</p>
         </div>
 
         {/* Auth Form */}
