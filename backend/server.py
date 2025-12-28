@@ -441,7 +441,14 @@ IMPORTANT GUIDELINES:
             bet_details=bet_details,
             individual_bets=individual_bets,
             risk_factors=risk_factors,
-            positive_factors=positive_factors
+            positive_factors=positive_factors,
+            expected_value=expected_value,
+            kelly_percentage=kelly_percentage,
+            true_odds=true_odds,
+            recommendation=recommendation,
+            confidence_score=confidence_score,
+            parlay_vs_straight=parlay_vs_straight,
+            estimated_roi=estimated_roi
         )
         
         analysis_dict = bet_analysis.model_dump()
@@ -456,6 +463,13 @@ IMPORTANT GUIDELINES:
             individual_bets=individual_bets,
             risk_factors=risk_factors,
             positive_factors=positive_factors,
+            expected_value=expected_value,
+            kelly_percentage=kelly_percentage,
+            true_odds=true_odds,
+            recommendation=recommendation,
+            confidence_score=confidence_score,
+            parlay_vs_straight=parlay_vs_straight,
+            estimated_roi=estimated_roi,
             created_at=bet_analysis.created_at
         )
         
