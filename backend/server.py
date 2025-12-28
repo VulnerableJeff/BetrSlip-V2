@@ -16,6 +16,12 @@ import base64
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 
+# Import sports data service
+import sys
+sys.path.append(os.path.dirname(__file__))
+from sports_data_service import get_enhanced_context_for_analysis
+
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
