@@ -80,6 +80,14 @@ class BetAnalysis(BaseModel):
     individual_bets: Optional[List[dict]] = None
     risk_factors: Optional[List[str]] = None
     positive_factors: Optional[List[str]] = None
+    # Advanced Analytics
+    expected_value: Optional[float] = None
+    kelly_percentage: Optional[float] = None
+    true_odds: Optional[str] = None
+    recommendation: Optional[str] = None
+    confidence_score: Optional[int] = None
+    parlay_vs_straight: Optional[dict] = None
+    estimated_roi: Optional[float] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BetAnalysisResponse(BaseModel):
