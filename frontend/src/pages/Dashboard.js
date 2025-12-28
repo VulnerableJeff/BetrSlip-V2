@@ -167,7 +167,7 @@ const Dashboard = ({ onLogout }) => {
                   data-testid="analyze-btn"
                   onClick={handleAnalyze}
                   disabled={!selectedFile || analyzing}
-                  className="w-full bg-brand-win hover:bg-emerald-600 text-brand-dark font-bold text-lg py-6 rounded-sm hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:hover:scale-100"
+                  className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold text-lg py-6 rounded-xl hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-violet-500/25"
                 >
                   {analyzing ? 'Analyzing...' : 'Analyze Bet Slip'}
                 </Button>
