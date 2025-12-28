@@ -104,7 +104,7 @@ const History = ({ onLogout }) => {
             <p className="text-slate-400 text-lg mb-4">No bet analyses yet</p>
             <Button
               data-testid="analyze-first-bet-btn"
-              className="bg-brand-win hover:bg-emerald-600 text-brand-dark font-bold rounded-sm"
+              className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25"
               onClick={() => navigate('/dashboard')}
             >
               Analyze Your First Bet
