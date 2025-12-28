@@ -312,14 +312,14 @@ When real-time data is provided, heavily weight it in your analysis."""
             logger.error(f"Error getting enhanced context: {str(e)}")
             enhanced_context = ""
         
-        # Create message with image
+        # Create message with image and enhanced context
         image_content = ImageContent(image_base64=image_base64)
-        user_message = UserMessage(
-            text="""You are an expert sports betting analyst with deep knowledge of odds, probability, and bankroll management.
+        
+        analysis_prompt = f"""You are an expert sports betting analyst with deep knowledge of odds, probability, and bankroll management.
 
 Analyze this betting slip and provide COMPREHENSIVE analysis in JSON format:
 
-{
+{{
     "win_probability": <realistic number 0-100>,
     "confidence_score": <1-10, how confident in this probability>,
     "bet_type": "<single/parlay/teaser etc>",
@@ -327,36 +327,43 @@ Analyze this betting slip and provide COMPREHENSIVE analysis in JSON format:
     "total_odds": "<combined odds>",
     "potential_payout": "<payout if visible>",
     "individual_bets": [
-        {
+        {{
             "description": "<team/player and bet type>",
             "odds": "<American odds format e.g. -140, +200>",
             "individual_probability": <win chance 0-100>,
-            "reasoning": "<brief analysis>"
-        }
+            "reasoning": "<brief analysis citing specific data if available>"
+        }}
     ],
     "risk_factors": [
-        "<specific concern 1>",
-        "<specific concern 2>",
-        "<specific concern 3>"
+        "<specific concern with data support>",
+        "<another concern>",
+        "<another concern>"
     ],
     "positive_factors": [
-        "<strength 1>",
-        "<strength 2>"
+        "<strength with reasoning>",
+        "<another strength>"
     ],
     "analysis": "<2-3 sentences overall assessment>",
     "bet_details": "<concise summary: stakes, odds, potential payout>",
-    "sharp_analysis": "<is this a sharp bet or square bet and why>"
-}
+    "sharp_analysis": "<based on line movement, book count, and market data - is this sharp or public money>"
+}}
+{enhanced_context}
 
-IMPORTANT GUIDELINES:
-- Single bets: 30-70% probability range
+IMPORTANT ANALYSIS GUIDELINES:
+- If real-time market data is provided above, USE IT to adjust probabilities
+- Compare user's odds to current market odds - identify value or no-value
+- Consider sharp money indicators (multiple books, line movement)
+- Single bets: 30-70% probability range (be critical)
 - 2-leg parlays: 20-50% range  
 - 3-leg parlays: 10-35% range
 - 4+ leg parlays: 5-20% range
-- Confidence score: 8-10 = very confident, 5-7 = moderate, 1-4 = low confidence
+- Confidence score: 8-10 = market data supports analysis, 5-7 = moderate data, 1-4 = limited data
 - Always include odds in American format (e.g., -140, +200)
 - Be realistic and critical - most bets have negative EV
-- Identify if bet follows sharp money patterns""",
+- If market shows heavy action on opposite side, FLAG IT in risk factors"""
+        
+        user_message = UserMessage(
+            text=analysis_prompt,
             file_contents=[image_content]
         )
         
