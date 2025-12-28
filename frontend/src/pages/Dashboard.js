@@ -352,6 +352,11 @@ const Dashboard = ({ onLogout }) => {
                     </p>
                   </div>
                 </div>
+
+                {/* Share Button - Outside the screenshot area */}
+                <div className="mt-6 pt-6 border-t border-slate-800">
+                  <ShareButton resultRef={resultRef} result={result} />
+                </div>
               </Card>
             ) : (
               <Card className="glass border-slate-800 p-8" data-testid="empty-results-card">
