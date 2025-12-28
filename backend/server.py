@@ -346,7 +346,7 @@ async def get_bet_history(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Bet Analyzer API"}
+    return {"message": "BetrSlip API - AI Bet Slip Companion"}
 
 
 # Include the router in the main app
