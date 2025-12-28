@@ -42,6 +42,66 @@ api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
 
+# ===== UTILITY FUNCTIONS =====
+def american_to_decimal(american_odds: str) -> float:
+    """Convert American odds to decimal odds"""
+    try:
+        odds = float(american_odds.replace('+', '').replace('-', ''))
+        if american_odds.startswith('-'):
+            return 1 + (100 / odds)
+        else:
+            return 1 + (odds / 100)
+    except:
+        return 2.0  # Default to even odds
+
+def decimal_to_implied_prob(decimal_odds: float) -> float:
+    """Convert decimal odds to implied probability"""
+    return (1 / decimal_odds) * 100
+
+def calculate_kelly_criterion(win_prob: float, decimal_odds: float) -> float:
+    """
+    Calculate Kelly Criterion percentage
+    Kelly % = (bp - q) / b
+    where b = decimal_odds - 1, p = win probability, q = 1 - p
+    """
+    b = decimal_odds - 1
+    p = win_prob / 100
+    q = 1 - p
+    kelly = (b * p - q) / b
+    # Cap at 25% max for safety (fractional Kelly)
+    return max(0, min(kelly * 100, 25))
+
+def calculate_expected_value(win_prob: float, decimal_odds: float, stake: float = 100) -> float:
+    """
+    Calculate Expected Value
+    EV = (win_prob * profit) - (loss_prob * stake)
+    """
+    p = win_prob / 100
+    profit = stake * (decimal_odds - 1)
+    ev = (p * profit) - ((1 - p) * stake)
+    return (ev / stake) * 100  # Return as percentage
+
+def probability_to_american_odds(prob: float) -> str:
+    """Convert probability to American odds format"""
+    if prob >= 50:
+        odds = -(prob / (100 - prob)) * 100
+        return f"{int(odds)}"
+    else:
+        odds = ((100 - prob) / prob) * 100
+        return f"+{int(odds)}"
+
+def get_bet_recommendation(ev: float, kelly: float, confidence: int) -> str:
+    """Determine bet recommendation based on metrics"""
+    if ev > 5 and kelly > 2 and confidence >= 7:
+        return "STRONG BET"
+    elif ev > 0 and kelly > 0:
+        return "BET"
+    elif ev > -2:
+        return "SMALL/SKIP"
+    else:
+        return "PASS"
+
+
 # ===== MODELS =====
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
