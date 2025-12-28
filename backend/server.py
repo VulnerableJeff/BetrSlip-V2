@@ -90,6 +90,14 @@ class BetAnalysisResponse(BaseModel):
     individual_bets: Optional[List[dict]] = None
     risk_factors: Optional[List[str]] = None
     positive_factors: Optional[List[str]] = None
+    # Advanced Analytics
+    expected_value: Optional[float] = None  # EV percentage
+    kelly_percentage: Optional[float] = None  # Kelly stake percentage
+    true_odds: Optional[str] = None  # What odds should be
+    recommendation: Optional[str] = None  # BET/PASS/SMALL
+    confidence_score: Optional[int] = None  # 1-10 scale
+    parlay_vs_straight: Optional[dict] = None  # Comparison if parlay
+    estimated_roi: Optional[float] = None  # Expected ROI
     created_at: datetime
 
 class BetHistoryResponse(BaseModel):
@@ -100,6 +108,10 @@ class BetHistoryResponse(BaseModel):
     individual_bets: Optional[List[dict]] = None
     risk_factors: Optional[List[str]] = None
     positive_factors: Optional[List[str]] = None
+    expected_value: Optional[float] = None
+    kelly_percentage: Optional[float] = None
+    recommendation: Optional[str] = None
+    confidence_score: Optional[int] = None
     image_data: str
     created_at: datetime
 
