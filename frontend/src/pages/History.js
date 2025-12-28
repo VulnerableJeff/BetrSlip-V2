@@ -144,6 +144,31 @@ const History = ({ onLogout }) => {
                     {formatDate(item.created_at)}
                   </p>
 
+                  {/* Individual Bets Count */}
+                  {item.individual_bets && item.individual_bets.length > 0 && (
+                    <div className="bg-slate-900/70 rounded-sm p-2 text-center">
+                      <p className="text-slate-400 text-xs">
+                        {item.individual_bets.length} bet{item.individual_bets.length > 1 ? 's' : ''} analyzed
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Risk/Positive Indicators */}
+                  <div className="flex gap-2 justify-center">
+                    {item.risk_factors && item.risk_factors.length > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-red-400">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>{item.risk_factors.length} risks</span>
+                      </div>
+                    )}
+                    {item.positive_factors && item.positive_factors.length > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-emerald-400">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>{item.positive_factors.length} positives</span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Bet Details */}
                   {item.bet_details && (
                     <div className="bg-slate-900/50 rounded-sm p-3">
@@ -155,7 +180,7 @@ const History = ({ onLogout }) => {
 
                   {/* Analysis Preview */}
                   <div className="bg-slate-900/50 rounded-sm p-3">
-                    <p className="text-slate-300 text-xs line-clamp-3">
+                    <p className="text-slate-300 text-xs line-clamp-2">
                       {item.analysis_text}
                     </p>
                   </div>
