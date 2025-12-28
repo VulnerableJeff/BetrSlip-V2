@@ -301,7 +301,4 @@ const Dashboard = ({ onLogout }) => {
   );
 };
 
-// Add missing import
-import { BarChart3 } from 'lucide-react';
-
 export default Dashboard;
