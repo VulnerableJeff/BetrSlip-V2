@@ -213,52 +213,15 @@ const Dashboard = ({ onLogout }) => {
                       }`}>
                         {result.recommendation}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Advanced Analytics Grid */}
-                  {(result.expected_value !== null || result.kelly_percentage !== null || result.true_odds) && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                      {/* Expected Value */}
                       {result.expected_value !== null && (
-                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
-                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Expected Value</p>
-                          <p className={`text-2xl font-black ${result.expected_value > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <p className="text-slate-400 text-sm mt-2">
+                          EV: <span className={result.expected_value > 0 ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
                             {result.expected_value > 0 ? '+' : ''}{result.expected_value.toFixed(1)}%
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Kelly Criterion */}
-                      {result.kelly_percentage !== null && (
-                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
-                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Kelly Stake</p>
-                          <p className="text-2xl font-black text-violet-400">
-                            {result.kelly_percentage.toFixed(1)}%
-                          </p>
-                          <p className="text-slate-500 text-xs mt-1">of bankroll</p>
-                        </div>
-                      )}
-
-                      {/* True Odds */}
-                      {result.true_odds && (
-                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
-                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Fair Odds</p>
-                          <p className="text-2xl font-black text-slate-300">
-                            {result.true_odds}
-                          </p>
-                          <p className="text-slate-500 text-xs mt-1">AI estimate</p>
-                        </div>
-                      )}
-
-                      {/* ROI */}
-                      {result.estimated_roi !== null && (
-                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 text-center">
-                          <p className="text-slate-400 text-xs mb-1 uppercase tracking-wider">Est. ROI</p>
-                          <p className={`text-2xl font-black ${result.estimated_roi > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.estimated_roi > 0 ? '+' : ''}{result.estimated_roi.toFixed(1)}%
-                          </p>
-                        </div>
+                          </span>
+                          {result.kelly_percentage !== null && (
+                            <> • Kelly: <span className="text-violet-400 font-semibold">{result.kelly_percentage.toFixed(1)}%</span></>
+                          )}
+                        </p>
                       )}
                     </div>
                   )}
