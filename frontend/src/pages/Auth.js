@@ -109,7 +109,7 @@ const Auth = ({ onLogin }) => {
             <button
               data-testid="toggle-auth-mode"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-brand-win hover:underline text-sm"
+              className="text-violet-400 hover:text-violet-300 hover:underline text-sm"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
