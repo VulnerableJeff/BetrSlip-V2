@@ -450,7 +450,7 @@ const Dashboard = ({ onLogout }) => {
                       <div className="mt-3 space-y-2 text-xs text-slate-400 pl-6">
                         <p><span className="text-violet-400 font-semibold">EV (Expected Value):</span> Average profit/loss per $100 bet. Positive = profit, negative = loss.</p>
                         <p><span className="text-violet-400 font-semibold">Kelly:</span> Optimal bet size as % of bankroll based on your edge.</p>
-                        <p><span className="text-violet-400 font-semibold">Confidence:</span> AI's confidence in prediction (8-10 = high, 5-7 = moderate, 1-4 = low).</p>
+                        <p><span className="text-violet-400 font-semibold">Confidence:</span> AI confidence in prediction (8-10 = high, 5-7 = moderate, 1-4 = low).</p>
                         <p><span className="text-violet-400 font-semibold">Parlay vs Individual:</span> Compares combined parlay vs separate bets.</p>
                       </div>
                     </details>
