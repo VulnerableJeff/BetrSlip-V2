@@ -236,7 +236,7 @@ class SportsDataService:
                         
                         # Sort by date descending and take last N games
                         recent_games.sort(key=lambda x: x['date'], reverse=True)
-                        _cache[cache_key] = recent_games
+                        _cache[cache_key] = (recent_games, datetime.now(timezone.utc))
                         return recent_games[:limit]
         except Exception as e:
             logger.error(f"Error fetching recent games: {str(e)}")
