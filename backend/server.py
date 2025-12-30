@@ -155,6 +155,10 @@ class BetAnalysis(BaseModel):
     confidence_score: Optional[int] = None
     parlay_vs_straight: Optional[dict] = None
     estimated_roi: Optional[float] = None
+    # Real-Time Intelligence
+    injuries_data: Optional[List[dict]] = None
+    weather_data: Optional[dict] = None
+    team_form_data: Optional[List[dict]] = None
     # Historical Tracking
     actual_outcome: Optional[str] = None  # "won", "lost", "push", "pending"
     outcome_marked_at: Optional[datetime] = None
@@ -178,6 +182,10 @@ class BetAnalysisResponse(BaseModel):
     confidence_score: Optional[int] = None  # 1-10 scale
     parlay_vs_straight: Optional[dict] = None  # Comparison if parlay
     estimated_roi: Optional[float] = None  # Expected ROI
+    # Real-Time Intelligence
+    injuries_data: Optional[List[dict]] = None  # Injury reports
+    weather_data: Optional[dict] = None  # Weather conditions
+    team_form_data: Optional[List[dict]] = None  # Team recent form
     created_at: datetime
 
 class BetHistoryResponse(BaseModel):
