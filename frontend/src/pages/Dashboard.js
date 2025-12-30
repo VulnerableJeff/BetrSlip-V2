@@ -185,7 +185,7 @@ const Dashboard = ({ onLogout }) => {
             
             {result ? (
               <Card className="glass border-slate-800 p-6 sm:p-8" data-testid="results-card">
-                <div ref={(el) => setResultRef(el)} className="space-y-4 sm:space-y-6">
+                <div ref={resultRef} className="space-y-4 sm:space-y-6">
                   {/* Win Probability */}
                   <div className={`text-center p-6 sm:p-8 rounded-sm ${getWinGlow(result.win_probability)}`}>
                     <p className="text-slate-400 text-xs sm:text-sm uppercase tracking-wider mb-2">
