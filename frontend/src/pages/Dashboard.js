@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 
