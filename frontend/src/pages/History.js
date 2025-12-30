@@ -212,6 +212,40 @@ const History = ({ onLogout }) => {
                       {item.analysis_text}
                     </p>
                   </div>
+
+                  {/* Outcome Buttons */}
+                  <div className="mt-2 pt-3 border-t border-slate-800">
+                    <p className="text-slate-400 text-xs mb-2 text-center">Did this bet win?</p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={marking[item.id]}
+                        onClick={() => markOutcome(item.id, 'won')}
+                        className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 text-xs"
+                      >
+                        <ThumbsUp className="w-3 h-3 mr-1" />
+                        Won
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={marking[item.id]}
+                        onClick={() => markOutcome(item.id, 'lost')}
+                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 text-xs"
+                      >
+                        <ThumbsDown className="w-3 h-3 mr-1" />
+                        Lost
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={marking[item.id]}
+                        onClick={() => markOutcome(item.id, 'push')}
+                        className="flex-1 bg-slate-700/50 hover:bg-slate-700/70 text-slate-300 border border-slate-600 text-xs"
+                      >
+                        <Minus className="w-3 h-3 mr-1" />
+                        Push
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </Card>
             ))}
