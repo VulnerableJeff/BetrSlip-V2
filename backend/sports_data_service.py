@@ -252,9 +252,11 @@ class SportsDataService:
         
         cache_key = f"stats_{team_info['id']}_{team_info['league']}"
         if cache_key in _cache:
-            cached_data, cached_time = _cache[cache_key]
-            if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
-                return cached_data
+            cached_entry = _cache[cache_key]
+            if isinstance(cached_entry, tuple) and len(cached_entry) == 2:
+                cached_data, cached_time = cached_entry
+                if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
+                    return cached_data
         
         try:
             url = f"{ESPN_API_BASE}/{team_info['sport']}/{team_info['league']}/teams/{team_info['id']}/statistics"
