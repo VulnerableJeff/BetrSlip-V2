@@ -126,11 +126,14 @@ backend:
     file: "/app/backend/injury_weather_service.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "WeatherAPI.com integration working. Returns temp, conditions, wind, precipitation for outdoor stadiums."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Weather API working perfectly. Successfully fetches weather data using WeatherAPI.com API key. Returns temperature, feels_like, conditions, wind_speed, humidity, precipitation_chance. Correctly handles indoor stadiums (returns 'Indoor stadium - weather not a factor'). Fixed .env loading issue in injury_weather_service.py. Tested with Chiefs (19.9°F, Clear), Bills (21.0°F, Light snow), Cowboys (Indoor), Eagles (34.0°F, Overcast)."
 
   - task: "Enhanced Team Stats & Form"
     implemented: true
