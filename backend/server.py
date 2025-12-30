@@ -154,6 +154,11 @@ class BetAnalysis(BaseModel):
     confidence_score: Optional[int] = None
     parlay_vs_straight: Optional[dict] = None
     estimated_roi: Optional[float] = None
+    # Historical Tracking
+    actual_outcome: Optional[str] = None  # "won", "lost", "push", "pending"
+    outcome_marked_at: Optional[datetime] = None
+    stake_amount: Optional[float] = None  # User's actual stake
+    payout_amount: Optional[float] = None  # Actual payout
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BetAnalysisResponse(BaseModel):
