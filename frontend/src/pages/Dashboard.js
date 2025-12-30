@@ -199,8 +199,9 @@ const Dashboard = ({ onLogout }) => {
                       {result.win_probability.toFixed(1)}%
                     </p>
                     {result.confidence_score && (
-                      <p className="text-slate-400 text-xs mt-2">
+                      <p className="text-slate-400 text-xs mt-2 flex items-center justify-center gap-1">
                         Confidence: {result.confidence_score}/10
+                        <InfoTooltip text="How confident the AI is in this prediction. 8-10 = high confidence with market data, 5-7 = moderate, 1-4 = limited data available." />
                       </p>
                     )}
                   </div>
@@ -215,6 +216,8 @@ const Dashboard = ({ onLogout }) => {
                         'bg-red-500/10 border border-red-500/50 text-red-400'
                       }`}>
                         {result.recommendation}
+                        <InfoTooltip text="AI recommendation based on expected value, Kelly criterion, and confidence. STRONG BET = great value, BET = positive expected value, SMALL/SKIP = marginal, PASS = negative expected value." />
+                      </div>
                       </div>
                       {result.expected_value !== null && (
                         <p className="text-slate-400 text-sm mt-2">
