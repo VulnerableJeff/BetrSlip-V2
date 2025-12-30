@@ -5,6 +5,12 @@ from typing import Dict, Optional, List
 from datetime import datetime, timezone, timedelta
 import json
 import re
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
