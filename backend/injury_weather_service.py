@@ -46,7 +46,7 @@ class InjuryWeatherService:
     async def get_injuries_for_team(team_name: str) -> List[Dict]:
         """
         Fetch injury report from ESPN for a team
-        Uses ESPN's free public API
+        Uses ESPN's sports.core API for injuries
         """
         try:
             # ESPN Team IDs (NFL)
@@ -69,27 +69,48 @@ class InjuryWeatherService:
             if not team_id:
                 return []
             
-            url = f'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}'
+            # Try the sports.core.api endpoint for injuries
+            url = f'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/teams/{team_id}/injuries'
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         data = await response.json()
                         
-                        # Get injuries from team data
                         injuries = []
-                        if 'team' in data and 'injuries' in data['team']:
-                            injury_data = data['team']['injuries']
-                            if isinstance(injury_data, dict) and 'items' in injury_data:
-                                for injury in injury_data['items']:
-                                    injuries.append({
-                                        'player': injury.get('athlete', {}).get('displayName', 'Unknown'),
-                                        'position': injury.get('athlete', {}).get('position', {}).get('abbreviation', ''),
-                                        'status': injury.get('status', 'Unknown'),
-                                        'injury': injury.get('type', 'Undisclosed')
-                                    })
+                        if 'items' in data:
+                            for item in data['items'][:5]:  # Top 5
+                                try:
+                                    # Fetch individual injury details
+                                    injury_url = item.get('$ref', '')
+                                    if injury_url:
+                                        async with session.get(injury_url, timeout=aiohttp.ClientTimeout(total=5)) as injury_resp:
+                                            if injury_resp.status == 200:
+                                                injury_data = await injury_resp.json()
+                                                
+                                                athlete_ref = injury_data.get('athlete', {}).get('$ref', '')
+                                                athlete_name = 'Unknown'
+                                                position = ''
+                                                
+                                                # Fetch athlete name
+                                                if athlete_ref:
+                                                    async with session.get(athlete_ref, timeout=aiohttp.ClientTimeout(total=3)) as athlete_resp:
+                                                        if athlete_resp.status == 200:
+                                                            athlete_data = await athlete_resp.json()
+                                                            athlete_name = athlete_data.get('displayName', 'Unknown')
+                                                            position = athlete_data.get('position', {}).get('abbreviation', '')
+                                                
+                                                injuries.append({
+                                                    'player': athlete_name,
+                                                    'position': position,
+                                                    'status': injury_data.get('status', {}).get('name', 'Unknown'),
+                                                    'injury': injury_data.get('details', {}).get('type', 'Undisclosed')
+                                                })
+                                except Exception as e:
+                                    logger.debug(f"Error parsing injury: {str(e)}")
+                                    continue
                         
-                        return injuries[:5]  # Top 5 injuries
+                        return injuries
                     else:
                         logger.error(f"ESPN injury API error: {response.status}")
                         return []
