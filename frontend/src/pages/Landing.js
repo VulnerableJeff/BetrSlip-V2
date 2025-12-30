@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle } from 'lucide-react';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -44,23 +44,37 @@ const Landing = () => {
               className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-6 tracking-tight"
               data-testid="hero-title"
             >
-              Let AI read your{' '}
+              AI-powered bet analysis{' '}
               <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-                bet slip
+                you can trust.
               </span>
-              <br />
-              before you bet it.
             </h1>
             <p
               className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto mb-4"
               data-testid="hero-description"
             >
-              BetrSlip scans your sportsbook screenshot, parses every leg, and gives you
-              fair odds, win probability, and Kelly stake—in seconds.
+              Upload your bet slip screenshot. Get AI-powered win probability with real-time 
+              injury reports, weather data, and team stats. Track your results and see our accuracy.
             </p>
             <p className="text-slate-400 text-sm max-w-2xl mx-auto">
-              Upload slips from Hard Rock, DraftKings, FanDuel & more
+              Works with Hard Rock, DraftKings, FanDuel & more
             </p>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full">
+              <Target className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-400 text-sm font-semibold">Track AI Accuracy</span>
+            </div>
+            <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 px-4 py-2 rounded-full">
+              <TrendingUp className="w-4 h-4 text-violet-400" />
+              <span className="text-violet-400 text-sm font-semibold">Real-Time Sports Data</span>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 px-4 py-2 rounded-full">
+              <CheckCircle className="w-4 h-4 text-purple-400" />
+              <span className="text-purple-400 text-sm font-semibold">Transparent Results</span>
+            </div>
           </div>
 
           {/* Preview Card */}
@@ -84,6 +98,28 @@ const Landing = () => {
                 <p className="text-slate-400 text-sm mt-3">
                   EV: <span className="text-red-400 font-semibold">-8.2%</span> • Kelly: <span className="text-violet-400 font-semibold">0%</span>
                 </p>
+              </div>
+
+              {/* Real-Time Data Section */}
+              <div className="bg-gradient-to-r from-emerald-950/30 to-teal-950/30 border border-emerald-500/30 rounded-xl p-4 mb-4">
+                <h3 className="text-white font-bold mb-3 text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                  Real-Time Intelligence
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Injuries</p>
+                    <p className="text-emerald-400 font-bold text-sm">2 Key OUT</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Weather</p>
+                    <p className="text-yellow-400 font-bold text-sm">❄️ 20°F</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Form</p>
+                    <p className="text-emerald-400 font-bold text-sm">WWWLW</p>
+                  </div>
+                </div>
               </div>
 
               {/* Parlay Comparison */}
@@ -178,38 +214,87 @@ const Landing = () => {
       {/* Features Section */}
       <section className="py-20 bg-slate-950/50 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-4">Why BetrSlip?</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Make smarter bets with AI-powered analysis, real-time data, and transparent accuracy tracking
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-6">
             {/* Feature 1 */}
             <div className="text-center" data-testid="feature-upload">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-6 mx-auto">
-                <Upload className="w-8 h-8 text-violet-400" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Upload className="w-7 h-7 text-violet-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Upload slips from Hard Rock, DraftKings, FanDuel & more</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Smart OCR</h3>
               <p className="text-slate-400 text-sm">
-                Simply screenshot your bet slip from any major sportsbook
+                Upload any bet slip screenshot—we extract every detail automatically
               </p>
             </div>
 
             {/* Feature 2 */}
             <div className="text-center" data-testid="feature-analyze">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-6 mx-auto">
-                <Sparkles className="w-8 h-8 text-violet-400" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Sparkles className="w-7 h-7 text-emerald-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">AI-powered parsing & edge estimates</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Real-Time Data</h3>
               <p className="text-slate-400 text-sm">
-                Advanced AI analyzes every bet and calculates true probabilities
+                Live odds, injuries, weather & team form integrated into analysis
               </p>
             </div>
 
             {/* Feature 3 */}
             <div className="text-center" data-testid="feature-track">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-6 mx-auto">
-                <BarChart3 className="w-8 h-8 text-violet-400" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center mb-4 mx-auto">
+                <BarChart3 className="w-7 h-7 text-yellow-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Win % and Kelly sizing per leg</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Kelly & EV</h3>
               <p className="text-slate-400 text-sm">
-                Get optimal stake sizes and individual leg probabilities
+                Optimal stake sizes and expected value for every leg
               </p>
+            </div>
+
+            {/* Feature 4 - NEW: Accuracy Tracking */}
+            <div className="text-center" data-testid="feature-accuracy">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Target className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Track Accuracy</h3>
+              <p className="text-slate-400 text-sm">
+                Mark bets as Won/Lost and see our real prediction accuracy
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Accuracy Section - NEW */}
+      <section className="py-16 bg-gradient-to-r from-emerald-950/20 to-teal-950/20 border-y border-emerald-500/20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-6">
+            <Target className="w-4 h-4 text-emerald-400" />
+            <span className="text-emerald-400 text-sm font-semibold">Transparency Built In</span>
+          </div>
+          <h2 className="text-3xl font-black text-white mb-4">
+            Track Results. Verify Accuracy.
+          </h2>
+          <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
+            Mark your bets as Won, Lost, or Push after games. See our AI's real accuracy rate 
+            and track your personal performance over time. No hidden stats—full transparency.
+          </p>
+          <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-emerald-500/30">
+              <p className="text-3xl font-black text-emerald-400 mb-1">✓</p>
+              <p className="text-slate-400 text-sm">Won</p>
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-red-500/30">
+              <p className="text-3xl font-black text-red-400 mb-1">✗</p>
+              <p className="text-slate-400 text-sm">Lost</p>
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-500/30">
+              <p className="text-3xl font-black text-slate-400 mb-1">−</p>
+              <p className="text-slate-400 text-sm">Push</p>
             </div>
           </div>
         </div>
@@ -220,7 +305,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-slate-400 text-sm mb-2">© 2025 BetrSlip. AI Bet Slip Companion.</p>
           <p className="text-slate-500 text-xs">
-            No spam. You'll only hear from us when the live version is ready. Or we have big updates.
+            Analyze smarter. Track results. Bet with confidence.
           </p>
         </div>
       </footer>
