@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ const Dashboard = ({ onLogout }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
-  const [resultRef, setResultRef] = useState(null);
+  const resultRef = useRef(null);
   const navigate = useNavigate();
 
   const handleFileSelect = (e) => {
