@@ -111,11 +111,14 @@ backend:
     file: "/app/backend/injury_weather_service.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Fixed ESPN injury API - status field was string not dict. Now returns player injuries correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: ESPN injury API working perfectly. Successfully fetches injury data for NFL teams (Chiefs, Bills, Cowboys, Eagles). Returns player names, positions, status (Out/Active), and injury types. Fixed .env loading issue. API calls ESPN sports.core.api endpoint and handles both string and dict status formats correctly."
 
   - task: "Weather API Integration"
     implemented: true
