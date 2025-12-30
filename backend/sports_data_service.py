@@ -483,32 +483,82 @@ class SportsDataService:
 async def get_enhanced_context_for_analysis(individual_bets: List[Dict], bet_details: str) -> str:
     """
     Get enhanced context string to add to AI prompt
+    Includes: live odds, team records, recent form, key stats
     """
+    context_parts = []
+    
+    # Extract team names
+    team_names = SportsDataService.extract_team_names(bet_details)
+    
+    # Get enhanced team data for each team found
+    if team_names:
+        context_parts.append("\n\n📊 TEAM DATA & ANALYSIS:")
+        
+        for team_name in team_names[:2]:  # Limit to 2 teams
+            team_context = []
+            
+            # Get team record
+            record = await SportsDataService.get_team_record(team_name)
+            if record:
+                team_context.append(f"\n**{record['team_name']}**")
+                if record.get('overall'):
+                    team_context.append(f"  Record: {record['overall']}")
+                if record.get('home'):
+                    team_context.append(f"  Home: {record['home']} | Away: {record.get('away', 'N/A')}")
+                if record.get('standing'):
+                    team_context.append(f"  Standing: {record['standing']}")
+            
+            # Get recent games (form)
+            recent_games = await SportsDataService.get_recent_games(team_name, limit=5)
+            if recent_games:
+                form = SportsDataService.calculate_form_rating(recent_games)
+                team_context.append(f"  Last 5: {form['form']} ({form['rating']})")
+                team_context.append(f"  Recent margin: {'+' if form['avg_margin'] > 0 else ''}{form['avg_margin']} pts/game")
+                
+                # Show last 3 games
+                team_context.append("  Recent results:")
+                for game in recent_games[:3]:
+                    team_context.append(f"    {game['result']} vs {game['opponent']} ({game['score']})")
+            
+            # Get key stats
+            stats = await SportsDataService.get_team_stats(team_name)
+            if stats and stats.get('key_stats'):
+                key_stats = stats['key_stats']
+                team_context.append("  Key Stats:")
+                stat_count = 0
+                for stat_name, value in key_stats.items():
+                    if stat_count < 5:  # Limit to 5 most relevant stats
+                        team_context.append(f"    - {stat_name}: {value}")
+                        stat_count += 1
+            
+            if team_context:
+                context_parts.extend(team_context)
+    
+    # Get live odds data
     enrichment = await SportsDataService.enrich_bet_analysis(individual_bets, bet_details)
     
-    if not enrichment['live_odds_available']:
-        return ""
-    
-    context_parts = ["\\n\\nREAL-TIME MARKET DATA:"]
-    
-    # Add market context
-    for game_data in enrichment['market_context']:
-        context_parts.append(f"\\nGame: {game_data['away_team']} @ {game_data['home_team']}")
-        context_parts.append(f"Books offering: {game_data['bookmakers_count']}")
+    if enrichment['live_odds_available']:
+        context_parts.append("\n\n📈 REAL-TIME MARKET DATA:")
         
-        if game_data.get('odds_sample'):
-            context_parts.append("Current market odds sample:")
-            for odds in game_data['odds_sample'][:3]:
-                context_parts.append(
-                    f"  - {odds['bookmaker']}: {odds['team']} {odds['market']} {odds.get('price', 'N/A')}"
-                )
+        # Add market context
+        for game_data in enrichment['market_context']:
+            context_parts.append(f"\nGame: {game_data['away_team']} @ {game_data['home_team']}")
+            context_parts.append(f"Books offering: {game_data['bookmakers_count']}")
+            
+            if game_data.get('odds_sample'):
+                context_parts.append("Current market odds sample:")
+                for odds in game_data['odds_sample'][:3]:
+                    context_parts.append(
+                        f"  - {odds['bookmaker']}: {odds['team']} {odds['market']} {odds.get('price', 'N/A')}"
+                    )
+        
+        # Add sharp indicators
+        if enrichment['sharp_indicators']:
+            context_parts.append("\nMarket indicators:")
+            for indicator in enrichment['sharp_indicators']:
+                context_parts.append(f"  - {indicator}")
     
-    # Add sharp indicators
-    if enrichment['sharp_indicators']:
-        context_parts.append("\\nMarket indicators:")
-        for indicator in enrichment['sharp_indicators']:
-            context_parts.append(f"  - {indicator}")
+    if context_parts:
+        context_parts.append("\n\n⚠️ Use this data to adjust your probability assessment. Consider recent form, head-to-head history, and market sentiment.")
     
-    context_parts.append("\\nConsider this real-time market data in your probability assessment.")
-    
-    return "\\n".join(context_parts)
+    return "\n".join(context_parts)
