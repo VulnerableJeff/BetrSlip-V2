@@ -580,7 +580,10 @@ IMPORTANT ANALYSIS GUIDELINES:
             recommendation=recommendation,
             confidence_score=confidence_score,
             parlay_vs_straight=parlay_vs_straight,
-            estimated_roi=estimated_roi
+            estimated_roi=estimated_roi,
+            injuries_data=injuries_data if injuries_data else None,
+            weather_data=weather_data,
+            team_form_data=team_form_data if team_form_data else None
         )
         
         analysis_dict = bet_analysis.model_dump()
@@ -602,6 +605,9 @@ IMPORTANT ANALYSIS GUIDELINES:
             confidence_score=confidence_score,
             parlay_vs_straight=parlay_vs_straight,
             estimated_roi=estimated_roi,
+            injuries_data=injuries_data if injuries_data else None,
+            weather_data=weather_data,
+            team_form_data=team_form_data if team_form_data else None,
             created_at=bet_analysis.created_at
         )
         
