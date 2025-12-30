@@ -9,7 +9,7 @@ const ShareButton = ({ resultRef, result }) => {
   const [copied, setCopied] = useState(false);
 
   const generateShareImage = async () => {
-    if (!resultRef) {
+    if (!resultRef || !resultRef.current) {
       toast.error('No results to share');
       return null;
     }
@@ -46,7 +46,7 @@ const ShareButton = ({ resultRef, result }) => {
       shareContainer.appendChild(header);
 
       // Clone the results content
-      const resultsClone = resultRef.cloneNode(true);
+      const resultsClone = resultRef.current.cloneNode(true);
       resultsClone.style.background = '#1e293b';
       resultsClone.style.borderRadius = '16px';
       resultsClone.style.padding = '24px';
