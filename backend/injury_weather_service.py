@@ -100,11 +100,11 @@ class InjuryWeatherService:
     @staticmethod
     async def get_weather_for_game(team_name: str, game_time: Optional[datetime] = None) -> Optional[Dict]:
         """
-        Fetch weather forecast for game location
+        Fetch weather forecast for game location using WeatherAPI.com
         Only relevant for outdoor stadiums
         """
-        if not WEATHER_API_KEY:
-            logger.warning("OPENWEATHER_API_KEY not set")
+        if not WEATHERAPI_KEY:
+            logger.warning("WEATHERAPI_KEY not set")
             return None
         
         team_lower = team_name.lower()
@@ -123,12 +123,14 @@ class InjuryWeatherService:
             return {'note': 'Indoor stadium - weather not a factor'}
         
         try:
-            url = f'{WEATHER_API_BASE}/forecast'
+            # Use city name for WeatherAPI
+            url = f'{WEATHERAPI_BASE}/forecast.json'
             params = {
-                'lat': location['lat'],
-                'lon': location['lon'],
-                'appid': WEATHER_API_KEY,
-                'units': 'imperial'  # Fahrenheit
+                'key': WEATHERAPI_KEY,
+                'q': location['city'],
+                'days': 1,
+                'aqi': 'no',
+                'alerts': 'no'
             }
             
             async with aiohttp.ClientSession() as session:
@@ -136,23 +138,25 @@ class InjuryWeatherService:
                     if response.status == 200:
                         data = await response.json()
                         
-                        # Get current or near-future forecast
-                        if data.get('list') and len(data['list']) > 0:
-                            forecast = data['list'][0]
-                            
-                            weather_info = {
-                                'temp': forecast['main']['temp'],
-                                'feels_like': forecast['main']['feels_like'],
-                                'conditions': forecast['weather'][0]['description'],
-                                'wind_speed': forecast['wind']['speed'],
-                                'humidity': forecast['main']['humidity'],
-                                'precipitation_chance': forecast.get('pop', 0) * 100,
-                                'city': location['city']
-                            }
-                            
-                            return weather_info
+                        current = data.get('current', {})
+                        forecast_day = data.get('forecast', {}).get('forecastday', [{}])[0].get('day', {})
+                        
+                        weather_info = {
+                            'temp': current.get('temp_f', 0),
+                            'feels_like': current.get('feelslike_f', 0),
+                            'conditions': current.get('condition', {}).get('text', 'Unknown'),
+                            'wind_speed': current.get('wind_mph', 0),
+                            'humidity': current.get('humidity', 0),
+                            'precipitation_chance': forecast_day.get('daily_chance_of_rain', 0),
+                            'city': location['city'],
+                            'wind_gust': current.get('gust_mph', 0)
+                        }
+                        
+                        return weather_info
                     else:
                         logger.error(f"Weather API error: {response.status}")
+                        text = await response.text()
+                        logger.error(f"Response: {text}")
                         return None
         except Exception as e:
             logger.error(f"Error fetching weather for {team_name}: {str(e)}")
