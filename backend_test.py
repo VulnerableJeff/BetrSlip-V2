@@ -6,7 +6,7 @@ from datetime import datetime
 from PIL import Image
 
 class BetAnalyzerAPITester:
-    def __init__(self, base_url="https://winchecker.preview.emergentagent.com"):
+    def __init__(self, base_url="https://win-predictor-35.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
