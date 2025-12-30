@@ -286,7 +286,6 @@ class SportsDataService:
                         ]
                         
                         for category in categories:
-                            cat_name = category.get('name', '')
                             for stat in category.get('stats', []):
                                 stat_name = stat.get('name', '')
                                 if stat_name in important_stats or 'PerGame' in stat_name:
