@@ -295,7 +295,7 @@ class SportsDataService:
                                     value = stat.get('value', stat.get('displayValue', 'N/A'))
                                     stats['key_stats'][display_name] = value
                         
-                        _cache[cache_key] = stats
+                        _cache[cache_key] = (stats, datetime.now(timezone.utc))
                         return stats
         except Exception as e:
             logger.error(f"Error fetching team stats: {str(e)}")
