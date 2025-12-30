@@ -6,9 +6,9 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# OpenWeather API (Free tier: 1000 calls/day)
-WEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY', '')
-WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5'
+# WeatherAPI.com (Free tier: 1M calls/month!)
+WEATHERAPI_KEY = os.environ.get('WEATHERAPI_KEY', '')
+WEATHERAPI_BASE = 'http://api.weatherapi.com/v1'
 
 # Stadium/Venue locations (major NFL stadiums)
 STADIUM_LOCATIONS = {
