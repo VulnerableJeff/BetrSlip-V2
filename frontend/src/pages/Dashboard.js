@@ -355,6 +355,23 @@ const Dashboard = ({ onLogout }) => {
                       {result.analysis_text}
                     </p>
                   </div>
+
+                  {/* Quick Reference Guide */}
+                  <div className="bg-slate-900/30 border border-slate-800 rounded-lg p-4">
+                    <details className="group">
+                      <summary className="flex items-center gap-2 text-slate-400 text-xs cursor-pointer hover:text-violet-400 transition-colors">
+                        <HelpCircle className="w-4 h-4" />
+                        <span>What do these terms mean?</span>
+                        <span className="ml-auto group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="mt-3 space-y-2 text-xs text-slate-400 pl-6">
+                        <p><span className="text-violet-400 font-semibold">EV (Expected Value):</span> Average profit/loss per $100 bet. Positive = profit, negative = loss.</p>
+                        <p><span className="text-violet-400 font-semibold">Kelly:</span> Optimal bet size as % of bankroll based on your edge.</p>
+                        <p><span className="text-violet-400 font-semibold">Confidence:</span> AI's confidence in prediction (8-10 = high, 5-7 = moderate, 1-4 = low).</p>
+                        <p><span className="text-violet-400 font-semibold">Parlay vs Individual:</span> Compares combined parlay vs separate bets.</p>
+                      </div>
+                    </details>
+                  </div>
                 </div>
 
                 {/* Share Button - Outside the screenshot area */}
