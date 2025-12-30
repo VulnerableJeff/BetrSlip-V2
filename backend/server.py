@@ -19,7 +19,8 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 # Import sports data service
 import sys
 sys.path.append(os.path.dirname(__file__))
-from sports_data_service import get_enhanced_context_for_analysis
+from sports_data_service import get_enhanced_context_for_analysis, SportsDataService
+from injury_weather_service import get_enhanced_game_context
 
 
 ROOT_DIR = Path(__file__).parent
