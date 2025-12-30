@@ -554,6 +554,119 @@ async def get_bet_history(current_user: dict = Depends(get_current_user)):
     ]
 
 
+class MarkOutcomeRequest(BaseModel):
+    outcome: str  # "won", "lost", "push"
+    stake_amount: Optional[float] = None
+    payout_amount: Optional[float] = None
+
+
+@api_router.post("/analysis/{analysis_id}/outcome")
+async def mark_bet_outcome(
+    analysis_id: str,
+    outcome_data: MarkOutcomeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Mark a bet as won/lost/push"""
+    # Verify ownership
+    bet = await db.bet_analyses.find_one(
+        {"id": analysis_id, "user_id": current_user['user_id']},
+        {"_id": 0}
+    )
+    
+    if not bet:
+        raise HTTPException(status_code=404, detail="Bet analysis not found")
+    
+    # Update outcome
+    update_data = {
+        "actual_outcome": outcome_data.outcome,
+        "outcome_marked_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if outcome_data.stake_amount is not None:
+        update_data["stake_amount"] = outcome_data.stake_amount
+    if outcome_data.payout_amount is not None:
+        update_data["payout_amount"] = outcome_data.payout_amount
+    
+    await db.bet_analyses.update_one(
+        {"id": analysis_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Outcome marked successfully", "outcome": outcome_data.outcome}
+
+
+@api_router.get("/stats")
+async def get_user_stats(current_user: dict = Depends(get_current_user)):
+    """Get user's betting statistics and AI accuracy"""
+    # Get all completed bets (with outcomes)
+    completed_bets = await db.bet_analyses.find(
+        {
+            "user_id": current_user['user_id'],
+            "actual_outcome": {"$in": ["won", "lost", "push"]}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not completed_bets:
+        return {
+            "total_analyzed": 0,
+            "total_tracked": 0,
+            "accuracy_rate": 0,
+            "total_profit": 0,
+            "roi": 0,
+            "bets_won": 0,
+            "bets_lost": 0,
+            "bets_push": 0,
+            "followed_recommendations": 0
+        }
+    
+    # Calculate stats
+    total_bets = len(completed_bets)
+    bets_won = sum(1 for b in completed_bets if b.get('actual_outcome') == 'won')
+    bets_lost = sum(1 for b in completed_bets if b.get('actual_outcome') == 'lost')
+    bets_push = sum(1 for b in completed_bets if b.get('actual_outcome') == 'push')
+    
+    # Calculate AI accuracy (predicted > 50% should win)
+    correct_predictions = 0
+    for bet in completed_bets:
+        if bet.get('actual_outcome') == 'push':
+            continue
+        predicted_win = bet.get('win_probability', 0) > 50
+        actually_won = bet.get('actual_outcome') == 'won'
+        if predicted_win == actually_won:
+            correct_predictions += 1
+    
+    accuracy_rate = (correct_predictions / (total_bets - bets_push) * 100) if (total_bets - bets_push) > 0 else 0
+    
+    # Calculate profit/loss
+    total_stake = sum(b.get('stake_amount', 0) for b in completed_bets if b.get('stake_amount'))
+    total_payout = sum(b.get('payout_amount', 0) for b in completed_bets if b.get('payout_amount'))
+    total_profit = total_payout - total_stake
+    roi = (total_profit / total_stake * 100) if total_stake > 0 else 0
+    
+    # Check how many followed recommendations
+    followed_recs = sum(
+        1 for b in completed_bets 
+        if b.get('recommendation') in ['BET', 'STRONG BET'] and b.get('actual_outcome') == 'won'
+    )
+    
+    # Get total analyzed (including pending)
+    total_analyzed = await db.bet_analyses.count_documents({"user_id": current_user['user_id']})
+    
+    return {
+        "total_analyzed": total_analyzed,
+        "total_tracked": total_bets,
+        "accuracy_rate": round(accuracy_rate, 1),
+        "total_profit": round(total_profit, 2),
+        "roi": round(roi, 1),
+        "bets_won": bets_won,
+        "bets_lost": bets_lost,
+        "bets_push": bets_push,
+        "followed_recommendations": followed_recs,
+        "win_rate": round((bets_won / (bets_won + bets_lost) * 100) if (bets_won + bets_lost) > 0 else 0, 1)
+    }
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
