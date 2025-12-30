@@ -183,11 +183,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GPT-4o analysis with enhanced context including team data, injuries, weather"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Full bet analysis working perfectly. POST /api/analyze endpoint returns all required fields: win_probability (35%), confidence_score (6/10), individual_bets, risk_factors, positive_factors, expected_value (-12.5%), kelly_percentage (0%), true_odds (+185), recommendation (PASS). Enhanced context (2039 chars) includes team records, recent form, injuries, and weather data. Analysis correctly incorporates enhanced data (detected weather, form, recent indicators in analysis text). Fixed .env loading for both weather and odds APIs."
 
   - task: "History & Stats Tracking"
     implemented: true
