@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
+import InfoTooltip from '@/components/InfoTooltip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
