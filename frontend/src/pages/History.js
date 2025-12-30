@@ -4,7 +4,8 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ArrowLeft, TrendingUp, LogOut, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, LogOut, BarChart3, AlertCircle, CheckCircle2, ThumbsUp, ThumbsDown, Minus } from 'lucide-react';
+import StatsDashboard from '@/components/StatsDashboard';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
