@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Optional, List
 from datetime import datetime, timezone, timedelta
 import json
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +12,74 @@ logger = logging.getLogger(__name__)
 ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
 ODDS_API_BASE = 'https://api.the-odds-api.com/v4'
 
+# ESPN API base
+ESPN_API_BASE = 'https://site.api.espn.com/apis/site/v2/sports'
+
 # In-memory cache
 _cache = {}
 CACHE_DURATION = timedelta(minutes=5)  # Cache for 5 minutes
+
+# Team ID mappings for ESPN API
+ESPN_NFL_TEAMS = {
+    'chiefs': {'id': '12', 'name': 'Kansas City Chiefs'},
+    'bills': {'id': '2', 'name': 'Buffalo Bills'},
+    'cowboys': {'id': '6', 'name': 'Dallas Cowboys'},
+    'eagles': {'id': '21', 'name': 'Philadelphia Eagles'},
+    'packers': {'id': '9', 'name': 'Green Bay Packers'},
+    '49ers': {'id': '25', 'name': 'San Francisco 49ers'},
+    'niners': {'id': '25', 'name': 'San Francisco 49ers'},
+    'ravens': {'id': '33', 'name': 'Baltimore Ravens'},
+    'bengals': {'id': '4', 'name': 'Cincinnati Bengals'},
+    'browns': {'id': '5', 'name': 'Cleveland Browns'},
+    'steelers': {'id': '23', 'name': 'Pittsburgh Steelers'},
+    'patriots': {'id': '17', 'name': 'New England Patriots'},
+    'dolphins': {'id': '15', 'name': 'Miami Dolphins'},
+    'jets': {'id': '20', 'name': 'New York Jets'},
+    'raiders': {'id': '13', 'name': 'Las Vegas Raiders'},
+    'chargers': {'id': '24', 'name': 'Los Angeles Chargers'},
+    'rams': {'id': '14', 'name': 'Los Angeles Rams'},
+    'seahawks': {'id': '26', 'name': 'Seattle Seahawks'},
+    'broncos': {'id': '7', 'name': 'Denver Broncos'},
+    'saints': {'id': '18', 'name': 'New Orleans Saints'},
+    'falcons': {'id': '1', 'name': 'Atlanta Falcons'},
+    'panthers': {'id': '29', 'name': 'Carolina Panthers'},
+    'buccaneers': {'id': '27', 'name': 'Tampa Bay Buccaneers'},
+    'bucs': {'id': '27', 'name': 'Tampa Bay Buccaneers'},
+    'lions': {'id': '8', 'name': 'Detroit Lions'},
+    'bears': {'id': '3', 'name': 'Chicago Bears'},
+    'vikings': {'id': '16', 'name': 'Minnesota Vikings'},
+    'texans': {'id': '34', 'name': 'Houston Texans'},
+    'colts': {'id': '11', 'name': 'Indianapolis Colts'},
+    'jaguars': {'id': '30', 'name': 'Jacksonville Jaguars'},
+    'titans': {'id': '10', 'name': 'Tennessee Titans'},
+    'commanders': {'id': '28', 'name': 'Washington Commanders'},
+    'giants': {'id': '19', 'name': 'New York Giants'},
+    'cardinals': {'id': '22', 'name': 'Arizona Cardinals'},
+}
+
+ESPN_NBA_TEAMS = {
+    'lakers': {'id': '13', 'name': 'Los Angeles Lakers'},
+    'warriors': {'id': '9', 'name': 'Golden State Warriors'},
+    'celtics': {'id': '2', 'name': 'Boston Celtics'},
+    'nets': {'id': '17', 'name': 'Brooklyn Nets'},
+    'bucks': {'id': '15', 'name': 'Milwaukee Bucks'},
+    'heat': {'id': '14', 'name': 'Miami Heat'},
+    'suns': {'id': '21', 'name': 'Phoenix Suns'},
+    'nuggets': {'id': '7', 'name': 'Denver Nuggets'},
+    'sixers': {'id': '20', 'name': 'Philadelphia 76ers'},
+    '76ers': {'id': '20', 'name': 'Philadelphia 76ers'},
+    'knicks': {'id': '18', 'name': 'New York Knicks'},
+    'bulls': {'id': '4', 'name': 'Chicago Bulls'},
+    'clippers': {'id': '12', 'name': 'LA Clippers'},
+    'mavericks': {'id': '6', 'name': 'Dallas Mavericks'},
+    'mavs': {'id': '6', 'name': 'Dallas Mavericks'},
+    'grizzlies': {'id': '29', 'name': 'Memphis Grizzlies'},
+    'thunder': {'id': '25', 'name': 'Oklahoma City Thunder'},
+    'timberwolves': {'id': '16', 'name': 'Minnesota Timberwolves'},
+    'wolves': {'id': '16', 'name': 'Minnesota Timberwolves'},
+    'cavaliers': {'id': '5', 'name': 'Cleveland Cavaliers'},
+    'cavs': {'id': '5', 'name': 'Cleveland Cavaliers'},
+}
 
 
 class SportsDataService:
