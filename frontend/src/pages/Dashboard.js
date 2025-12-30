@@ -218,7 +218,6 @@ const Dashboard = ({ onLogout }) => {
                         {result.recommendation}
                         <InfoTooltip text="AI recommendation based on expected value, Kelly criterion, and confidence. STRONG BET = great value, BET = positive expected value, SMALL/SKIP = marginal, PASS = negative expected value." />
                       </div>
-                      </div>
                       {result.expected_value !== null && (
                         <p className="text-slate-400 text-sm mt-2">
                           EV: 
