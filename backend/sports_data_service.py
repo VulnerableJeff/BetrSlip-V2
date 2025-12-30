@@ -86,6 +86,247 @@ class SportsDataService:
     """Service to fetch real-time sports data for bet analysis"""
     
     @staticmethod
+    def get_team_info(team_name: str) -> Optional[Dict]:
+        """Get ESPN team ID and league from team name"""
+        team_lower = team_name.lower().strip()
+        
+        # Check NFL teams
+        for key, info in ESPN_NFL_TEAMS.items():
+            if key in team_lower or team_lower in key:
+                return {'id': info['id'], 'name': info['name'], 'league': 'nfl', 'sport': 'football'}
+        
+        # Check NBA teams
+        for key, info in ESPN_NBA_TEAMS.items():
+            if key in team_lower or team_lower in key:
+                return {'id': info['id'], 'name': info['name'], 'league': 'nba', 'sport': 'basketball'}
+        
+        return None
+    
+    @staticmethod
+    async def get_team_record(team_name: str) -> Optional[Dict]:
+        """Get team's current season record"""
+        team_info = SportsDataService.get_team_info(team_name)
+        if not team_info:
+            return None
+        
+        cache_key = f"record_{team_info['id']}_{team_info['league']}"
+        if cache_key in _cache:
+            cached_data, cached_time = _cache[cache_key]
+            if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
+                return cached_data
+        
+        try:
+            url = f"{ESPN_API_BASE}/{team_info['sport']}/{team_info['league']}/teams/{team_info['id']}"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        team = data.get('team', {})
+                        
+                        record_items = team.get('record', {}).get('items', [])
+                        record_data = {
+                            'team_name': team.get('displayName', team_name),
+                            'overall': None,
+                            'home': None,
+                            'away': None,
+                            'conference': None,
+                            'division': None,
+                            'streak': None
+                        }
+                        
+                        for item in record_items:
+                            desc = item.get('description', '').lower()
+                            summary = item.get('summary', '')
+                            
+                            if not desc or desc == '':
+                                record_data['overall'] = summary
+                            elif 'home' in desc:
+                                record_data['home'] = summary
+                            elif 'away' in desc:
+                                record_data['away'] = summary
+                            elif 'conference' in desc:
+                                record_data['conference'] = summary
+                            elif 'division' in desc:
+                                record_data['division'] = summary
+                        
+                        # Get standing info
+                        standing = team.get('standingSummary', '')
+                        record_data['standing'] = standing
+                        
+                        _cache[cache_key] = (record_data, datetime.now(timezone.utc))
+                        return record_data
+        except Exception as e:
+            logger.error(f"Error fetching team record: {str(e)}")
+        
+        return None
+    
+    @staticmethod
+    async def get_recent_games(team_name: str, limit: int = 5) -> List[Dict]:
+        """Get team's recent game results (last N games)"""
+        team_info = SportsDataService.get_team_info(team_name)
+        if not team_info:
+            return []
+        
+        cache_key = f"schedule_{team_info['id']}_{team_info['league']}"
+        if cache_key in _cache:
+            cached_data, cached_time = _cache[cache_key]
+            if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
+                return cached_data[:limit]
+        
+        try:
+            url = f"{ESPN_API_BASE}/{team_info['sport']}/{team_info['league']}/teams/{team_info['id']}/schedule"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        events = data.get('events', [])
+                        
+                        recent_games = []
+                        for event in events:
+                            competition = event.get('competitions', [{}])[0]
+                            status = competition.get('status', {}).get('type', {})
+                            
+                            # Only include completed games
+                            if status.get('completed', False):
+                                competitors = competition.get('competitors', [])
+                                
+                                home_team = None
+                                away_team = None
+                                for comp in competitors:
+                                    if comp.get('homeAway') == 'home':
+                                        home_team = {
+                                            'name': comp.get('team', {}).get('displayName', ''),
+                                            'score': int(comp.get('score', 0)),
+                                            'winner': comp.get('winner', False)
+                                        }
+                                    else:
+                                        away_team = {
+                                            'name': comp.get('team', {}).get('displayName', ''),
+                                            'score': int(comp.get('score', 0)),
+                                            'winner': comp.get('winner', False)
+                                        }
+                                
+                                if home_team and away_team:
+                                    # Determine if our team won
+                                    our_team_home = team_info['name'].lower() in home_team['name'].lower()
+                                    our_team = home_team if our_team_home else away_team
+                                    opponent = away_team if our_team_home else home_team
+                                    
+                                    game_result = {
+                                        'date': event.get('date', ''),
+                                        'opponent': opponent['name'],
+                                        'home_away': 'home' if our_team_home else 'away',
+                                        'score': f"{our_team['score']}-{opponent['score']}",
+                                        'result': 'W' if our_team['winner'] else 'L',
+                                        'point_diff': our_team['score'] - opponent['score']
+                                    }
+                                    recent_games.append(game_result)
+                        
+                        # Sort by date descending and take last N games
+                        recent_games.sort(key=lambda x: x['date'], reverse=True)
+                        _cache[cache_key] = recent_games
+                        return recent_games[:limit]
+        except Exception as e:
+            logger.error(f"Error fetching recent games: {str(e)}")
+        
+        return []
+    
+    @staticmethod
+    async def get_team_stats(team_name: str) -> Optional[Dict]:
+        """Get key team statistics"""
+        team_info = SportsDataService.get_team_info(team_name)
+        if not team_info:
+            return None
+        
+        cache_key = f"stats_{team_info['id']}_{team_info['league']}"
+        if cache_key in _cache:
+            cached_data, cached_time = _cache[cache_key]
+            if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
+                return cached_data
+        
+        try:
+            url = f"{ESPN_API_BASE}/{team_info['sport']}/{team_info['league']}/teams/{team_info['id']}/statistics"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        stats = {
+                            'team_name': team_info['name'],
+                            'league': team_info['league'].upper(),
+                            'key_stats': {}
+                        }
+                        
+                        # Parse stats from results
+                        results = data.get('results', {}).get('stats', {})
+                        if not results:
+                            results = data.get('stats', {})
+                        
+                        categories = results.get('categories', []) if isinstance(results, dict) else []
+                        
+                        # Key stats to extract
+                        important_stats = [
+                            'pointsPerGame', 'pointsAllowedPerGame', 'totalPointsPerGame',
+                            'yardsPerGame', 'passingYardsPerGame', 'rushingYardsPerGame',
+                            'turnovers', 'takeaways', 'thirdDownConvPct', 'redZoneEfficiency',
+                            'offensiveRebounds', 'defensiveRebounds', 'assists', 'steals', 'blocks'
+                        ]
+                        
+                        for category in categories:
+                            cat_name = category.get('name', '')
+                            for stat in category.get('stats', []):
+                                stat_name = stat.get('name', '')
+                                if stat_name in important_stats or 'PerGame' in stat_name:
+                                    display_name = stat.get('displayName', stat_name)
+                                    value = stat.get('value', stat.get('displayValue', 'N/A'))
+                                    stats['key_stats'][display_name] = value
+                        
+                        _cache[cache_key] = stats
+                        return stats
+        except Exception as e:
+            logger.error(f"Error fetching team stats: {str(e)}")
+        
+        return None
+    
+    @staticmethod
+    def calculate_form_rating(recent_games: List[Dict]) -> Dict:
+        """Calculate team form from recent games"""
+        if not recent_games:
+            return {'form': 'Unknown', 'wins': 0, 'losses': 0, 'avg_margin': 0}
+        
+        wins = sum(1 for g in recent_games if g['result'] == 'W')
+        losses = len(recent_games) - wins
+        avg_margin = sum(g['point_diff'] for g in recent_games) / len(recent_games)
+        
+        # Form string (last 5 results)
+        form_str = ''.join(g['result'] for g in recent_games[:5])
+        
+        # Rating
+        win_pct = wins / len(recent_games)
+        if win_pct >= 0.8:
+            rating = 'Hot 🔥'
+        elif win_pct >= 0.6:
+            rating = 'Good'
+        elif win_pct >= 0.4:
+            rating = 'Mixed'
+        elif win_pct >= 0.2:
+            rating = 'Struggling'
+        else:
+            rating = 'Cold ❄️'
+        
+        return {
+            'form': form_str,
+            'rating': rating,
+            'wins': wins,
+            'losses': losses,
+            'avg_margin': round(avg_margin, 1),
+            'games_analyzed': len(recent_games)
+        }
+    
+    @staticmethod
     async def get_live_odds(sport: str = 'americanfootball_nfl') -> Optional[Dict]:
         """
         Fetch live odds from The Odds API
