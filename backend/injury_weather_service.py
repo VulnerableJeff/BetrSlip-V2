@@ -1,0 +1,219 @@
+import os
+import aiohttp
+import logging
+from typing import Dict, Optional, List
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+# OpenWeather API (Free tier: 1000 calls/day)
+WEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY', '')
+WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5'
+
+# Stadium/Venue locations (major NFL stadiums)
+STADIUM_LOCATIONS = {
+    # NFL Teams
+    'chiefs': {'city': 'Kansas City', 'lat': 39.0489, 'lon': -94.4839, 'outdoor': True},
+    'bills': {'city': 'Buffalo', 'lat': 42.7738, 'lon': -78.7870, 'outdoor': True},
+    'cowboys': {'city': 'Arlington', 'lat': 32.7473, 'lon': -97.0945, 'outdoor': False},  # Dome
+    'eagles': {'city': 'Philadelphia', 'lat': 39.9008, 'lon': -75.1675, 'outdoor': True},
+    'packers': {'city': 'Green Bay', 'lat': 44.5013, 'lon': -88.0622, 'outdoor': True},
+    '49ers': {'city': 'Santa Clara', 'lat': 37.4032, 'lon': -121.9698, 'outdoor': True},
+    'ravens': {'city': 'Baltimore', 'lat': 39.2780, 'lon': -76.6227, 'outdoor': True},
+    'bengals': {'city': 'Cincinnati', 'lat': 39.0954, 'lon': -84.5160, 'outdoor': True},
+    'browns': {'city': 'Cleveland', 'lat': 41.5061, 'lon': -81.6995, 'outdoor': True},
+    'steelers': {'city': 'Pittsburgh', 'lat': 40.4468, 'lon': -80.0158, 'outdoor': True},
+    'patriots': {'city': 'Foxborough', 'lat': 42.0909, 'lon': -71.2643, 'outdoor': True},
+    'dolphins': {'city': 'Miami Gardens', 'lat': 25.9580, 'lon': -80.2389, 'outdoor': True},
+    'jets': {'city': 'East Rutherford', 'lat': 40.8135, 'lon': -74.0745, 'outdoor': True},
+    'raiders': {'city': 'Las Vegas', 'lat': 36.0908, 'lon': -115.1836, 'outdoor': False},  # Dome
+    'chargers': {'city': 'Inglewood', 'lat': 33.9535, 'lon': -118.3390, 'outdoor': False},  # Dome
+    'rams': {'city': 'Inglewood', 'lat': 33.9535, 'lon': -118.3390, 'outdoor': False},
+    'seahawks': {'city': 'Seattle', 'lat': 47.5952, 'lon': -122.3316, 'outdoor': True},
+    'broncos': {'city': 'Denver', 'lat': 39.7439, 'lon': -104.9537, 'outdoor': True},
+    'saints': {'city': 'New Orleans', 'lat': 29.9511, 'lon': -90.0812, 'outdoor': False},  # Dome
+    'falcons': {'city': 'Atlanta', 'lat': 33.7554, 'lon': -84.4008, 'outdoor': False},  # Dome
+    'panthers': {'city': 'Charlotte', 'lat': 35.2258, 'lon': -80.8530, 'outdoor': True},
+    'buccaneers': {'city': 'Tampa', 'lat': 27.9759, 'lon': -82.5033, 'outdoor': True},
+    # Add more as needed
+}
+
+
+class InjuryWeatherService:
+    """Service for fetching injury reports and weather data"""
+    
+    @staticmethod
+    async def get_injuries_for_team(team_name: str) -> List[Dict]:
+        """
+        Fetch injury report from ESPN for a team
+        Uses ESPN's free public API
+        """
+        try:
+            # ESPN Team IDs (NFL)
+            team_ids = {
+                'chiefs': '12', 'bills': '2', 'cowboys': '6', 'eagles': '21',
+                'packers': '9', '49ers': '25', 'ravens': '33', 'bengals': '4',
+                'browns': '5', 'steelers': '23', 'patriots': '17', 'dolphins': '15',
+                'jets': '20', 'raiders': '13', 'chargers': '24', 'rams': '14',
+                'seahawks': '26', 'broncos': '7', 'saints': '18', 'falcons': '1',
+                'panthers': '29', 'buccaneers': '27'
+            }
+            
+            team_lower = team_name.lower()
+            team_id = None
+            for key, tid in team_ids.items():
+                if key in team_lower or team_lower in key:
+                    team_id = tid
+                    break
+            
+            if not team_id:
+                return []
+            
+            url = f'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}'
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        # Get injuries from team data
+                        injuries = []
+                        if 'team' in data and 'injuries' in data['team']:
+                            injury_data = data['team']['injuries']
+                            if isinstance(injury_data, dict) and 'items' in injury_data:
+                                for injury in injury_data['items']:
+                                    injuries.append({
+                                        'player': injury.get('athlete', {}).get('displayName', 'Unknown'),
+                                        'position': injury.get('athlete', {}).get('position', {}).get('abbreviation', ''),
+                                        'status': injury.get('status', 'Unknown'),
+                                        'injury': injury.get('type', 'Undisclosed')
+                                    })
+                        
+                        return injuries[:5]  # Top 5 injuries
+                    else:
+                        logger.error(f"ESPN injury API error: {response.status}")
+                        return []
+        except Exception as e:
+            logger.error(f"Error fetching injuries for {team_name}: {str(e)}")
+            return []
+    
+    @staticmethod
+    async def get_weather_for_game(team_name: str, game_time: Optional[datetime] = None) -> Optional[Dict]:
+        """
+        Fetch weather forecast for game location
+        Only relevant for outdoor stadiums
+        """
+        if not WEATHER_API_KEY:
+            logger.warning("OPENWEATHER_API_KEY not set")
+            return None
+        
+        team_lower = team_name.lower()
+        location = None
+        
+        for key, loc in STADIUM_LOCATIONS.items():
+            if key in team_lower or team_lower in key:
+                location = loc
+                break
+        
+        if not location:
+            return None
+        
+        # Skip weather for domed stadiums
+        if not location.get('outdoor', True):
+            return {'note': 'Indoor stadium - weather not a factor'}
+        
+        try:
+            url = f'{WEATHER_API_BASE}/forecast'
+            params = {
+                'lat': location['lat'],
+                'lon': location['lon'],
+                'appid': WEATHER_API_KEY,
+                'units': 'imperial'  # Fahrenheit
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        # Get current or near-future forecast
+                        if data.get('list') and len(data['list']) > 0:
+                            forecast = data['list'][0]
+                            
+                            weather_info = {
+                                'temp': forecast['main']['temp'],
+                                'feels_like': forecast['main']['feels_like'],
+                                'conditions': forecast['weather'][0]['description'],
+                                'wind_speed': forecast['wind']['speed'],
+                                'humidity': forecast['main']['humidity'],
+                                'precipitation_chance': forecast.get('pop', 0) * 100,
+                                'city': location['city']
+                            }
+                            
+                            return weather_info
+                    else:
+                        logger.error(f"Weather API error: {response.status}")
+                        return None
+        except Exception as e:
+            logger.error(f"Error fetching weather for {team_name}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def format_injury_report(injuries: List[Dict]) -> str:
+        """Format injury list for AI prompt"""
+        if not injuries:
+            return ""
+        
+        report = "\n\n⚕️ INJURY REPORT:\n"
+        for injury in injuries:
+            report += f"  - {injury['player']} ({injury['position']}): {injury['status']} - {injury['injury']}\n"
+        
+        return report
+    
+    @staticmethod
+    def format_weather_report(weather: Optional[Dict]) -> str:
+        """Format weather data for AI prompt"""
+        if not weather:
+            return ""
+        
+        if 'note' in weather:
+            return f"\n\n🏟️ VENUE: {weather['note']}"
+        
+        report = f"\n\n🌡️ WEATHER FORECAST ({weather['city']}):\n"
+        report += f"  - Temperature: {weather['temp']:.0f}°F (feels like {weather['feels_like']:.0f}°F)\n"
+        report += f"  - Conditions: {weather['conditions']}\n"
+        report += f"  - Wind: {weather['wind_speed']:.0f} mph\n"
+        report += f"  - Humidity: {weather['humidity']}%\n"
+        
+        if weather['precipitation_chance'] > 30:
+            report += f"  - ⚠️ Precipitation chance: {weather['precipitation_chance']:.0f}%\n"
+        
+        # Add impact analysis
+        if weather['wind_speed'] > 15:
+            report += "  - Impact: High winds may affect passing game\n"
+        if weather['temp'] < 32:
+            report += "  - Impact: Freezing conditions may affect ball handling\n"
+        if weather['precipitation_chance'] > 50:
+            report += "  - Impact: Rain/snow likely - favors running game\n"
+        
+        return report
+
+
+async def get_enhanced_game_context(team_names: List[str]) -> str:
+    """
+    Get injury and weather context for teams
+    """
+    context_parts = []
+    
+    for team in team_names[:2]:  # Max 2 teams (home and away)
+        # Get injuries
+        injuries = await InjuryWeatherService.get_injuries_for_team(team)
+        if injuries:
+            context_parts.append(InjuryWeatherService.format_injury_report(injuries))
+        
+        # Get weather (only for home team typically)
+        weather = await InjuryWeatherService.get_weather_for_game(team)
+        if weather:
+            context_parts.append(InjuryWeatherService.format_weather_report(weather))
+    
+    return "".join(context_parts)
