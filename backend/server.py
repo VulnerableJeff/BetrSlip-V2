@@ -306,13 +306,23 @@ When real-time data is provided, heavily weight it in your analysis."""
         try:
             # First, do a quick parse to extract bet details
             quick_parse_msg = UserMessage(
-                text="Extract team names and bet types from this image in one line. Format: 'Team1, Team2, bet types'",
+                text="Extract team names from this image in one line. Just list team names separated by commas.",
                 file_contents=[ImageContent(image_base64=image_base64)]
             )
             quick_response = await chat.send_message(quick_parse_msg)
             
-            # Get real-time sports data context
-            enhanced_context = await get_enhanced_context_for_analysis([], quick_response)
+            # Extract team names
+            team_names = SportsDataService.extract_team_names(quick_response)
+            
+            # Get real-time sports odds data context
+            odds_context = await get_enhanced_context_for_analysis([], quick_response)
+            
+            # Get injury and weather context
+            injury_weather_context = await get_enhanced_game_context(team_names)
+            
+            # Combine all contexts
+            enhanced_context = odds_context + injury_weather_context
+            
             logger.info(f"Enhanced context length: {len(enhanced_context)}")
         except Exception as e:
             logger.error(f"Error getting enhanced context: {str(e)}")
