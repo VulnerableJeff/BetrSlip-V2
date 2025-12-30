@@ -100,11 +100,20 @@ class InjuryWeatherService:
                                                             athlete_name = athlete_data.get('displayName', 'Unknown')
                                                             position = athlete_data.get('position', {}).get('abbreviation', '')
                                                 
+                                                # Status can be a string or dict depending on ESPN API version
+                                                status_val = injury_data.get('status', 'Unknown')
+                                                if isinstance(status_val, dict):
+                                                    status_val = status_val.get('name', 'Unknown')
+                                                
+                                                # Get injury type from details
+                                                details = injury_data.get('details', {})
+                                                injury_type = details.get('type', 'Undisclosed') if isinstance(details, dict) else 'Undisclosed'
+                                                
                                                 injuries.append({
                                                     'player': athlete_name,
                                                     'position': position,
-                                                    'status': injury_data.get('status', {}).get('name', 'Unknown'),
-                                                    'injury': injury_data.get('details', {}).get('type', 'Undisclosed')
+                                                    'status': status_val,
+                                                    'injury': injury_type
                                                 })
                                 except Exception as e:
                                     logger.debug(f"Error parsing injury: {str(e)}")
