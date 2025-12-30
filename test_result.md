@@ -236,12 +236,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "ESPN Injury API Integration"
-    - "Weather API Integration"
-    - "Enhanced Team Stats & Form"
-    - "Improved OCR/Text Extraction"
-    - "Bet Analysis with AI"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
