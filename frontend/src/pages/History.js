@@ -116,6 +116,9 @@ const History = ({ onLogout }) => {
           Your Bet History
         </h2>
 
+        {/* Stats Dashboard */}
+        <StatsDashboard />
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-slate-400">Loading history...</p>
