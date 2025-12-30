@@ -13,6 +13,7 @@ const API = `${BACKEND_URL}/api`;
 const History = ({ onLogout }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [marking, setMarking] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +28,25 @@ const History = ({ onLogout }) => {
       toast.error('Failed to load history');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markOutcome = async (betId, outcome, stake = null, payout = null) => {
+    setMarking(prev => ({ ...prev, [betId]: true }));
+    try {
+      await axios.post(`${API}/analysis/${betId}/outcome`, {
+        outcome,
+        stake_amount: stake,
+        payout_amount: payout
+      });
+      
+      toast.success(`Marked as ${outcome}!`);
+      // Reload history to show updated stats
+      loadHistory();
+    } catch (error) {
+      toast.error('Failed to mark outcome');
+    } finally {
+      setMarking(prev => ({ ...prev, [betId]: false }));
     }
   };
 
