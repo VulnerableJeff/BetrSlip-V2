@@ -195,18 +195,26 @@ class SportsDataService:
                                 home_team = None
                                 away_team = None
                                 for comp in competitors:
-                                    if comp.get('homeAway') == 'home':
-                                        home_team = {
-                                            'name': comp.get('team', {}).get('displayName', ''),
-                                            'score': int(comp.get('score', 0)),
-                                            'winner': comp.get('winner', False)
-                                        }
+                                    # Handle score as either dict or int/string
+                                    score_val = comp.get('score', 0)
+                                    if isinstance(score_val, dict):
+                                        score_val = int(score_val.get('value', 0))
                                     else:
-                                        away_team = {
-                                            'name': comp.get('team', {}).get('displayName', ''),
-                                            'score': int(comp.get('score', 0)),
-                                            'winner': comp.get('winner', False)
-                                        }
+                                        try:
+                                            score_val = int(score_val) if score_val else 0
+                                        except (ValueError, TypeError):
+                                            score_val = 0
+                                    
+                                    team_data = {
+                                        'name': comp.get('team', {}).get('displayName', ''),
+                                        'score': score_val,
+                                        'winner': comp.get('winner', False)
+                                    }
+                                    
+                                    if comp.get('homeAway') == 'home':
+                                        home_team = team_data
+                                    else:
+                                        away_team = team_data
                                 
                                 if home_team and away_team:
                                     # Determine if our team won
