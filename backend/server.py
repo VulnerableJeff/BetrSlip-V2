@@ -289,33 +289,69 @@ async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = De
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"bet_analysis_{uuid.uuid4()}",
-            system_message="""You are an elite sports betting analyst with access to real-time market data. 
+            system_message="""You are an elite sports betting analyst with OCR expertise and access to real-time market data. 
             
 Your analysis must be:
-1. DATA-DRIVEN: Use real-time odds, line movements, and market indicators provided
-2. REALISTIC: Most bets have negative EV - don't be overly optimistic
-3. SHARP: Consider sharp money indicators, line movement, and market efficiency
-4. DETAILED: Explain WHY a probability is what it is using specific data points
+1. PRECISE: Extract ALL text from bet slips accurately - odds, teams, amounts, bet types
+2. DATA-DRIVEN: Use real-time odds, line movements, and market indicators provided
+3. REALISTIC: Most bets have negative EV - don't be overly optimistic
+4. SHARP: Consider sharp money indicators, line movement, and market efficiency
 
 When real-time data is provided, heavily weight it in your analysis."""
         )
         chat.with_model("openai", "gpt-4o")
         
-        # Try to get enhanced context with real-time data
+        # STEP 1: Dedicated OCR/Extraction Pass
+        # This improves accuracy by focusing solely on text extraction first
+        image_content = ImageContent(image_base64=image_base64)
+        
+        extraction_prompt = """STEP 1: EXTRACT ALL TEXT FROM THIS BET SLIP IMAGE
+
+Focus on extracting EVERY piece of text visible. Be meticulous and accurate.
+
+Return a structured extraction:
+```
+SPORTSBOOK: [App name - DraftKings, FanDuel, Hard Rock, BetMGM, etc.]
+BET_TYPE: [Single, Parlay, Same Game Parlay, Teaser, Round Robin, etc.]
+TOTAL_STAKE: [Amount wagered with $ symbol]
+POTENTIAL_PAYOUT: [Potential win amount]
+TOTAL_ODDS: [Combined odds if shown]
+
+INDIVIDUAL SELECTIONS:
+1. Team/Player: [exact name]
+   Bet Type: [Moneyline, Spread, Over/Under, Player Prop, etc.]
+   Line: [spread or total if applicable]
+   Odds: [American format odds]
+   
+2. Team/Player: [exact name]
+   Bet Type: [...]
+   Line: [...]
+   Odds: [...]
+
+[Continue for all selections...]
+
+OTHER VISIBLE TEXT:
+- [Any other relevant text like game dates, times, leagues]
+```
+
+Be EXACT with names, numbers and odds. If something is unclear, note it as [unclear]."""
+
+        extraction_msg = UserMessage(
+            text=extraction_prompt,
+            file_contents=[image_content]
+        )
+        
+        extracted_data = await chat.send_message(extraction_msg)
+        logger.info(f"Extracted bet slip data: {extracted_data[:500]}...")
+        
+        # STEP 2: Get Enhanced Context with Real-Time Data
         enhanced_context = ""
         try:
-            # First, do a quick parse to extract bet details
-            quick_parse_msg = UserMessage(
-                text="Extract team names from this image in one line. Just list team names separated by commas.",
-                file_contents=[ImageContent(image_base64=image_base64)]
-            )
-            quick_response = await chat.send_message(quick_parse_msg)
-            
-            # Extract team names
-            team_names = SportsDataService.extract_team_names(quick_response)
+            # Extract team names from the extracted text
+            team_names = SportsDataService.extract_team_names(extracted_data)
             
             # Get real-time sports odds data context
-            odds_context = await get_enhanced_context_for_analysis([], quick_response)
+            odds_context = await get_enhanced_context_for_analysis([], extracted_data)
             
             # Get injury and weather context
             injury_weather_context = await get_enhanced_game_context(team_names)
@@ -328,12 +364,15 @@ When real-time data is provided, heavily weight it in your analysis."""
             logger.error(f"Error getting enhanced context: {str(e)}")
             enhanced_context = ""
         
-        # Create message with image and enhanced context
-        image_content = ImageContent(image_base64=image_base64)
-        
-        analysis_prompt = f"""You are an expert sports betting analyst with deep knowledge of odds, probability, and bankroll management.
+        # STEP 3: Full Analysis with Extracted Data + Context
+        analysis_prompt = f"""STEP 2: ANALYZE THIS BET SLIP
 
-Analyze this betting slip and provide COMPREHENSIVE analysis in JSON format:
+EXTRACTED BET SLIP DATA:
+{extracted_data}
+
+{enhanced_context}
+
+Now provide your COMPREHENSIVE analysis in JSON format:
 
 {{
     "win_probability": <realistic number 0-100>,
@@ -363,28 +402,24 @@ Analyze this betting slip and provide COMPREHENSIVE analysis in JSON format:
     "bet_details": "<concise summary: stakes, odds, potential payout>",
     "sharp_analysis": "<based on line movement, book count, and market data - is this sharp or public money>"
 }}
-{enhanced_context}
 
 IMPORTANT ANALYSIS GUIDELINES:
-- If real-time market data is provided above, USE IT to adjust probabilities
+- Use the EXTRACTED DATA above for accurate bet details
+- If real-time market data is provided, USE IT to adjust probabilities  
 - Compare user's odds to current market odds - identify value or no-value
-- Consider sharp money indicators (multiple books, line movement)
+- Consider team form, injuries, and weather if provided
 - Single bets: 30-70% probability range (be critical)
 - 2-leg parlays: 20-50% range  
 - 3-leg parlays: 10-35% range
 - 4+ leg parlays: 5-20% range
 - Confidence score: 8-10 = market data supports analysis, 5-7 = moderate data, 1-4 = limited data
 - Always include odds in American format (e.g., -140, +200)
-- Be realistic and critical - most bets have negative EV
-- If market shows heavy action on opposite side, FLAG IT in risk factors"""
+- Be realistic and critical - most bets have negative EV"""
         
-        user_message = UserMessage(
-            text=analysis_prompt,
-            file_contents=[image_content]
-        )
+        analysis_msg = UserMessage(text=analysis_prompt)
         
         # Get AI response
-        response = await chat.send_message(user_message)
+        response = await chat.send_message(analysis_msg)
         
         # Parse response and calculate advanced analytics
         import json
