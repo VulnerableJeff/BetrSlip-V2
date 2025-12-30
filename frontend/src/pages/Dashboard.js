@@ -229,6 +229,89 @@ const Dashboard = ({ onLogout }) => {
                     </div>
                   )}
 
+                  {/* Real-Time Intelligence Section */}
+                  {(result.injuries_data?.length > 0 || result.weather_data || result.team_form_data?.length > 0) && (
+                    <div className="bg-gradient-to-r from-emerald-950/30 to-teal-950/30 border border-emerald-500/30 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-sm sm:text-base">
+                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+                        Real-Time Intelligence
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* Injuries */}
+                        {result.injuries_data && result.injuries_data.length > 0 && (
+                          <div className="bg-slate-900/50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Activity className="w-4 h-4 text-red-400" />
+                              <p className="text-slate-400 text-xs uppercase tracking-wider">Key Injuries</p>
+                            </div>
+                            <div className="space-y-1">
+                              {result.injuries_data.slice(0, 3).map((injury, idx) => (
+                                <p key={idx} className="text-xs">
+                                  <span className={`font-semibold ${injury.status === 'Out' ? 'text-red-400' : 'text-yellow-400'}`}>
+                                    {injury.status}
+                                  </span>
+                                  <span className="text-slate-300"> - {injury.player}</span>
+                                  <span className="text-slate-500"> ({injury.position})</span>
+                                </p>
+                              ))}
+                              {result.injuries_data.length > 3 && (
+                                <p className="text-slate-500 text-xs">+{result.injuries_data.length - 3} more</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Weather */}
+                        {result.weather_data && (
+                          <div className="bg-slate-900/50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Thermometer className="w-4 h-4 text-blue-400" />
+                              <p className="text-slate-400 text-xs uppercase tracking-wider">Weather</p>
+                            </div>
+                            <p className="text-2xl font-bold text-white mb-1">
+                              {result.weather_data.temp?.toFixed(0) || 'N/A'}°F
+                            </p>
+                            <p className="text-xs text-slate-300">{result.weather_data.conditions}</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Wind: {result.weather_data.wind_speed?.toFixed(0) || 'N/A'} mph
+                              {result.weather_data.precipitation_chance > 30 && (
+                                <span className="text-yellow-400"> • {result.weather_data.precipitation_chance}% rain</span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Team Form */}
+                        {result.team_form_data && result.team_form_data.length > 0 && (
+                          <div className="bg-slate-900/50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <TrendingUp className="w-4 h-4 text-violet-400" />
+                              <p className="text-slate-400 text-xs uppercase tracking-wider">Team Form</p>
+                            </div>
+                            <div className="space-y-2">
+                              {result.team_form_data.slice(0, 2).map((team, idx) => (
+                                <div key={idx}>
+                                  <p className="text-xs text-slate-300 font-semibold">{team.team}</p>
+                                  <p className="text-xs">
+                                    <span className={`font-bold ${
+                                      team.rating?.includes('Hot') ? 'text-emerald-400' :
+                                      team.rating?.includes('Cold') ? 'text-red-400' :
+                                      'text-yellow-400'
+                                    }`}>
+                                      {team.form}
+                                    </span>
+                                    <span className="text-slate-500"> ({team.record})</span>
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Parlay vs Straight Comparison */}
                   {result.parlay_vs_straight && (
                     <div className="bg-gradient-to-r from-violet-950/30 to-purple-950/30 border border-violet-500/30 rounded-lg p-4 sm:p-6">
