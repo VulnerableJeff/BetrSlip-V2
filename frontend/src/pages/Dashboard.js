@@ -201,7 +201,6 @@ const Dashboard = ({ onLogout }) => {
                     {result.confidence_score && (
                       <p className="text-slate-400 text-xs mt-2 flex items-center justify-center gap-1">
                         Confidence: {result.confidence_score}/10
-                        <InfoTooltip text="How confident the AI is in this prediction. 8-10 = high confidence with market data, 5-7 = moderate, 1-4 = limited data available." />
                       </p>
                     )}
                   </div>
@@ -216,19 +215,14 @@ const Dashboard = ({ onLogout }) => {
                         'bg-red-500/10 border border-red-500/50 text-red-400'
                       }`}>
                         {result.recommendation}
-                        <InfoTooltip text="AI recommendation based on expected value, Kelly criterion, and confidence. STRONG BET = great value, BET = positive expected value, SMALL/SKIP = marginal, PASS = negative expected value." />
                       </div>
                       {result.expected_value !== null && (
                         <p className="text-slate-400 text-sm mt-2">
-                          EV: 
-                          <InfoTooltip text="Expected Value: How much you can expect to win or lose per $100 bet on average. Positive means profit, negative means loss." />
-                          <span className={result.expected_value > 0 ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
+                          EV: <span className={result.expected_value > 0 ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
                             {result.expected_value > 0 ? '+' : ''}{result.expected_value.toFixed(1)}%
                           </span>
                           {result.kelly_percentage !== null && (
-                            <> • Kelly: 
-                            <InfoTooltip text="Kelly Criterion: Mathematically optimal bet size as % of your bankroll. Based on your edge and the odds. 0% means don't bet." />
-                            <span className="text-violet-400 font-semibold">{result.kelly_percentage.toFixed(1)}%</span></>
+                            <> • Kelly: <span className="text-violet-400 font-semibold">{result.kelly_percentage.toFixed(1)}%</span></>
                           )}
                         </p>
                       )}
