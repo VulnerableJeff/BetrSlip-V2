@@ -238,19 +238,26 @@ const Dashboard = ({ onLogout }) => {
                     <div className="bg-gradient-to-r from-violet-950/30 to-purple-950/30 border border-violet-500/30 rounded-lg p-4 sm:p-6">
                       <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
                         <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
-                        Parlay vs Straight Bets
+                        Parlay vs Individual Bets
+                        <InfoTooltip text="Compares betting all legs together (parlay) vs betting each leg separately. Individual bets often have better value." />
                       </h3>
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
-                          <p className="text-slate-400 text-xs mb-1">Parlay EV</p>
+                          <p className="text-slate-400 text-xs mb-1">
+                            Parlay Value
+                            <InfoTooltip text="Expected return if you bet all legs as one combined parlay bet." />
+                          </p>
                           <p className={`text-xl font-bold ${result.parlay_vs_straight.parlay_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.parlay_vs_straight.parlay_ev}%
+                            {result.parlay_vs_straight.parlay_ev > 0 ? '+' : ''}{result.parlay_vs_straight.parlay_ev}%
                           </p>
                         </div>
                         <div>
-                          <p className="text-slate-400 text-xs mb-1">Straight Bets EV</p>
+                          <p className="text-slate-400 text-xs mb-1">
+                            Individual Value
+                            <InfoTooltip text="Expected return if you bet each leg separately as straight bets." />
+                          </p>
                           <p className={`text-xl font-bold ${result.parlay_vs_straight.straight_bets_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.parlay_vs_straight.straight_bets_ev}%
+                            {result.parlay_vs_straight.straight_bets_ev > 0 ? '+' : ''}{result.parlay_vs_straight.straight_bets_ev}%
                           </p>
                         </div>
                       </div>
@@ -259,7 +266,7 @@ const Dashboard = ({ onLogout }) => {
                           💡 {result.parlay_vs_straight.recommendation}
                         </p>
                         <p className="text-slate-400 text-xs mt-1">
-                          Difference: {result.parlay_vs_straight.difference}% EV
+                          Value difference: {result.parlay_vs_straight.difference}%
                         </p>
                       </div>
                     </div>
