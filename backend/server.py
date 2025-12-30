@@ -354,9 +354,43 @@ Be EXACT with names, numbers and odds. If something is unclear, note it as [uncl
         
         # STEP 2: Get Enhanced Context with Real-Time Data
         enhanced_context = ""
+        injuries_data = []
+        weather_data = None
+        team_form_data = []
+        
         try:
             # Extract team names from the extracted text
             team_names = SportsDataService.extract_team_names(extracted_data)
+            logger.info(f"Extracted teams: {team_names}")
+            
+            # Fetch real-time data for each team
+            from injury_weather_service import InjuryWeatherService
+            
+            for team in team_names[:2]:  # Max 2 teams
+                # Get injuries
+                team_injuries = await InjuryWeatherService.get_injuries_for_team(team)
+                if team_injuries:
+                    injuries_data.extend([{**inj, 'team': team.title()} for inj in team_injuries])
+                
+                # Get weather (usually just need one location)
+                if not weather_data:
+                    team_weather = await InjuryWeatherService.get_weather_for_game(team)
+                    if team_weather and 'note' not in team_weather:
+                        weather_data = team_weather
+                
+                # Get team form
+                recent_games = await SportsDataService.get_recent_games(team, limit=5)
+                if recent_games:
+                    form = SportsDataService.calculate_form_rating(recent_games)
+                    record = await SportsDataService.get_team_record(team)
+                    team_form_data.append({
+                        'team': record.get('team_name', team.title()) if record else team.title(),
+                        'record': record.get('overall', 'N/A') if record else 'N/A',
+                        'form': form.get('form', ''),
+                        'rating': form.get('rating', 'Unknown'),
+                        'avg_margin': form.get('avg_margin', 0),
+                        'recent': [f"{g['result']} vs {g['opponent']}" for g in recent_games[:3]]
+                    })
             
             # Get real-time sports odds data context
             odds_context = await get_enhanced_context_for_analysis([], extracted_data)
@@ -368,6 +402,7 @@ Be EXACT with names, numbers and odds. If something is unclear, note it as [uncl
             enhanced_context = odds_context + injury_weather_context
             
             logger.info(f"Enhanced context length: {len(enhanced_context)}")
+            logger.info(f"Injuries found: {len(injuries_data)}, Weather: {weather_data is not None}, Team forms: {len(team_form_data)}")
         except Exception as e:
             logger.error(f"Error getting enhanced context: {str(e)}")
             enhanced_context = ""
