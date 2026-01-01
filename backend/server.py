@@ -783,6 +783,15 @@ IMPORTANT ANALYSIS GUIDELINES:
         analysis_dict['created_at'] = analysis_dict['created_at'].isoformat()
         await db.bet_analyses.insert_one(analysis_dict)
         
+        # Generate improvement suggestions for low probability bets
+        improvement_data = generate_improvement_suggestions(
+            win_probability=win_probability,
+            individual_bets=individual_bets or [],
+            expected_value=expected_value or 0,
+            kelly_percentage=kelly_percentage or 0,
+            bet_type=bet_details or "parlay"
+        )
+        
         return BetAnalysisResponse(
             id=bet_analysis.id,
             win_probability=win_probability,
@@ -802,6 +811,9 @@ IMPORTANT ANALYSIS GUIDELINES:
             weather_data=weather_data,
             team_form_data=team_form_data if team_form_data else None,
             games_status=games_status,
+            improvement_suggestions=improvement_data["suggestions"] if improvement_data["suggestions"] else None,
+            risk_level=improvement_data["risk_level"],
+            educational_tips=improvement_data["educational_tips"] if improvement_data["educational_tips"] else None,
             created_at=bet_analysis.created_at
         )
         
