@@ -159,6 +159,8 @@ class BetAnalysis(BaseModel):
     injuries_data: Optional[List[dict]] = None
     weather_data: Optional[dict] = None
     team_form_data: Optional[List[dict]] = None
+    # Game Status
+    games_status: Optional[dict] = None  # {"has_expired": bool, "expired_games": [], "upcoming_games": []}
     # Historical Tracking
     actual_outcome: Optional[str] = None  # "won", "lost", "push", "pending"
     outcome_marked_at: Optional[datetime] = None
@@ -186,6 +188,8 @@ class BetAnalysisResponse(BaseModel):
     injuries_data: Optional[List[dict]] = None  # Injury reports
     weather_data: Optional[dict] = None  # Weather conditions
     team_form_data: Optional[List[dict]] = None  # Team recent form
+    # Game Status
+    games_status: Optional[dict] = None  # Expired/upcoming game info
     created_at: datetime
 
 class BetHistoryResponse(BaseModel):
