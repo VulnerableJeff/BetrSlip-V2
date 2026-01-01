@@ -168,6 +168,14 @@ class BetAnalysis(BaseModel):
     payout_amount: Optional[float] = None  # Actual payout
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class BetImprovementSuggestion(BaseModel):
+    """Suggestions for improving low probability bets"""
+    type: str  # "remove_leg", "bet_individually", "alternative"
+    title: str
+    description: str
+    impact: Optional[str] = None  # e.g., "Increases probability from 12% to 35%"
+    new_probability: Optional[float] = None
+
 class BetAnalysisResponse(BaseModel):
     id: str
     win_probability: float
@@ -190,6 +198,10 @@ class BetAnalysisResponse(BaseModel):
     team_form_data: Optional[List[dict]] = None  # Team recent form
     # Game Status
     games_status: Optional[dict] = None  # Expired/upcoming game info
+    # Improvement Suggestions (for low probability bets)
+    improvement_suggestions: Optional[List[dict]] = None  # Smart suggestions to improve odds
+    risk_level: Optional[str] = None  # "low", "medium", "high", "extreme"
+    educational_tips: Optional[List[str]] = None  # Educational content
     created_at: datetime
 
 class BetHistoryResponse(BaseModel):
