@@ -112,7 +112,7 @@ class BetAnalyzerAPITester:
         return img_bytes.getvalue()
 
     def test_analyze_bet_slip(self):
-        """Test bet slip analysis"""
+        """Test bet slip analysis with real-time intelligence"""
         if not self.token:
             print("❌ No token available for analysis test")
             return False
@@ -133,13 +133,43 @@ class BetAnalyzerAPITester:
         )
         
         if success:
+            # Test basic required fields
             required_fields = ['id', 'win_probability', 'analysis_text', 'created_at']
             missing_fields = [field for field in required_fields if field not in response]
             if missing_fields:
-                print(f"   Warning: Missing fields in response: {missing_fields}")
-            else:
-                print(f"   Win probability: {response.get('win_probability', 'N/A')}%")
-                print(f"   Analysis preview: {response.get('analysis_text', '')[:50]}...")
+                print(f"   Warning: Missing basic fields: {missing_fields}")
+            
+            # Test NEW real-time intelligence fields
+            intelligence_fields = ['injuries_data', 'weather_data', 'team_form_data']
+            print(f"\n🔍 Testing Real-Time Intelligence Fields:")
+            
+            for field in intelligence_fields:
+                if field in response:
+                    value = response[field]
+                    if value is not None:
+                        print(f"   ✅ {field}: Found data")
+                        if field == 'injuries_data' and isinstance(value, list):
+                            print(f"      - {len(value)} injury records")
+                            if value:
+                                print(f"      - Sample: {value[0].get('player', 'N/A')} ({value[0].get('status', 'N/A')})")
+                        elif field == 'weather_data' and isinstance(value, dict):
+                            print(f"      - Temperature: {value.get('temp', 'N/A')}°F")
+                            print(f"      - Conditions: {value.get('conditions', 'N/A')}")
+                        elif field == 'team_form_data' and isinstance(value, list):
+                            print(f"      - {len(value)} team records")
+                            if value:
+                                print(f"      - Sample: {value[0].get('team', 'N/A')} ({value[0].get('record', 'N/A')})")
+                    else:
+                        print(f"   ⚠️  {field}: Present but null")
+                else:
+                    print(f"   ❌ {field}: Missing from response")
+            
+            print(f"\n📊 Analysis Results:")
+            print(f"   Win probability: {response.get('win_probability', 'N/A')}%")
+            print(f"   Confidence score: {response.get('confidence_score', 'N/A')}/10")
+            print(f"   Expected value: {response.get('expected_value', 'N/A')}%")
+            print(f"   Recommendation: {response.get('recommendation', 'N/A')}")
+            print(f"   Analysis preview: {response.get('analysis_text', '')[:100]}...")
         
         return success
 
