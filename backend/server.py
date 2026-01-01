@@ -411,6 +411,16 @@ Be EXACT with names, numbers and odds. If something is unclear, note it as [uncl
             logger.error(f"Error getting enhanced context: {str(e)}")
             enhanced_context = ""
         
+        # STEP 2.5: Check if games have already ended
+        games_status = None
+        try:
+            team_names_for_status = SportsDataService.extract_team_names(extracted_data)
+            games_status = await SportsDataService.check_games_status(team_names_for_status)
+            if games_status.get('warning_message'):
+                logger.info(f"Game status warning: {games_status['warning_message']}")
+        except Exception as e:
+            logger.error(f"Error checking games status: {str(e)}")
+        
         # STEP 3: Full Analysis with Extracted Data + Context
         analysis_prompt = f"""STEP 2: ANALYZE THIS BET SLIP
 
