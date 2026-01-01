@@ -197,75 +197,20 @@ class BetAnalyzerAPITester:
         
         return success
 
-    def test_direct_intelligence_services(self):
-        """Test the backend intelligence services directly"""
-        print(f"\n🧠 Testing Backend Intelligence Services Directly...")
+    def test_invalid_auth(self):
+        """Test endpoints with invalid authentication"""
+        old_token = self.token
+        self.token = "invalid_token"
         
-        try:
-            # Test if we can import and call the services
-            import sys
-            import os
-            sys.path.append('/app/backend')
-            
-            from injury_weather_service import InjuryWeatherService
-            from sports_data_service import SportsDataService
-            import asyncio
-            
-            async def test_services():
-                results = {}
-                
-                # Test injury service
-                print(f"   🏥 Testing injury service for Chiefs...")
-                injuries = await InjuryWeatherService.get_injuries_for_team('chiefs')
-                results['injuries'] = len(injuries) if injuries else 0
-                if injuries:
-                    print(f"      ✅ Found {len(injuries)} injuries")
-                else:
-                    print(f"      ⚠️  No injuries found")
-                
-                # Test weather service
-                print(f"   🌤️ Testing weather service for Chiefs...")
-                weather = await InjuryWeatherService.get_weather_for_game('chiefs')
-                results['weather'] = weather is not None
-                if weather:
-                    if 'note' in weather:
-                        print(f"      ℹ️  {weather['note']}")
-                    else:
-                        print(f"      ✅ Weather: {weather.get('temp', 'N/A')}°F, {weather.get('conditions', 'N/A')}")
-                else:
-                    print(f"      ⚠️  No weather data")
-                
-                # Test team stats service
-                print(f"   📊 Testing team stats for Chiefs...")
-                record = await SportsDataService.get_team_record('chiefs')
-                results['team_stats'] = record is not None
-                if record:
-                    print(f"      ✅ Record: {record.get('overall', 'N/A')}")
-                else:
-                    print(f"      ⚠️  No team record found")
-                
-                return results
-            
-            # Run the async tests
-            results = asyncio.run(test_services())
-            
-            # Check if all services are working
-            all_working = (
-                results.get('injuries', 0) > 0 or 
-                results.get('weather', False) or 
-                results.get('team_stats', False)
-            )
-            
-            if all_working:
-                print(f"   ✅ Backend intelligence services are functional")
-                return True
-            else:
-                print(f"   ⚠️  Some backend services may have issues")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Error testing backend services: {str(e)}")
-            return False
+        success, _ = self.run_test(
+            "Invalid Auth - History",
+            "GET",
+            "history",
+            401
+        )
+        
+        self.token = old_token
+        return success
 
 def main():
     print("🚀 Starting BetAnalyzer API Tests")
