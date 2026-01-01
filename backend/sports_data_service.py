@@ -344,6 +344,99 @@ class SportsDataService:
         }
     
     @staticmethod
+    async def check_games_status(team_names: List[str]) -> Dict:
+        """
+        Check if games involving these teams have already ended or are upcoming.
+        Returns status info to warn users about expired bets.
+        """
+        result = {
+            'has_expired': False,
+            'has_live': False,
+            'expired_games': [],
+            'live_games': [],
+            'upcoming_games': [],
+            'warning_message': None
+        }
+        
+        if not team_names:
+            return result
+        
+        try:
+            # Check each team's schedule for game status
+            for team_name in team_names[:2]:  # Max 2 teams
+                team_info = SportsDataService.get_team_info(team_name)
+                if not team_info:
+                    continue
+                
+                url = f"{ESPN_API_BASE}/{team_info['sport']}/{team_info['league']}/teams/{team_info['id']}/schedule"
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            events = data.get('events', [])
+                            
+                            now = datetime.now(timezone.utc)
+                            
+                            for event in events:
+                                competition = event.get('competitions', [{}])[0]
+                                status = competition.get('status', {}).get('type', {})
+                                event_date_str = event.get('date', '')
+                                event_name = event.get('name', 'Unknown Game')
+                                
+                                # Parse event date
+                                try:
+                                    if event_date_str:
+                                        event_date = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
+                                    else:
+                                        continue
+                                except:
+                                    continue
+                                
+                                # Check game status
+                                is_completed = status.get('completed', False)
+                                is_in_progress = status.get('name', '').lower() in ['in progress', 'halftime', 'live']
+                                state = status.get('state', '').lower()
+                                
+                                game_info = {
+                                    'name': event_name,
+                                    'date': event_date_str,
+                                    'status': status.get('description', 'Unknown')
+                                }
+                                
+                                if is_completed or state == 'post':
+                                    # Check if it's a recent completed game (within last 7 days)
+                                    days_ago = (now - event_date).days
+                                    if 0 <= days_ago <= 7:
+                                        game_info['days_ago'] = days_ago
+                                        result['expired_games'].append(game_info)
+                                        result['has_expired'] = True
+                                        
+                                elif is_in_progress or state == 'in':
+                                    result['live_games'].append(game_info)
+                                    result['has_live'] = True
+                                    
+                                elif state == 'pre' and event_date > now:
+                                    # Upcoming game within next 7 days
+                                    days_until = (event_date - now).days
+                                    if days_until <= 7:
+                                        game_info['days_until'] = days_until
+                                        result['upcoming_games'].append(game_info)
+            
+            # Generate warning message
+            if result['has_expired'] and not result['upcoming_games']:
+                result['warning_message'] = "⚠️ This bet slip appears to contain games that have already ended. The analysis is for informational purposes only."
+            elif result['has_live']:
+                result['warning_message'] = "🔴 Live games detected! Some games on this slip are currently in progress."
+            elif result['has_expired'] and result['upcoming_games']:
+                result['warning_message'] = "⚠️ Some games on this slip may have already ended. Please verify game times."
+                
+        except Exception as e:
+            logger.error(f"Error checking games status: {str(e)}")
+        
+        return result
+    
+    @staticmethod
     async def get_live_odds(sport: str = 'americanfootball_nfl') -> Optional[Dict]:
         """
         Fetch live odds from The Odds API
