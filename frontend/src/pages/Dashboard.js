@@ -425,41 +425,6 @@ const Dashboard = ({ onLogout }) => {
                     </div>
                   )}
 
-                  {/* Parlay vs Straight Comparison */}
-                  {result.parlay_vs_straight && (
-                    <div className="bg-gradient-to-r from-violet-950/30 to-purple-950/30 border border-violet-500/30 rounded-lg p-4 sm:p-6">
-                      <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
-                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
-                        Parlay vs Individual Bets
-                      </h3>
-                      <p className="text-slate-400 text-xs mb-4">
-                        Compares combined parlay bet vs betting each leg separately
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-slate-400 text-xs mb-1">Parlay Value</p>
-                          <p className={`text-xl font-bold ${result.parlay_vs_straight.parlay_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.parlay_vs_straight.parlay_ev > 0 ? '+' : ''}{result.parlay_vs_straight.parlay_ev}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-xs mb-1">Individual Value</p>
-                          <p className={`text-xl font-bold ${result.parlay_vs_straight.straight_bets_ev > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.parlay_vs_straight.straight_bets_ev > 0 ? '+' : ''}{result.parlay_vs_straight.straight_bets_ev}%
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-slate-900/50 rounded px-3 py-2 text-center">
-                        <p className="text-violet-300 text-sm font-semibold">
-                          💡 {result.parlay_vs_straight.recommendation}
-                        </p>
-                        <p className="text-slate-400 text-xs mt-1">
-                          Value difference: {result.parlay_vs_straight.difference}%
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Individual Bets Breakdown */}
                   {result.individual_bets && result.individual_bets.length > 0 && (
                     <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
