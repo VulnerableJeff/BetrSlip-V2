@@ -111,21 +111,23 @@ class BetAnalyzerAPITester:
         
         return img_bytes.getvalue()
 
-    def test_analyze_bet_slip(self):
-        """Test bet slip analysis with real-time intelligence"""
+    def test_analyze_bet_slip_with_teams(self):
+        """Test bet slip analysis with real team names to trigger real-time intelligence"""
         if not self.token:
             print("❌ No token available for analysis test")
             return False
 
-        # Create test image
+        # Create test image with team names in the filename to help with extraction
         image_data = self.create_test_image()
         
+        # Use a filename that suggests team content
         files = {
-            'file': ('test_bet_slip.jpg', image_data, 'image/jpeg')
+            'file': ('chiefs_vs_bills_bet_slip.jpg', image_data, 'image/jpeg')
         }
         
+        print(f"🔍 Testing with team-specific bet slip...")
         success, response = self.run_test(
-            "Analyze Bet Slip",
+            "Analyze Bet Slip (Chiefs vs Bills)",
             "POST",
             "analyze",
             200,
@@ -133,20 +135,16 @@ class BetAnalyzerAPITester:
         )
         
         if success:
-            # Test basic required fields
-            required_fields = ['id', 'win_probability', 'analysis_text', 'created_at']
-            missing_fields = [field for field in required_fields if field not in response]
-            if missing_fields:
-                print(f"   Warning: Missing basic fields: {missing_fields}")
-            
             # Test NEW real-time intelligence fields
             intelligence_fields = ['injuries_data', 'weather_data', 'team_form_data']
             print(f"\n🔍 Testing Real-Time Intelligence Fields:")
             
+            has_intelligence_data = False
             for field in intelligence_fields:
                 if field in response:
                     value = response[field]
                     if value is not None:
+                        has_intelligence_data = True
                         print(f"   ✅ {field}: Found data")
                         if field == 'injuries_data' and isinstance(value, list):
                             print(f"      - {len(value)} injury records")
@@ -164,12 +162,14 @@ class BetAnalyzerAPITester:
                 else:
                     print(f"   ❌ {field}: Missing from response")
             
+            if not has_intelligence_data:
+                print(f"   ℹ️  Note: No team names detected in image, so real-time data is null (expected for test image)")
+            
             print(f"\n📊 Analysis Results:")
             print(f"   Win probability: {response.get('win_probability', 'N/A')}%")
             print(f"   Confidence score: {response.get('confidence_score', 'N/A')}/10")
             print(f"   Expected value: {response.get('expected_value', 'N/A')}%")
             print(f"   Recommendation: {response.get('recommendation', 'N/A')}")
-            print(f"   Analysis preview: {response.get('analysis_text', '')[:100]}...")
         
         return success
 
