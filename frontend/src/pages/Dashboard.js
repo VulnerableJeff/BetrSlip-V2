@@ -528,6 +528,114 @@ const Dashboard = ({ onLogout }) => {
                     </div>
                   )}
 
+                  {/* === IMPROVEMENT SUGGESTIONS SECTION === */}
+                  {/* Risk Level Warning Banner */}
+                  {result.risk_level && ['high', 'extreme'].includes(result.risk_level) && (
+                    <div className={`rounded-lg p-4 ${
+                      result.risk_level === 'extreme' 
+                        ? 'bg-red-950/40 border-2 border-red-500/50' 
+                        : 'bg-orange-950/30 border border-orange-500/40'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        <ShieldAlert className={`w-6 h-6 flex-shrink-0 ${
+                          result.risk_level === 'extreme' ? 'text-red-400' : 'text-orange-400'
+                        }`} />
+                        <div>
+                          <h3 className={`font-bold text-sm sm:text-base mb-1 ${
+                            result.risk_level === 'extreme' ? 'text-red-400' : 'text-orange-400'
+                          }`}>
+                            {result.risk_level === 'extreme' ? '🚨 Extreme Risk Bet' : '⚠️ High Risk Bet'}
+                          </h3>
+                          <p className="text-slate-300 text-xs sm:text-sm">
+                            {result.risk_level === 'extreme' 
+                              ? `With only ${result.win_probability?.toFixed(1)}% win probability, this bet is essentially a lottery ticket. Consider the suggestions below.`
+                              : `This bet has a ${result.win_probability?.toFixed(1)}% chance of winning. See our suggestions to improve your odds.`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Smart Suggestions */}
+                  {result.improvement_suggestions && result.improvement_suggestions.length > 0 && (
+                    <div className="bg-gradient-to-r from-violet-950/30 to-blue-950/30 border border-violet-500/30 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-sm sm:text-base">
+                        <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+                        Smart Suggestions to Improve Your Bet
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        {result.improvement_suggestions.map((suggestion, index) => (
+                          <div 
+                            key={index}
+                            className={`rounded-lg p-3 sm:p-4 border ${
+                              suggestion.type === 'remove_leg' ? 'bg-red-950/20 border-red-500/30' :
+                              suggestion.type === 'bet_individually' ? 'bg-blue-950/20 border-blue-500/30' :
+                              suggestion.type === 'alternative' ? 'bg-emerald-950/20 border-emerald-500/30' :
+                              suggestion.type === 'stake_warning' ? 'bg-red-950/30 border-red-500/40' :
+                              'bg-yellow-950/20 border-yellow-500/30'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                suggestion.type === 'remove_leg' ? 'bg-red-500/20' :
+                                suggestion.type === 'bet_individually' ? 'bg-blue-500/20' :
+                                suggestion.type === 'alternative' ? 'bg-emerald-500/20' :
+                                'bg-yellow-500/20'
+                              }`}>
+                                {suggestion.type === 'remove_leg' && <Target className="w-4 h-4 text-red-400" />}
+                                {suggestion.type === 'bet_individually' && <BarChart3 className="w-4 h-4 text-blue-400" />}
+                                {suggestion.type === 'alternative' && <Lightbulb className="w-4 h-4 text-emerald-400" />}
+                                {(suggestion.type === 'stake_warning' || suggestion.type === 'stake_advice') && <AlertTriangle className="w-4 h-4 text-yellow-400" />}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-white text-sm mb-1">{suggestion.title}</h4>
+                                <p className="text-slate-300 text-xs sm:text-sm mb-2">{suggestion.description}</p>
+                                {suggestion.impact && (
+                                  <p className={`text-xs font-semibold ${
+                                    suggestion.new_probability && suggestion.new_probability > result.win_probability 
+                                      ? 'text-emerald-400' 
+                                      : 'text-yellow-400'
+                                  }`}>
+                                    📈 {suggestion.impact}
+                                  </p>
+                                )}
+                                {suggestion.recommended_legs && (
+                                  <div className="mt-2 text-xs text-slate-400">
+                                    <p className="font-semibold text-violet-400 mb-1">Recommended legs:</p>
+                                    {suggestion.recommended_legs.map((leg, i) => (
+                                      <p key={i} className="ml-2">✓ {leg}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Educational Tips */}
+                  {result.educational_tips && result.educational_tips.length > 0 && (
+                    <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-white font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                        Betting Tips & Education
+                      </h3>
+                      <div className="space-y-2">
+                        {result.educational_tips.map((tip, index) => (
+                          <p key={index} className="text-slate-300 text-xs sm:text-sm flex items-start gap-2">
+                            <span className="text-blue-400 flex-shrink-0">→</span>
+                            <span>{tip}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* === END IMPROVEMENT SUGGESTIONS SECTION === */}
+
                   {/* Bet Details */}
                   {result.bet_details && (
                     <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
