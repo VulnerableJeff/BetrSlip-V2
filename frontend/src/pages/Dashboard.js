@@ -187,6 +187,45 @@ const Dashboard = ({ onLogout }) => {
             {result ? (
               <Card className="glass border-slate-800 p-6 sm:p-8" data-testid="results-card">
                 <div ref={resultRef} className="space-y-4 sm:space-y-6">
+                  
+                  {/* Game Status Warning Banner */}
+                  {result.games_status?.warning_message && (
+                    <div className={`rounded-lg p-4 flex items-start gap-3 ${
+                      result.games_status.has_expired && !result.games_status.has_live
+                        ? 'bg-orange-950/30 border border-orange-500/50'
+                        : result.games_status.has_live
+                        ? 'bg-red-950/30 border border-red-500/50'
+                        : 'bg-yellow-950/30 border border-yellow-500/50'
+                    }`}>
+                      <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                        result.games_status.has_live ? 'text-red-400' : 'text-orange-400'
+                      }`} />
+                      <div>
+                        <p className={`font-semibold text-sm ${
+                          result.games_status.has_live ? 'text-red-400' : 'text-orange-400'
+                        }`}>
+                          {result.games_status.warning_message}
+                        </p>
+                        {result.games_status.expired_games?.length > 0 && (
+                          <div className="mt-2 text-xs text-slate-400">
+                            <p className="font-medium text-orange-300 mb-1">Completed Games:</p>
+                            {result.games_status.expired_games.slice(0, 3).map((game, idx) => (
+                              <p key={idx} className="ml-2">• {game.name} - {game.status}</p>
+                            ))}
+                          </div>
+                        )}
+                        {result.games_status.live_games?.length > 0 && (
+                          <div className="mt-2 text-xs text-slate-400">
+                            <p className="font-medium text-red-300 mb-1">Live Now:</p>
+                            {result.games_status.live_games.map((game, idx) => (
+                              <p key={idx} className="ml-2">🔴 {game.name}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Win Probability */}
                   <div className={`text-center p-6 sm:p-8 rounded-sm ${getWinGlow(result.win_probability)}`}>
                     <p className="text-slate-400 text-xs sm:text-sm uppercase tracking-wider mb-2">
