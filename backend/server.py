@@ -301,6 +301,172 @@ async def login(user_data: UserLogin):
     return TokenResponse(token=token, user=user_response)
 
 
+# ===== IMPROVEMENT SUGGESTIONS HELPER =====
+def generate_improvement_suggestions(
+    win_probability: float,
+    individual_bets: List[dict],
+    expected_value: float,
+    kelly_percentage: float,
+    bet_type: str = "parlay"
+) -> dict:
+    """
+    Generate smart suggestions for improving low probability bets.
+    Returns suggestions, risk level, and educational tips.
+    """
+    suggestions = []
+    educational_tips = []
+    
+    # Determine risk level
+    if win_probability >= 50:
+        risk_level = "low"
+    elif win_probability >= 35:
+        risk_level = "medium"
+    elif win_probability >= 20:
+        risk_level = "high"
+    else:
+        risk_level = "extreme"
+    
+    num_legs = len(individual_bets) if individual_bets else 0
+    
+    # === SMART SUGGESTIONS ===
+    
+    # 1. Find the weakest leg(s) to remove
+    if individual_bets and num_legs >= 2:
+        # Sort bets by probability (lowest first)
+        sorted_bets = sorted(
+            [(i, bet) for i, bet in enumerate(individual_bets) if bet.get('individual_probability')],
+            key=lambda x: x[1].get('individual_probability', 50)
+        )
+        
+        if sorted_bets and len(sorted_bets) >= 2:
+            weakest_idx, weakest_bet = sorted_bets[0]
+            weakest_prob = weakest_bet.get('individual_probability', 50)
+            
+            # Calculate new probability without weakest leg
+            remaining_probs = [
+                bet.get('individual_probability', 50) / 100 
+                for i, bet in enumerate(individual_bets) 
+                if i != weakest_idx and bet.get('individual_probability')
+            ]
+            
+            if remaining_probs:
+                new_prob = 1.0
+                for p in remaining_probs:
+                    new_prob *= p
+                new_prob *= 100
+                
+                if new_prob > win_probability * 1.3:  # At least 30% improvement
+                    suggestions.append({
+                        "type": "remove_leg",
+                        "title": f"🎯 Remove weakest leg",
+                        "description": f"Remove \"{weakest_bet.get('description', 'Leg ' + str(weakest_idx + 1))}\" ({weakest_prob:.0f}% chance)",
+                        "impact": f"Increases probability from {win_probability:.1f}% → {new_prob:.1f}%",
+                        "new_probability": round(new_prob, 1),
+                        "remove_index": weakest_idx
+                    })
+    
+    # 2. Suggest betting individually for parlays
+    if num_legs >= 2 and bet_type.lower() in ['parlay', 'same game parlay', 'sgp']:
+        # Calculate average individual probability
+        avg_individual = sum(
+            bet.get('individual_probability', 50) 
+            for bet in individual_bets
+        ) / num_legs if num_legs > 0 else 50
+        
+        suggestions.append({
+            "type": "bet_individually",
+            "title": "📊 Bet legs individually",
+            "description": f"Instead of a {num_legs}-leg parlay, bet each leg separately",
+            "impact": f"Average win rate: {avg_individual:.0f}% per bet vs {win_probability:.1f}% combined",
+            "new_probability": round(avg_individual, 1)
+        })
+    
+    # 3. Find best 2-leg combo if 3+ legs
+    if num_legs >= 3 and individual_bets:
+        best_combo_prob = 0
+        best_combo = None
+        
+        for i, bet1 in enumerate(individual_bets):
+            for j, bet2 in enumerate(individual_bets):
+                if i < j:
+                    p1 = bet1.get('individual_probability', 50) / 100
+                    p2 = bet2.get('individual_probability', 50) / 100
+                    combo_prob = p1 * p2 * 100
+                    
+                    if combo_prob > best_combo_prob:
+                        best_combo_prob = combo_prob
+                        best_combo = (bet1, bet2)
+        
+        if best_combo and best_combo_prob > win_probability * 1.5:
+            suggestions.append({
+                "type": "alternative",
+                "title": "💡 Try this 2-leg combo instead",
+                "description": f"Combine your two strongest picks for better odds",
+                "impact": f"Win probability: {best_combo_prob:.1f}% (vs {win_probability:.1f}%)",
+                "new_probability": round(best_combo_prob, 1),
+                "recommended_legs": [best_combo[0].get('description'), best_combo[1].get('description')]
+            })
+    
+    # 4. Kelly Criterion suggestion
+    if kelly_percentage is not None and kelly_percentage <= 0:
+        suggestions.append({
+            "type": "stake_warning",
+            "title": "⚠️ Kelly says: Don't bet this",
+            "description": "The Kelly Criterion suggests 0% stake - the odds don't justify the risk",
+            "impact": "Consider skipping this bet entirely or betting minimum",
+            "new_probability": None
+        })
+    elif kelly_percentage is not None and kelly_percentage < 2:
+        suggestions.append({
+            "type": "stake_advice",
+            "title": "💰 Reduce your stake",
+            "description": f"Kelly suggests only {kelly_percentage:.1f}% of bankroll",
+            "impact": "Small stake protects your bankroll on risky bets",
+            "new_probability": None
+        })
+    
+    # === EDUCATIONAL TIPS ===
+    
+    # Parlay education
+    if num_legs >= 3:
+        educational_tips.append(
+            f"📚 Parlay math: A {num_legs}-leg parlay with 50% legs = only {(0.5 ** num_legs * 100):.1f}% win rate"
+        )
+    
+    if num_legs >= 2:
+        educational_tips.append(
+            "💡 Sportsbooks love parlays because the house edge compounds with each leg"
+        )
+    
+    # EV education
+    if expected_value is not None and expected_value < -5:
+        educational_tips.append(
+            f"📉 Negative EV ({expected_value:.1f}%) means you lose ${abs(expected_value):.2f} per $100 bet on average"
+        )
+    
+    # Risk education based on probability
+    if win_probability < 15:
+        educational_tips.append(
+            "🎰 Bets under 15% are lottery tickets - fun but expect to lose"
+        )
+    elif win_probability < 25:
+        educational_tips.append(
+            "⚠️ Low probability bets should be a small % of your betting activity"
+        )
+    
+    # Bankroll tip
+    if risk_level in ["high", "extreme"]:
+        educational_tips.append(
+            "💵 Bankroll tip: Never bet more than 2-5% of your bankroll on risky bets"
+        )
+    
+    return {
+        "suggestions": suggestions,
+        "risk_level": risk_level,
+        "educational_tips": educational_tips[:4]  # Max 4 tips
+    }
+
+
 # ===== BET ANALYSIS ROUTES =====
 @api_router.post("/analyze", response_model=BetAnalysisResponse)
 async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
