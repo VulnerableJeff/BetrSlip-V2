@@ -295,7 +295,8 @@ def main():
     tests_to_run = [
         ("Root Endpoint", lambda: tester.test_root_endpoint()),
         ("User Signup", lambda: tester.test_signup(test_email, test_password)),
-        ("Bet Slip Analysis", lambda: tester.test_analyze_bet_slip()),
+        ("Bet Slip Analysis", lambda: tester.test_analyze_bet_slip_with_teams()),
+        ("Backend Intelligence Services", lambda: tester.test_direct_intelligence_services()),
         ("Get History", lambda: tester.test_get_history()),
         ("Invalid Auth", lambda: tester.test_invalid_auth()),
     ]
