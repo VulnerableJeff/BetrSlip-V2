@@ -597,7 +597,8 @@ IMPORTANT ANALYSIS GUIDELINES:
             estimated_roi=estimated_roi,
             injuries_data=injuries_data if injuries_data else None,
             weather_data=weather_data,
-            team_form_data=team_form_data if team_form_data else None
+            team_form_data=team_form_data if team_form_data else None,
+            games_status=games_status
         )
         
         analysis_dict = bet_analysis.model_dump()
@@ -622,6 +623,7 @@ IMPORTANT ANALYSIS GUIDELINES:
             injuries_data=injuries_data if injuries_data else None,
             weather_data=weather_data,
             team_form_data=team_form_data if team_form_data else None,
+            games_status=games_status,
             created_at=bet_analysis.created_at
         )
         
