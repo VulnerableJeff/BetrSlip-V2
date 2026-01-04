@@ -1,23 +1,52 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert } from 'lucide-react';
+import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
+import SubscriptionModal from '@/components/SubscriptionModal';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Admin email for showing admin link
+const ADMIN_EMAIL = 'hundojeff@icloud.com';
 
 const Dashboard = ({ onLogout }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [usage, setUsage] = useState(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const resultRef = useRef(null);
   const navigate = useNavigate();
+
+  // Fetch usage status on mount
+  useEffect(() => {
+    fetchUsageStatus();
+    // Get user email from token
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserEmail(payload.email || '');
+      } catch (e) {}
+    }
+  }, []);
+
+  const fetchUsageStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/usage`);
+      setUsage(response.data);
+    } catch (error) {
+      console.error('Error fetching usage:', error);
+    }
+  };
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
