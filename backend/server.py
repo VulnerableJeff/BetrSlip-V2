@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -14,6 +14,7 @@ import jwt
 from passlib.context import CryptContext
 import base64
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 
 # Import sports data service
@@ -21,6 +22,13 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 from sports_data_service import get_enhanced_context_for_analysis, SportsDataService
 from injury_weather_service import get_enhanced_game_context
+from admin_subscription import (
+    is_admin, get_all_users, get_admin_stats, ban_user, unban_user,
+    check_usage_limit, increment_usage, update_device_fingerprint,
+    generate_device_fingerprint, get_client_ip, get_user_subscription,
+    create_subscription_record, update_subscription_status,
+    FREE_ANALYSIS_LIMIT, SUBSCRIPTION_PRICE, ADMIN_EMAIL
+)
 
 
 ROOT_DIR = Path(__file__).parent
@@ -39,6 +47,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # LLM Configuration
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+
+# Stripe Configuration
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
 
 # Create the main app without a prefix
 app = FastAPI()
