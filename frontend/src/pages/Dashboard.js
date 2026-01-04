@@ -35,7 +35,9 @@ const Dashboard = ({ onLogout }) => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUserEmail(payload.email || '');
-      } catch (e) {}
+      } catch (e) {
+        console.log('Could not parse token');
+      }
     }
   }, []);
 
