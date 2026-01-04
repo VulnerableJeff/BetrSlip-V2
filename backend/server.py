@@ -979,6 +979,257 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ===== SUBSCRIPTION & USAGE ROUTES =====
+
+class DeviceFingerprintData(BaseModel):
+    """Client-side device fingerprint data"""
+    screen_resolution: Optional[str] = None
+    timezone: Optional[str] = None
+    platform: Optional[str] = None
+    canvas_hash: Optional[str] = None
+    webgl_hash: Optional[str] = None
+
+
+@api_router.get("/usage")
+async def get_usage_status(request: Request, current_user: dict = Depends(get_current_user)):
+    """Get user's usage status and subscription info"""
+    subscription = await get_user_subscription(db, current_user['user_id'])
+    return subscription
+
+
+@api_router.post("/check-usage")
+async def check_analysis_usage(
+    request: Request,
+    fingerprint_data: Optional[DeviceFingerprintData] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Check if user can perform analysis (free limit or subscription)"""
+    # Generate device fingerprint
+    fingerprint = generate_device_fingerprint(
+        request, 
+        fingerprint_data.model_dump() if fingerprint_data else None
+    )
+    ip_address = get_client_ip(request)
+    
+    # Update user's device fingerprint
+    await update_device_fingerprint(db, current_user['user_id'], fingerprint, ip_address)
+    
+    # Check usage limit
+    usage_status = await check_usage_limit(db, current_user['user_id'], fingerprint, ip_address)
+    
+    return usage_status
+
+
+# ===== STRIPE SUBSCRIPTION ROUTES =====
+
+class CreateCheckoutRequest(BaseModel):
+    origin_url: str
+
+
+@api_router.post("/subscription/create-checkout")
+async def create_subscription_checkout(
+    request: Request,
+    checkout_request: CreateCheckoutRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create Stripe checkout session for subscription"""
+    try:
+        host_url = str(request.base_url).rstrip('/')
+        webhook_url = f"{host_url}/api/webhook/stripe"
+        
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        
+        # Build URLs from provided origin
+        success_url = f"{checkout_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{checkout_request.origin_url}/subscription/cancel"
+        
+        # Create checkout session for $5/month subscription
+        checkout_req = CheckoutSessionRequest(
+            amount=SUBSCRIPTION_PRICE,
+            currency="usd",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": current_user['user_id'],
+                "email": current_user['email'],
+                "type": "subscription"
+            }
+        )
+        
+        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_req)
+        
+        # Store pending transaction
+        await db.payment_transactions.insert_one({
+            "session_id": session.session_id,
+            "user_id": current_user['user_id'],
+            "email": current_user['email'],
+            "amount": SUBSCRIPTION_PRICE,
+            "currency": "usd",
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"url": session.url, "session_id": session.session_id}
+        
+    except Exception as e:
+        logger.error(f"Error creating checkout session: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating checkout: {str(e)}")
+
+
+@api_router.get("/subscription/status/{session_id}")
+async def get_checkout_status(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Check Stripe checkout session status"""
+    try:
+        host_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+        webhook_url = f"{host_url}/api/webhook/stripe"
+        
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+        
+        # Update transaction and subscription if paid
+        if status.payment_status == 'paid':
+            # Check if already processed
+            existing = await db.payment_transactions.find_one({
+                "session_id": session_id,
+                "payment_status": "paid"
+            })
+            
+            if not existing:
+                # Update transaction
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {
+                        "payment_status": "paid",
+                        "paid_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                
+                # Create/update subscription
+                await create_subscription_record(
+                    db,
+                    current_user['user_id'],
+                    current_user['email'],
+                    "",  # stripe_customer_id - would come from webhook in production
+                    session_id
+                )
+        
+        return {
+            "status": status.status,
+            "payment_status": status.payment_status,
+            "amount": status.amount_total / 100,  # Convert from cents
+            "currency": status.currency
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking checkout status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error checking status: {str(e)}")
+
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks"""
+    try:
+        body = await request.body()
+        host_url = str(request.base_url).rstrip('/')
+        webhook_url = f"{host_url}/api/webhook/stripe"
+        
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        
+        webhook_response = await stripe_checkout.handle_webhook(
+            body,
+            request.headers.get("Stripe-Signature")
+        )
+        
+        if webhook_response.payment_status == 'paid':
+            # Update subscription status
+            user_id = webhook_response.metadata.get('user_id')
+            if user_id:
+                await update_subscription_status(db, user_id, 'active')
+        
+        return {"status": "processed"}
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
+# ===== ADMIN ROUTES =====
+
+async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify user is admin"""
+    user = await get_current_user(credentials)
+    if not is_admin(user['email']):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
+@api_router.get("/admin/stats")
+async def admin_get_stats(admin_user: dict = Depends(get_admin_user)):
+    """Get admin dashboard statistics"""
+    stats = await get_admin_stats(db)
+    return stats
+
+
+@api_router.get("/admin/users")
+async def admin_get_users(
+    skip: int = 0,
+    limit: int = 50,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get all users for admin dashboard"""
+    users = await get_all_users(db, skip, limit)
+    return {"users": users, "total": await db.users.count_documents({})}
+
+
+class BanUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+@api_router.post("/admin/users/{user_id}/ban")
+async def admin_ban_user(
+    user_id: str,
+    ban_request: BanUserRequest,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Ban a user"""
+    # Don't allow banning yourself
+    if user_id == admin_user['user_id']:
+        raise HTTPException(status_code=400, detail="Cannot ban yourself")
+    
+    success = await ban_user(db, user_id, ban_request.reason)
+    if success:
+        return {"message": f"User {user_id} has been banned", "success": True}
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@api_router.post("/admin/users/{user_id}/unban")
+async def admin_unban_user(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Unban a user"""
+    success = await unban_user(db, user_id)
+    if success:
+        return {"message": f"User {user_id} has been unbanned", "success": True}
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@api_router.get("/admin/user/{user_id}")
+async def admin_get_user_details(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Get detailed user info for admin"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    usage = await db.user_usage.find_one({"user_id": user_id}, {"_id": 0})
+    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    analyses = await db.bet_analyses.count_documents({"user_id": user_id})
+    
+    return {
+        "user": user,
+        "usage": usage,
+        "subscription": subscription,
+        "total_analyses": analyses
+    }
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
