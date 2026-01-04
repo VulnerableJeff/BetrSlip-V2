@@ -848,6 +848,13 @@ IMPORTANT ANALYSIS GUIDELINES:
             created_at=bet_analysis.created_at
         )
         
+        # Increment usage count after successful analysis
+        await increment_usage(db, current_user['user_id'])
+        
+        return response
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error analyzing bet slip: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing bet slip: {str(e)}")
