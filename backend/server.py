@@ -480,7 +480,27 @@ def generate_improvement_suggestions(
 
 # ===== BET ANALYSIS ROUTES =====
 @api_router.post("/analyze", response_model=BetAnalysisResponse)
-async def analyze_bet_slip(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+async def analyze_bet_slip(
+    request: Request,
+    file: UploadFile = File(...), 
+    current_user: dict = Depends(get_current_user)
+):
+    # Check if user is banned or over usage limit
+    fingerprint = generate_device_fingerprint(request, None)
+    ip_address = get_client_ip(request)
+    
+    usage_status = await check_usage_limit(db, current_user['user_id'], fingerprint, ip_address)
+    
+    if not usage_status['allowed']:
+        raise HTTPException(
+            status_code=403, 
+            detail={
+                "message": usage_status['reason'],
+                "show_subscription": usage_status.get('show_subscription', False),
+                "analyses_remaining": usage_status['analyses_remaining']
+            }
+        )
+    
     try:
         # Read and encode image
         image_bytes = await file.read()
