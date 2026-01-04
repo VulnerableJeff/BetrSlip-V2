@@ -69,6 +69,12 @@ const Dashboard = ({ onLogout }) => {
       return;
     }
 
+    // Check usage limit first
+    if (usage && !usage.is_subscribed && usage.analyses_remaining <= 0) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+
     setAnalyzing(true);
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -82,8 +88,21 @@ const Dashboard = ({ onLogout }) => {
 
       setResult(response.data);
       toast.success('Analysis complete!');
+      
+      // Refresh usage status
+      fetchUsageStatus();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Analysis failed');
+      // Check if it's a usage limit error
+      if (error.response?.status === 403) {
+        const detail = error.response?.data?.detail;
+        if (detail?.show_subscription) {
+          setShowSubscriptionModal(true);
+        } else {
+          toast.error(detail?.message || 'Access denied');
+        }
+      } else {
+        toast.error(error.response?.data?.detail || 'Analysis failed');
+      }
     } finally {
       setAnalyzing(false);
     }
