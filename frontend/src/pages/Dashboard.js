@@ -127,6 +127,13 @@ const Dashboard = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen bg-brand-dark">
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal} 
+        onClose={() => setShowSubscriptionModal(false)}
+        usage={usage}
+      />
+
       {/* Header */}
       <header className="border-b border-slate-800 bg-brand-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -138,30 +145,93 @@ const Dashboard = ({ onLogout }) => {
                   BetrSlip
                 </div>
               </div>
+              {/* Usage Badge */}
+              {usage && (
+                <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                  usage.is_subscribed 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}>
+                  {usage.is_subscribed ? (
+                    <>
+                      <Crown className="w-3 h-3" />
+                      Pro
+                    </>
+                  ) : (
+                    <>
+                      <span>{usage.analyses_remaining}/{usage.free_limit} free</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Admin Link - Only for admin user */}
+              {userEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                <Button
+                  variant="ghost"
+                  className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+                  onClick={() => navigate('/admin')}
+                >
+                  <Shield className="w-5 h-5 sm:mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
               <Button
                 data-testid="history-nav-btn"
                 variant="ghost"
                 className="text-slate-300 hover:text-white hover:bg-violet-500/10"
                 onClick={() => navigate('/history')}
               >
-                <History className="w-5 h-5 mr-2" />
-                History
+                <History className="w-5 h-5 sm:mr-2" />
+                <span className="hidden sm:inline">History</span>
               </Button>
+              {!usage?.is_subscribed && (
+                <Button
+                  variant="ghost"
+                  className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                  onClick={() => setShowSubscriptionModal(true)}
+                >
+                  <Crown className="w-5 h-5 sm:mr-2" />
+                  <span className="hidden sm:inline">Upgrade</span>
+                </Button>
+              )}
               <Button
                 data-testid="logout-btn"
                 variant="ghost"
                 className="text-slate-300 hover:text-white hover:bg-violet-500/10"
                 onClick={handleLogout}
               >
-                <LogOut className="w-5 h-5 mr-2" />
-                Logout
+                <LogOut className="w-5 h-5 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Usage Banner for Free Users */}
+      {usage && !usage.is_subscribed && usage.analyses_remaining <= 2 && (
+        <div className="bg-gradient-to-r from-violet-950/50 to-purple-950/50 border-b border-violet-500/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-violet-200 text-sm">
+                {usage.analyses_remaining === 0 
+                  ? "You've used all free analyses!"
+                  : `⚡ ${usage.analyses_remaining} free ${usage.analyses_remaining === 1 ? 'analysis' : 'analyses'} remaining`
+                }
+              </p>
+              <Button
+                size="sm"
+                onClick={() => setShowSubscriptionModal(true)}
+                className="bg-violet-500 hover:bg-violet-600 text-white text-xs"
+              >
+                Upgrade to Pro - $5/mo
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
