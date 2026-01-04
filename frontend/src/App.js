@@ -6,6 +6,8 @@ import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
+import Admin from './pages/Admin';
+import { SubscriptionSuccess, SubscriptionCancel } from './pages/Subscription';
 import '@/App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -93,6 +95,36 @@ function App() {
             element={
               isAuthenticated ? (
                 <History onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/auth" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              isAuthenticated ? (
+                <Admin />
+              ) : (
+                <Navigate to="/auth" replace />
+              )
+            }
+          />
+          <Route
+            path="/subscription/success"
+            element={
+              isAuthenticated ? (
+                <SubscriptionSuccess />
+              ) : (
+                <Navigate to="/auth" replace />
+              )
+            }
+          />
+          <Route
+            path="/subscription/cancel"
+            element={
+              isAuthenticated ? (
+                <SubscriptionCancel />
               ) : (
                 <Navigate to="/auth" replace />
               )
