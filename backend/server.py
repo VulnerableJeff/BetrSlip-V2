@@ -1257,6 +1257,70 @@ async def admin_get_user_details(user_id: str, admin_user: dict = Depends(get_ad
     }
 
 
+@api_router.post("/admin/users/{user_id}/reset-usage")
+async def admin_reset_usage(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Reset a user's free analysis usage count"""
+    result = await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$set": {"analyses_count": 0}},
+        upsert=True
+    )
+    return {"message": f"Usage reset for user {user_id}", "success": True}
+
+
+@api_router.post("/admin/users/{user_id}/grant-subscription")
+async def admin_grant_subscription(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Grant Pro subscription to a user (free)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await db.subscriptions.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": user_id,
+            "email": user.get('email', ''),
+            "subscription_status": "active",
+            "subscription_start": datetime.now(timezone.utc).isoformat(),
+            "granted_by_admin": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {"message": f"Pro subscription granted to {user.get('email')}", "success": True}
+
+
+@api_router.post("/admin/users/{user_id}/revoke-subscription")
+async def admin_revoke_subscription(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Revoke Pro subscription from a user"""
+    result = await db.subscriptions.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "subscription_status": "revoked",
+            "revoked_at": datetime.now(timezone.utc).isoformat(),
+            "revoked_by_admin": True
+        }}
+    )
+    if result.modified_count > 0:
+        return {"message": f"Subscription revoked for user {user_id}", "success": True}
+    raise HTTPException(status_code=404, detail="No subscription found")
+
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Permanently delete a user and all their data"""
+    if user_id == admin_user['user_id']:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    
+    # Delete from all collections
+    await db.users.delete_one({"id": user_id})
+    await db.user_usage.delete_one({"user_id": user_id})
+    await db.subscriptions.delete_one({"user_id": user_id})
+    await db.bet_analyses.delete_many({"user_id": user_id})
+    
+    return {"message": f"User {user_id} deleted permanently", "success": True}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
