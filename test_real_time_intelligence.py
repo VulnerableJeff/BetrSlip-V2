@@ -19,7 +19,7 @@ from sports_data_service import SportsDataService, get_enhanced_context_for_anal
 
 class RealTimeIntelligenceTest:
     def __init__(self):
-        self.base_url = "https://win-predictor-35.preview.emergentagent.com"
+        self.base_url = "https://winrate-predict.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         self.token = None
         
