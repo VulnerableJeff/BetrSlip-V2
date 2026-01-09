@@ -35,6 +35,33 @@ function App() {
       setIsAuthenticated(true);
     }
     setLoading(false);
+    
+    // Remove any externally injected badges
+    const removeBadges = () => {
+      const selectors = [
+        '[class*="emergent"]',
+        '[id*="emergent"]',
+        '[data-emergent]',
+        'a[href*="emergent"]',
+        'iframe[src*="emergent"]'
+      ];
+      selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          if (el && el.parentNode) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+          }
+        });
+      });
+    };
+    
+    // Run immediately and on interval to catch dynamically injected elements
+    removeBadges();
+    const interval = setInterval(removeBadges, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogin = (token) => {
