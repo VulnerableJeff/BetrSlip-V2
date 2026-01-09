@@ -94,6 +94,12 @@ const Dashboard = ({ onLogout }) => {
     }
   };
 
+  const dismissNotification = () => {
+    setShowAnalysisNotification(false);
+    setHasSeenNotification(true);
+    localStorage.setItem('hasSeenAnalysisNotification', 'true');
+  };
+
   const handleAnalyze = async () => {
     if (!selectedFile) {
       toast.error('Please select a betting slip image');
@@ -107,6 +113,12 @@ const Dashboard = ({ onLogout }) => {
     }
 
     setAnalyzing(true);
+    
+    // Show notification if user hasn't seen it before
+    if (!hasSeenNotification) {
+      setShowAnalysisNotification(true);
+    }
+    
     const formData = new FormData();
     formData.append('file', selectedFile);
 
@@ -118,6 +130,7 @@ const Dashboard = ({ onLogout }) => {
       });
 
       setResult(response.data);
+      setShowAnalysisNotification(false);
       toast.success('Analysis complete!');
       
       // Refresh usage status
