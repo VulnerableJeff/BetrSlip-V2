@@ -26,7 +26,7 @@ const AnalysisNotification = ({ onDismiss }) => {
         <div className="flex-1">
           <p className="text-white font-semibold text-sm mb-1">Analysis in Progress</p>
           <p className="text-slate-300 text-xs">
-            Your bet slip analysis typically takes 3-5 minutes. We're gathering real-time data on injuries, weather, and team stats to give you the most accurate prediction.
+            Your bet slip analysis typically takes 3-5 minutes. We&apos;re gathering real-time data on injuries, weather, and team stats to give you the most accurate prediction.
           </p>
         </div>
         <button
