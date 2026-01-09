@@ -661,6 +661,166 @@ const Admin = () => {
           </div>
         </Card>
       </div>
+      </>
+      )}
+
+      {/* Top Bets Tab Content */}
+      {activeTab === 'topbets' && (
+        <div className="max-w-7xl mx-auto">
+          <Card className="glass border-emerald-500/20 overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-emerald-400" />
+                High Percentage Bet Slips (60%+)
+              </h2>
+              <p className="text-slate-400 text-sm">{topBets.length} bets stored</p>
+            </div>
+            
+            <div className="divide-y divide-slate-800">
+              {topBets.map((bet) => (
+                <div key={bet.id} className="p-4">
+                  {/* Bet Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {/* Probability Badge */}
+                      <div className={`px-3 py-2 rounded-lg font-black text-lg ${
+                        bet.win_probability >= 80 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                        bet.win_probability >= 70 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                        'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      }`}>
+                        {bet.win_probability?.toFixed(1)}%
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold text-sm">{bet.user_email}</p>
+                        <p className="text-slate-500 text-xs">
+                          {new Date(bet.created_at).toLocaleDateString()} • {bet.recommendation || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setExpandedBet(expandedBet === bet.id ? null : bet.id)}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        {expandedBet === bet.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteTopBet(bet.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="flex gap-4 text-xs mb-2">
+                    <span className="text-slate-400">
+                      Confidence: <span className="text-white font-semibold">{bet.confidence_score}/10</span>
+                    </span>
+                    <span className="text-slate-400">
+                      EV: <span className={bet.expected_value > 0 ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
+                        {bet.expected_value > 0 ? '+' : ''}{bet.expected_value?.toFixed(1)}%
+                      </span>
+                    </span>
+                    <span className="text-slate-400">
+                      Kelly: <span className="text-violet-400 font-semibold">{bet.kelly_percentage?.toFixed(1)}%</span>
+                    </span>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {expandedBet === bet.id && (
+                    <div className="mt-4 bg-slate-900/50 rounded-lg p-4 space-y-4">
+                      {/* Bet Details */}
+                      {bet.bet_details && (
+                        <div>
+                          <p className="text-slate-400 text-xs font-semibold mb-1">Bet Details</p>
+                          <p className="text-white text-sm">{bet.bet_details}</p>
+                        </div>
+                      )}
+
+                      {/* Individual Bets */}
+                      {bet.individual_bets && bet.individual_bets.length > 0 && (
+                        <div>
+                          <p className="text-slate-400 text-xs font-semibold mb-2">Individual Legs</p>
+                          <div className="space-y-2">
+                            {bet.individual_bets.map((leg, i) => (
+                              <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded p-2">
+                                <span className="text-white text-sm">{leg.description}</span>
+                                <span className={`font-bold text-sm ${
+                                  leg.individual_probability >= 60 ? 'text-emerald-400' :
+                                  leg.individual_probability >= 45 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
+                                  {leg.individual_probability}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Positive Factors */}
+                      {bet.positive_factors && bet.positive_factors.length > 0 && (
+                        <div>
+                          <p className="text-emerald-400 text-xs font-semibold mb-1">Positive Factors</p>
+                          <ul className="space-y-1">
+                            {bet.positive_factors.map((factor, i) => (
+                              <li key={i} className="text-slate-300 text-xs flex items-start gap-1">
+                                <span className="text-emerald-400">✓</span> {factor}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Risk Factors */}
+                      {bet.risk_factors && bet.risk_factors.length > 0 && (
+                        <div>
+                          <p className="text-red-400 text-xs font-semibold mb-1">Risk Factors</p>
+                          <ul className="space-y-1">
+                            {bet.risk_factors.map((factor, i) => (
+                              <li key={i} className="text-slate-300 text-xs flex items-start gap-1">
+                                <span className="text-red-400">•</span> {factor}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Team Form */}
+                      {bet.team_form_data && bet.team_form_data.length > 0 && (
+                        <div>
+                          <p className="text-violet-400 text-xs font-semibold mb-1">Team Form</p>
+                          <div className="flex gap-4">
+                            {bet.team_form_data.map((team, i) => (
+                              <div key={i} className="text-xs">
+                                <span className="text-white font-semibold">{team.team}</span>
+                                <span className="text-slate-400 ml-2">{team.form} ({team.record})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {topBets.length === 0 && (
+                <div className="p-12 text-center">
+                  <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-400">No high-percentage bets stored yet</p>
+                  <p className="text-slate-500 text-sm mt-1">Bets with 60%+ win probability will appear here</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Ban Modal */}
       {showBanModal && selectedUser && (
