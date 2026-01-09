@@ -177,6 +177,20 @@ const Admin = () => {
     }
   };
 
+  const handleDeleteTopBet = async (betId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `${BACKEND_URL}/api/admin/top-bets/${betId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Top bet deleted');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error deleting top bet');
+    }
+  };
+
   const exportUsers = () => {
     const csvContent = [
       ['Email', 'Status', 'Subscription', 'Analyses', 'Joined', 'Last Login', 'IPs'].join(','),
