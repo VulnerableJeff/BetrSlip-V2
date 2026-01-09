@@ -823,7 +823,7 @@ IMPORTANT ANALYSIS GUIDELINES:
             bet_type=bet_details or "parlay"
         )
         
-        return BetAnalysisResponse(
+        response = BetAnalysisResponse(
             id=bet_analysis.id,
             win_probability=win_probability,
             analysis_text=analysis_text,
@@ -850,6 +850,29 @@ IMPORTANT ANALYSIS GUIDELINES:
         
         # Increment usage count after successful analysis
         await increment_usage(db, current_user['user_id'])
+        
+        # Store high-percentage bets for admin review (60%+ win probability)
+        HIGH_PERCENTAGE_THRESHOLD = 60
+        if win_probability >= HIGH_PERCENTAGE_THRESHOLD:
+            top_bet = {
+                "id": str(uuid.uuid4()),
+                "analysis_id": bet_analysis.id,
+                "user_id": current_user['user_id'],
+                "user_email": current_user['email'],
+                "win_probability": win_probability,
+                "confidence_score": confidence_score,
+                "expected_value": expected_value,
+                "kelly_percentage": kelly_percentage,
+                "recommendation": recommendation,
+                "bet_details": bet_details,
+                "individual_bets": individual_bets,
+                "risk_factors": risk_factors,
+                "positive_factors": positive_factors,
+                "team_form_data": team_form_data,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.top_bets.insert_one(top_bet)
+            logger.info(f"Stored high-percentage bet: {win_probability}% for user {current_user['email']}")
         
         return response
         
