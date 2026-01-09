@@ -346,6 +346,11 @@ const Dashboard = ({ onLogout }) => {
               Analysis Results
             </h2>
             
+            {/* Analysis Notification */}
+            {showAnalysisNotification && (
+              <AnalysisNotification onDismiss={dismissNotification} />
+            )}
+            
             {result ? (
               <Card className="glass border-slate-800 p-6 sm:p-8" data-testid="results-card">
                 <div ref={resultRef} className="space-y-4 sm:space-y-6">
