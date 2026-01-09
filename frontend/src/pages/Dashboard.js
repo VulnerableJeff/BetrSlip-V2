@@ -830,14 +830,14 @@ const Dashboard = ({ onLogout }) => {
                   <ShareButton resultRef={resultRef} result={result} />
                 </div>
               </Card>
-            ) : (
+            ) : !analyzing ? (
               <Card className="glass border-slate-800 p-8" data-testid="empty-results-card">
                 <div className="text-center py-8 sm:py-12">
                   <BarChart3 className="w-12 h-12 sm:w-16 sm:h-16 text-slate-700 mx-auto mb-4" />
                   <p className="text-slate-500 text-sm">Upload a betting slip to see analysis</p>
                 </div>
               </Card>
-            )}
+            ) : null}
           </div>
         </div>
       </main>
