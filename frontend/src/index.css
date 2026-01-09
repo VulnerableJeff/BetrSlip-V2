@@ -91,3 +91,19 @@ code {
         @apply shadow-lg shadow-violet-500/30;
     }
 }
+
+/* Hide Made with Emergent badge */
+[class*="emergent-badge"],
+[id*="emergent-badge"],
+[data-emergent-badge],
+div[class*="made-with"],
+a[href*="emergent"][class*="badge"],
+iframe[src*="emergent"],
+div[style*="emergent"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
