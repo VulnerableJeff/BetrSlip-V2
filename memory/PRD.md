@@ -108,9 +108,9 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
 ## Important Notes
 
 ### Payment Status
-- Stripe is in **TEST MODE** - no real payments processed
-- User needs to provide live key (`sk_live_...`) for production
-- Test cards work for checkout testing
+- ✅ Stripe is now in **LIVE MODE** - real payments enabled!
+- Live secret key configured in backend
+- Ready for production use
 
 ### Top Bets Threshold
 - Bets with 60%+ win probability are automatically saved
@@ -122,10 +122,9 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
 
 ### P1 - High Priority
 1. **PayPal Integration** - Add as alternative payment method
-2. **Live Stripe Payments** - Replace test key with live key
 
 ### P2 - Medium Priority
-3. **Manual CashApp Option** - UI for requesting CashApp payment
+2. **Manual CashApp Option** - UI for requesting CashApp payment
 
 ### Future / Backlog
 - Bankroll Management Dashboard
@@ -149,6 +148,11 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
    - DraftKings, FanDuel, Hard Rock, BetMGM, + More
    - Visual badges with hover effects
    - Clearer messaging for supported apps
+
+3. **Activated Live Stripe Payments** ✅
+   - Configured live secret key (sk_live_...)
+   - Verified checkout session creation works
+   - Ready to process real $5/month subscriptions
 
 ---
 
