@@ -56,9 +56,17 @@ const Landing = () => {
               Upload your bet slip screenshot. Get AI-powered win probability with real-time 
               injury reports, weather data, and team stats. Track your results and see our accuracy.
             </p>
-            <p className="text-slate-400 text-sm max-w-2xl mx-auto">
-              Works with Hard Rock, DraftKings, FanDuel & more
-            </p>
+            {/* Supported Sportsbooks */}
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 mt-6">
+              <span className="text-slate-500 text-sm">Works with:</span>
+              <div className="flex flex-wrap justify-center gap-3">
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">DraftKings</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">FanDuel</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">Hard Rock</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">BetMGM</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-emerald-400 font-semibold text-sm">+ More</span>
+              </div>
+            </div>
           </div>
 
           {/* Trust Badges */}
