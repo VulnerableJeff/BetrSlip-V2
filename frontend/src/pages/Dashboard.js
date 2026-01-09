@@ -347,11 +347,26 @@ const Dashboard = ({ onLogout }) => {
             </h2>
             
             {/* Analysis Notification */}
-            {showAnalysisNotification && (
+            {analyzing && showAnalysisNotification && (
               <AnalysisNotification onDismiss={dismissNotification} />
             )}
+
+            {/* Loading State */}
+            {analyzing && (
+              <Card className="glass border-slate-800 p-8 text-center">
+                <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <h3 className="text-white font-bold text-lg mb-2">Analyzing Your Bet Slip</h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Gathering real-time data on injuries, weather, and team stats...
+                </p>
+                <div className="flex items-center justify-center gap-2 text-violet-400 text-xs">
+                  <Clock className="w-4 h-4" />
+                  <span>This usually takes 3-5 minutes</span>
+                </div>
+              </Card>
+            )}
             
-            {result ? (
+            {!analyzing && result ? (
               <Card className="glass border-slate-800 p-6 sm:p-8" data-testid="results-card">
                 <div ref={resultRef} className="space-y-4 sm:space-y-6">
                   
