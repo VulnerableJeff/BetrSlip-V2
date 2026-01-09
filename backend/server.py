@@ -1344,6 +1344,70 @@ async def admin_delete_user(user_id: str, admin_user: dict = Depends(get_admin_u
     return {"message": f"User {user_id} deleted permanently", "success": True}
 
 
+# ===== TOP BETS (HIGH PERCENTAGE) ROUTES =====
+
+@api_router.get("/admin/top-bets")
+async def admin_get_top_bets(
+    skip: int = 0,
+    limit: int = 50,
+    min_probability: float = 60,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get all high-percentage bets for admin review"""
+    top_bets = await db.top_bets.find(
+        {"win_probability": {"$gte": min_probability}},
+        {"_id": 0}
+    ).sort("win_probability", -1).skip(skip).limit(limit).to_list(limit)
+    
+    total = await db.top_bets.count_documents({"win_probability": {"$gte": min_probability}})
+    
+    return {
+        "top_bets": top_bets,
+        "total": total,
+        "threshold": min_probability
+    }
+
+
+@api_router.get("/admin/top-bets/stats")
+async def admin_get_top_bets_stats(admin_user: dict = Depends(get_admin_user)):
+    """Get statistics about top bets"""
+    total_top_bets = await db.top_bets.count_documents({})
+    elite_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 80}})
+    strong_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 70, "$lt": 80}})
+    good_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 60, "$lt": 70}})
+    
+    # Get average probability
+    pipeline = [
+        {"$group": {"_id": None, "avg_probability": {"$avg": "$win_probability"}}}
+    ]
+    avg_result = await db.top_bets.aggregate(pipeline).to_list(1)
+    avg_probability = avg_result[0]["avg_probability"] if avg_result else 0
+    
+    return {
+        "total_top_bets": total_top_bets,
+        "elite_bets_80_plus": elite_bets,
+        "strong_bets_70_79": strong_bets,
+        "good_bets_60_69": good_bets,
+        "average_probability": round(avg_probability, 1) if avg_probability else 0
+    }
+
+
+@api_router.delete("/admin/top-bets/{bet_id}")
+async def admin_delete_top_bet(bet_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Delete a top bet from the collection"""
+    result = await db.top_bets.delete_one({"id": bet_id})
+    if result.deleted_count > 0:
+        return {"message": f"Top bet {bet_id} deleted", "success": True}
+    raise HTTPException(status_code=404, detail="Top bet not found")
+
+
+@api_router.delete("/admin/top-bets")
+async def admin_clear_top_bets(admin_user: dict = Depends(get_admin_user)):
+    """Clear all top bets (use with caution)"""
+    result = await db.top_bets.delete_many({})
+    return {"message": f"Deleted {result.deleted_count} top bets", "success": True}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
