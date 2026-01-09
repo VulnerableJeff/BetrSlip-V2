@@ -6,8 +6,8 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { 
   Users, Ban, CheckCircle, BarChart3, DollarSign, Shield, ArrowLeft, RefreshCw,
-  Search, Eye, Gift, Trash2, Download, Settings, Crown, Clock, Activity,
-  ChevronDown, ChevronUp, X, AlertTriangle, History, TrendingUp
+  Search, Eye, Gift, Trash2, Download, Crown, Clock, Activity,
+  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -16,16 +16,19 @@ const Admin = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [topBets, setTopBets] = useState([]);
+  const [topBetsStats, setTopBetsStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'topbets'
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [banReason, setBanReason] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // all, active, banned, subscribed
+  const [filterStatus, setFilterStatus] = useState('all');
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBanModal, setShowBanModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
+  const [expandedBet, setExpandedBet] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
