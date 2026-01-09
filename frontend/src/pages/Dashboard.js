@@ -15,6 +15,31 @@ const API = `${BACKEND_URL}/api`;
 // Admin email for showing admin link
 const ADMIN_EMAIL = 'hundojeff@icloud.com';
 
+// Notification component for analysis time
+const AnalysisNotification = ({ onDismiss }) => {
+  return (
+    <div className="bg-gradient-to-r from-violet-950/80 to-purple-950/80 border border-violet-500/30 rounded-lg p-4 mb-4 backdrop-blur-sm">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+          <Clock className="w-4 h-4 text-violet-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-white font-semibold text-sm mb-1">Analysis in Progress</p>
+          <p className="text-slate-300 text-xs">
+            Your bet slip analysis typically takes 3-5 minutes. We're gathering real-time data on injuries, weather, and team stats to give you the most accurate prediction.
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-slate-400 hover:text-white text-xs font-medium px-2 py-1 rounded hover:bg-slate-800 transition-colors"
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = ({ onLogout }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -23,6 +48,10 @@ const Dashboard = ({ onLogout }) => {
   const [usage, setUsage] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [showAnalysisNotification, setShowAnalysisNotification] = useState(false);
+  const [hasSeenNotification, setHasSeenNotification] = useState(
+    localStorage.getItem('hasSeenAnalysisNotification') === 'true'
+  );
   const resultRef = useRef(null);
   const navigate = useNavigate();
 
