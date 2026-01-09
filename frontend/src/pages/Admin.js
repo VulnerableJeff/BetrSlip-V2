@@ -41,13 +41,17 @@ const Admin = () => {
 
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, usersRes] = await Promise.all([
+      const [statsRes, usersRes, topBetsRes, topBetsStatsRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/admin/stats`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/users?limit=100`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/users?limit=100`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/top-bets?limit=50`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/top-bets/stats`, { headers })
       ]);
 
       setStats(statsRes.data);
       setUsers(usersRes.data.users);
+      setTopBets(topBetsRes.data.top_bets);
+      setTopBetsStats(topBetsStatsRes.data);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
