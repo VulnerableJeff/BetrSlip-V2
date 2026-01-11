@@ -209,6 +209,99 @@ const Admin = () => {
     }
   };
 
+  // Daily Picks Management Functions
+  const resetPickForm = () => {
+    setPickForm({
+      title: '',
+      description: '',
+      win_probability: 65,
+      odds: '-110',
+      sport: 'NFL',
+      confidence: 7,
+      reasoning: [''],
+      risk_factors: [''],
+      game_time: ''
+    });
+    setEditingPick(null);
+  };
+
+  const handleCreatePick = async () => {
+    if (!pickForm.title || !pickForm.description) {
+      toast.error('Please fill in title and description');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const pickData = {
+        ...pickForm,
+        reasoning: pickForm.reasoning.filter(r => r.trim()),
+        risk_factors: pickForm.risk_factors.filter(r => r.trim())
+      };
+      
+      await axios.post(
+        `${BACKEND_URL}/api/admin/daily-picks`,
+        pickData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Daily pick created!');
+      setShowPickModal(false);
+      resetPickForm();
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error creating pick');
+    }
+  };
+
+  const handleDeletePick = async (pickId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `${BACKEND_URL}/api/admin/daily-picks/${pickId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Pick deleted');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error deleting pick');
+    }
+  };
+
+  const handleTogglePick = async (pickId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/daily-picks/${pickId}/toggle`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Pick status updated');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error toggling pick');
+    }
+  };
+
+  const addReasonField = () => {
+    setPickForm(prev => ({ ...prev, reasoning: [...prev.reasoning, ''] }));
+  };
+
+  const addRiskField = () => {
+    setPickForm(prev => ({ ...prev, risk_factors: [...prev.risk_factors, ''] }));
+  };
+
+  const updateReasoning = (index, value) => {
+    const newReasons = [...pickForm.reasoning];
+    newReasons[index] = value;
+    setPickForm(prev => ({ ...prev, reasoning: newReasons }));
+  };
+
+  const updateRiskFactor = (index, value) => {
+    const newRisks = [...pickForm.risk_factors];
+    newRisks[index] = value;
+    setPickForm(prev => ({ ...prev, risk_factors: newRisks }));
+  };
+
   const exportUsers = () => {
     const csvContent = [
       ['Email', 'Status', 'Subscription', 'Analyses', 'Joined', 'Last Login', 'IPs'].join(','),
