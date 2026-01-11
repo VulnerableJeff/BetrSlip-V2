@@ -154,6 +154,22 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
    - Verified checkout session creation works
    - Ready to process real $5/month subscriptions
 
+4. **Social Sharing Link Preview** ✅
+   - Updated page title to "BetrSlip - AI Bet Slip Analysis"
+   - Added Open Graph and Twitter Card meta tags
+   - Removed "Made with Emergent" badge from HTML
+
+5. **Daily Picks Feature (NEW)** ✅
+   - "Today's Top Picks" section on Dashboard showing 1-3 featured bets
+   - Admin can create, edit, activate/deactivate, and delete picks
+   - Picks include: sport, title, description, win probability, odds, confidence, reasoning, risk factors, game time
+   - Public API endpoint for fetching active picks
+
+6. **"How It Works" Landing Page Section (NEW)** ✅
+   - 3-step visual guide: Screenshot → Upload & Analyze → Make Smarter Bets
+   - Highlights DraftKings, FanDuel, Hard Rock support
+   - Full sportsbook badges: DraftKings, FanDuel, Hard Rock, BetMGM, Caesars, + Any App
+
 ---
 
 *Last Updated: January 9, 2026*
