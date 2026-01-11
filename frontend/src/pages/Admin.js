@@ -944,6 +944,277 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Daily Picks Tab Content */}
+      {activeTab === 'dailypicks' && (
+        <div className="max-w-7xl mx-auto">
+          <Card className="glass border-yellow-500/20 overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Flame className="w-5 h-5 text-yellow-400" />
+                Daily Picks Management
+              </h2>
+              <Button
+                onClick={() => {
+                  resetPickForm();
+                  setShowPickModal(true);
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Pick
+              </Button>
+            </div>
+            
+            <div className="divide-y divide-slate-800">
+              {dailyPicks.map((pick) => (
+                <div key={pick.id} className={`p-4 ${!pick.is_active ? 'opacity-50' : ''}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold uppercase text-slate-400">{pick.sport}</span>
+                        {pick.is_active ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs">Active</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-400 text-xs">Inactive</span>
+                        )}
+                      </div>
+                      <h4 className="text-white font-bold">{pick.title}</h4>
+                      <p className="text-slate-400 text-sm mt-1">{pick.description}</p>
+                      {pick.game_time && (
+                        <p className="text-slate-500 text-xs mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {pick.game_time}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-2xl font-black ${
+                        pick.win_probability >= 70 ? 'text-emerald-400' :
+                        pick.win_probability >= 55 ? 'text-yellow-400' : 'text-orange-400'
+                      }`}>{pick.win_probability}%</p>
+                      <p className="text-slate-400 text-xs">Odds: {pick.odds}</p>
+                      <p className="text-violet-400 text-xs">Conf: {pick.confidence}/10</p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleTogglePick(pick.id)}
+                        className={pick.is_active ? 'text-yellow-400' : 'text-emerald-400'}
+                      >
+                        {pick.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeletePick(pick.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Reasoning Preview */}
+                  {pick.reasoning && pick.reasoning.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-800">
+                      <p className="text-emerald-400 text-xs font-semibold mb-1">Reasoning:</p>
+                      <ul className="space-y-1">
+                        {pick.reasoning.slice(0, 2).map((r, i) => (
+                          <li key={i} className="text-slate-400 text-xs">• {r}</li>
+                        ))}
+                        {pick.reasoning.length > 2 && (
+                          <li className="text-slate-500 text-xs">+ {pick.reasoning.length - 2} more...</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {dailyPicks.length === 0 && (
+                <div className="p-12 text-center">
+                  <Flame className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-400">No daily picks yet</p>
+                  <p className="text-slate-500 text-sm mt-1">Add picks to show on user dashboards</p>
+                  <Button
+                    onClick={() => {
+                      resetPickForm();
+                      setShowPickModal(true);
+                    }}
+                    className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Pick
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Daily Pick Modal */}
+      {showPickModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="glass border-yellow-500/30 p-6 max-w-2xl w-full my-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Flame className="w-5 h-5 text-yellow-400" />
+                {editingPick ? 'Edit Daily Pick' : 'Create Daily Pick'}
+              </h3>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowPickModal(false);
+                  resetPickForm();
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Chiefs -3.5 vs Raiders"
+                  value={pickForm.title}
+                  onChange={(e) => setPickForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">Description *</label>
+                <textarea
+                  placeholder="Brief explanation of the pick"
+                  value={pickForm.description}
+                  onChange={(e) => setPickForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                />
+              </div>
+
+              {/* Row: Sport, Odds, Game Time */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-slate-400 text-xs mb-1 block">Sport</label>
+                  <select
+                    value={pickForm.sport}
+                    onChange={(e) => setPickForm(prev => ({ ...prev, sport: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  >
+                    <option value="NFL">NFL</option>
+                    <option value="NBA">NBA</option>
+                    <option value="MLB">MLB</option>
+                    <option value="NHL">NHL</option>
+                    <option value="Soccer">Soccer</option>
+                    <option value="UFC">UFC</option>
+                    <option value="Tennis">Tennis</option>
+                    <option value="Golf">Golf</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs mb-1 block">Odds</label>
+                  <input
+                    type="text"
+                    placeholder="-110"
+                    value={pickForm.odds}
+                    onChange={(e) => setPickForm(prev => ({ ...prev, odds: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs mb-1 block">Game Time</label>
+                  <input
+                    type="text"
+                    placeholder="Sunday 4:25 PM ET"
+                    value={pickForm.game_time}
+                    onChange={(e) => setPickForm(prev => ({ ...prev, game_time: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+              </div>
+
+              {/* Row: Win Probability, Confidence */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 text-xs mb-1 block">Win Probability: {pickForm.win_probability}%</label>
+                  <input
+                    type="range"
+                    min="30"
+                    max="90"
+                    value={pickForm.win_probability}
+                    onChange={(e) => setPickForm(prev => ({ ...prev, win_probability: parseInt(e.target.value) }))}
+                    className="w-full accent-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs mb-1 block">Confidence: {pickForm.confidence}/10</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={pickForm.confidence}
+                    onChange={(e) => setPickForm(prev => ({ ...prev, confidence: parseInt(e.target.value) }))}
+                    className="w-full accent-violet-500"
+                  />
+                </div>
+              </div>
+
+              {/* Reasoning */}
+              <div>
+                <label className="text-emerald-400 text-xs mb-1 block flex items-center justify-between">
+                  <span>Reasoning (Why we like this)</span>
+                  <button onClick={addReasonField} className="text-emerald-400 hover:text-emerald-300 text-xs">+ Add</button>
+                </label>
+                {pickForm.reasoning.map((reason, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    placeholder={`Reason ${i + 1}`}
+                    value={reason}
+                    onChange={(e) => updateReasoning(i, e.target.value)}
+                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 mb-2"
+                  />
+                ))}
+              </div>
+
+              {/* Risk Factors */}
+              <div>
+                <label className="text-orange-400 text-xs mb-1 block flex items-center justify-between">
+                  <span>Risk Factors (Watch out for)</span>
+                  <button onClick={addRiskField} className="text-orange-400 hover:text-orange-300 text-xs">+ Add</button>
+                </label>
+                {pickForm.risk_factors.map((risk, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    placeholder={`Risk ${i + 1}`}
+                    value={risk}
+                    onChange={(e) => updateRiskFactor(i, e.target.value)}
+                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-orange-500 mb-2"
+                  />
+                ))}
+              </div>
+
+              {/* Submit */}
+              <Button
+                onClick={handleCreatePick}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-6"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                {editingPick ? 'Update Pick' : 'Create Pick'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Ban Modal */}
       {showBanModal && selectedUser && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
