@@ -449,7 +449,7 @@ const Admin = () => {
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setActiveTab('users')}
             className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
@@ -471,6 +471,17 @@ const Admin = () => {
           >
             <Trophy className="w-4 h-4" />
             Top Bets ({topBets.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('dailypicks')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'dailypicks'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Flame className="w-4 h-4" />
+            Daily Picks ({dailyPicks.length})
           </button>
         </div>
       </div>
