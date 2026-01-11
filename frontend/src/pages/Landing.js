@@ -219,6 +219,81 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section className="py-16 bg-gradient-to-b from-slate-900 to-slate-950 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-4">How It Works</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Get AI-powered bet analysis in 3 simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Step 1 */}
+            <div className="relative">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-purple-500/30 border-2 border-violet-500/50 flex items-center justify-center mb-4 relative">
+                  <Camera className="w-8 h-8 text-violet-400" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-violet-500 text-white text-sm font-bold flex items-center justify-center">1</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Screenshot Your Bet</h3>
+                <p className="text-slate-400 text-sm">
+                  Take a screenshot from <span className="text-emerald-400 font-semibold">DraftKings</span>, <span className="text-emerald-400 font-semibold">FanDuel</span>, <span className="text-emerald-400 font-semibold">Hard Rock</span>, or any sportsbook app
+                </p>
+              </div>
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-8 -right-4 w-8 text-slate-600">
+                <ArrowRight className="w-8 h-8" />
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-500/30 border-2 border-emerald-500/50 flex items-center justify-center mb-4 relative">
+                  <Upload className="w-8 h-8 text-emerald-400" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 text-white text-sm font-bold flex items-center justify-center">2</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Upload & Analyze</h3>
+                <p className="text-slate-400 text-sm">
+                  Our AI extracts bet details and calculates win probability using <span className="text-yellow-400 font-semibold">real-time odds</span>, <span className="text-yellow-400 font-semibold">injury reports</span> & <span className="text-yellow-400 font-semibold">team stats</span>
+                </p>
+              </div>
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-8 -right-4 w-8 text-slate-600">
+                <ArrowRight className="w-8 h-8" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/50 flex items-center justify-center mb-4 relative">
+                <Trophy className="w-8 h-8 text-yellow-400" />
+                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-yellow-500 text-white text-sm font-bold flex items-center justify-center">3</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Make Smarter Bets</h3>
+              <p className="text-slate-400 text-sm">
+                Get detailed breakdown with <span className="text-violet-400 font-semibold">win probability</span>, <span className="text-violet-400 font-semibold">expected value</span>, and <span className="text-violet-400 font-semibold">betting suggestions</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Supported Sportsbooks */}
+          <div className="mt-12 pt-8 border-t border-slate-800/50">
+            <p className="text-center text-slate-500 text-sm mb-4">Works with all major sportsbooks</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">DraftKings</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">FanDuel</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">Hard Rock</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">BetMGM</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">Caesars</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-emerald-500/30 rounded-xl text-emerald-400 font-semibold">+ Any App</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-20 bg-slate-950/50 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
