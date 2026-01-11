@@ -8,6 +8,7 @@ import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircl
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 import SubscriptionModal from '@/components/SubscriptionModal';
+import DailyPicks from '@/components/DailyPicks';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
