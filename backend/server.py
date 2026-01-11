@@ -1408,6 +1408,137 @@ async def admin_clear_top_bets(admin_user: dict = Depends(get_admin_user)):
     return {"message": f"Deleted {result.deleted_count} top bets", "success": True}
 
 
+# ===== DAILY PICKS (Featured Bets) ROUTES =====
+
+class DailyPickCreate(BaseModel):
+    """Model for creating a daily pick"""
+    title: str  # e.g., "Chiefs -3.5 vs Raiders"
+    description: str  # Brief explanation
+    win_probability: float  # 0-100
+    odds: str  # e.g., "-110"
+    sport: str  # e.g., "NFL", "NBA", "MLB"
+    confidence: int  # 1-10
+    reasoning: List[str]  # List of reasons
+    risk_factors: Optional[List[str]] = None
+    game_time: Optional[str] = None  # e.g., "Sunday 4:25 PM ET"
+
+
+@api_router.post("/admin/daily-picks")
+async def admin_create_daily_pick(
+    pick_data: DailyPickCreate,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Create a new daily pick (admin only)"""
+    pick = {
+        "id": str(uuid.uuid4()),
+        "title": pick_data.title,
+        "description": pick_data.description,
+        "win_probability": pick_data.win_probability,
+        "odds": pick_data.odds,
+        "sport": pick_data.sport,
+        "confidence": pick_data.confidence,
+        "reasoning": pick_data.reasoning,
+        "risk_factors": pick_data.risk_factors or [],
+        "game_time": pick_data.game_time,
+        "created_by": admin_user['email'],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True
+    }
+    await db.daily_picks.insert_one(pick)
+    return {"message": "Daily pick created", "pick": {k: v for k, v in pick.items() if k != '_id'}}
+
+
+@api_router.get("/daily-picks")
+async def get_daily_picks():
+    """Get active daily picks (public endpoint)"""
+    # Get picks from last 24 hours that are active
+    yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    
+    picks = await db.daily_picks.find(
+        {
+            "is_active": True,
+            "created_at": {"$gte": yesterday}
+        },
+        {"_id": 0}
+    ).sort("win_probability", -1).limit(3).to_list(3)
+    
+    # If no recent picks, get most recent active ones
+    if not picks:
+        picks = await db.daily_picks.find(
+            {"is_active": True},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(3).to_list(3)
+    
+    return {"picks": picks, "count": len(picks)}
+
+
+@api_router.get("/admin/daily-picks")
+async def admin_get_all_daily_picks(
+    skip: int = 0,
+    limit: int = 20,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get all daily picks (admin only)"""
+    picks = await db.daily_picks.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    total = await db.daily_picks.count_documents({})
+    return {"picks": picks, "total": total}
+
+
+@api_router.put("/admin/daily-picks/{pick_id}")
+async def admin_update_daily_pick(
+    pick_id: str,
+    pick_data: DailyPickCreate,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Update a daily pick"""
+    update_data = pick_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = admin_user['email']
+    
+    result = await db.daily_picks.update_one(
+        {"id": pick_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count > 0:
+        return {"message": "Daily pick updated", "success": True}
+    raise HTTPException(status_code=404, detail="Pick not found")
+
+
+@api_router.delete("/admin/daily-picks/{pick_id}")
+async def admin_delete_daily_pick(
+    pick_id: str,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Delete a daily pick"""
+    result = await db.daily_picks.delete_one({"id": pick_id})
+    if result.deleted_count > 0:
+        return {"message": "Daily pick deleted", "success": True}
+    raise HTTPException(status_code=404, detail="Pick not found")
+
+
+@api_router.post("/admin/daily-picks/{pick_id}/toggle")
+async def admin_toggle_daily_pick(
+    pick_id: str,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Toggle a daily pick active/inactive"""
+    pick = await db.daily_picks.find_one({"id": pick_id})
+    if not pick:
+        raise HTTPException(status_code=404, detail="Pick not found")
+    
+    new_status = not pick.get("is_active", True)
+    await db.daily_picks.update_one(
+        {"id": pick_id},
+        {"$set": {"is_active": new_status}}
+    )
+    return {"message": f"Pick {'activated' if new_status else 'deactivated'}", "is_active": new_status}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
