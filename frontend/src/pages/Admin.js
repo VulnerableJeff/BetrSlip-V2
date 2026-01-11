@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Users, Ban, CheckCircle, BarChart3, DollarSign, Shield, ArrowLeft, RefreshCw,
   Search, Eye, Gift, Trash2, Download, Crown, Clock, Activity,
-  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy
+  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -18,8 +18,9 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [topBets, setTopBets] = useState([]);
   const [topBetsStats, setTopBetsStats] = useState(null);
+  const [dailyPicks, setDailyPicks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'topbets'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'topbets', or 'dailypicks'
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [banReason, setBanReason] = useState('');
@@ -27,8 +28,23 @@ const Admin = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBanModal, setShowBanModal] = useState(false);
+  const [showPickModal, setShowPickModal] = useState(false);
+  const [editingPick, setEditingPick] = useState(null);
   const [expandedUser, setExpandedUser] = useState(null);
   const [expandedBet, setExpandedBet] = useState(null);
+  
+  // Daily Pick Form State
+  const [pickForm, setPickForm] = useState({
+    title: '',
+    description: '',
+    win_probability: 65,
+    odds: '-110',
+    sport: 'NFL',
+    confidence: 7,
+    reasoning: [''],
+    risk_factors: [''],
+    game_time: ''
+  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
