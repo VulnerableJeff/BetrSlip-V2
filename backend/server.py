@@ -312,6 +312,48 @@ async def login(user_data: UserLogin):
     return TokenResponse(token=token, user=user_response)
 
 
+# ===== ADMIN PASSWORD RESET (One-time use after deployment) =====
+class AdminPasswordReset(BaseModel):
+    email: str
+    new_password: str
+    reset_key: str
+
+@api_router.post("/auth/admin-reset")
+async def admin_password_reset(reset_data: AdminPasswordReset):
+    """
+    Reset admin password using a secret key.
+    This is a secure endpoint for resetting admin password after deployment.
+    """
+    # Secret reset key - only works for admin email
+    RESET_KEY = "BetrSlip2026SecureReset"
+    
+    if reset_data.reset_key != RESET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid reset key")
+    
+    if reset_data.email.lower() != ADMIN_EMAIL.lower():
+        raise HTTPException(status_code=403, detail="This endpoint is only for admin password reset")
+    
+    # Find admin user
+    admin_user = await db.users.find_one({"email": reset_data.email.lower()})
+    if not admin_user:
+        # If admin doesn't exist on live site, create them
+        password_hash = hash_password(reset_data.new_password)
+        user = User(email=reset_data.email.lower(), password_hash=password_hash, is_admin=True)
+        user_dict = user.model_dump()
+        user_dict['created_at'] = user_dict['created_at'].isoformat()
+        await db.users.insert_one(user_dict)
+        return {"message": "Admin account created successfully", "success": True}
+    
+    # Update password
+    new_hash = hash_password(reset_data.new_password)
+    await db.users.update_one(
+        {"email": reset_data.email.lower()},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    return {"message": "Admin password reset successfully", "success": True}
+
+
 # ===== IMPROVEMENT SUGGESTIONS HELPER =====
 def generate_improvement_suggestions(
     win_probability: float,
