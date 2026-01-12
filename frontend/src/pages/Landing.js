@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy } from 'lucide-react';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
