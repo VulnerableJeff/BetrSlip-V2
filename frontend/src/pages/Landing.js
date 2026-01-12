@@ -294,6 +294,158 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Daily Top Picks - Pro Feature */}
+      <section className="py-16 bg-gradient-to-b from-slate-950 to-violet-950/20 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Feature Description */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-4 py-2 rounded-full mb-6">
+                <Trophy className="w-4 h-4 text-yellow-400" />
+                <span className="text-yellow-400 text-sm font-semibold uppercase tracking-wider">
+                  Pro Feature
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+                Today's Top Picks
+              </h2>
+              <p className="text-slate-400 text-lg mb-6">
+                Get <span className="text-yellow-400 font-semibold">3 AI-curated high-value bets</span> delivered daily. Our algorithm analyzes thousands of games to find the best opportunities.
+              </p>
+              
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Win Probability 60%+</span>
+                    <p className="text-slate-400 text-sm">Only high-confidence picks make the cut</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Full Analysis Included</span>
+                    <p className="text-slate-400 text-sm">Reasoning, risk factors, and confidence scores</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Updated Daily</span>
+                    <p className="text-slate-400 text-sm">Fresh picks every morning for that day's games</p>
+                  </div>
+                </li>
+              </ul>
+
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-yellow-500/25"
+                onClick={() => navigate('/auth')}
+              >
+                <Trophy className="w-5 h-5 mr-2" />
+                Get Pro - $5/month
+              </Button>
+            </div>
+
+            {/* Right - Preview Card */}
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-3xl blur-3xl"></div>
+              
+              {/* Card */}
+              <div className="relative bg-slate-900/90 border border-yellow-500/30 rounded-2xl p-6 backdrop-blur-xl">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold flex items-center gap-2">
+                      Today's Top Picks
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                        3 Picks
+                      </span>
+                    </h3>
+                    <p className="text-slate-400 text-xs">AI-analyzed high-value bets</p>
+                  </div>
+                </div>
+
+                {/* Sample Picks */}
+                <div className="space-y-3">
+                  {/* Pick 1 */}
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">🏀</span>
+                          <span className="text-xs text-slate-400 font-medium">NBA</span>
+                          <span className="px-2 py-0.5 rounded-full bg-yellow-500/30 text-yellow-300 text-xs font-bold">TOP PICK</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Celtics -6.5 vs Hornets</p>
+                        <p className="text-slate-400 text-xs">Tonight 7:30 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-emerald-400">72%</p>
+                        <p className="text-slate-400 text-xs">-108</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pick 2 */}
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">🏈</span>
+                          <span className="text-xs text-slate-400 font-medium">NFL</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Chiefs -3.5 vs Raiders</p>
+                        <p className="text-slate-400 text-xs">Sunday 4:25 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-yellow-400">68%</p>
+                        <p className="text-slate-400 text-xs">-110</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pick 3 */}
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">⚾</span>
+                          <span className="text-xs text-slate-400 font-medium">MLB</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Dodgers ML vs Padres</p>
+                        <p className="text-slate-400 text-xs">Tomorrow 10:10 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-yellow-400">64%</p>
+                        <p className="text-slate-400 text-xs">-145</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pro badge */}
+                <div className="mt-4 pt-4 border-t border-slate-800 text-center">
+                  <p className="text-slate-500 text-xs">
+                    Included with <span className="text-yellow-400 font-semibold">Pro subscription</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-20 bg-slate-950/50 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
