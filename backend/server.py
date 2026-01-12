@@ -1172,7 +1172,7 @@ async def create_subscription_checkout(
 async def get_checkout_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Check Stripe checkout session status"""
     try:
-        host_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+        host_url = os.environ.get('BACKEND_URL', os.environ.get('REACT_APP_BACKEND_URL', ''))
         webhook_url = f"{host_url}/api/webhook/stripe"
         
         stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
