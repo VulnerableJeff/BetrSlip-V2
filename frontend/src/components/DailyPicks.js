@@ -12,8 +12,10 @@ const DailyPicks = ({ usage, onSubscribe }) => {
   const [expandedPick, setExpandedPick] = useState(null);
 
   // Check if user can view picks - only after usage is loaded
-  const canViewPicks = !usage || usage.is_subscribed || (usage.usage_count < 5);
-  const isLockedOut = usage && !usage.is_subscribed && usage.usage_count >= 5;
+  // usage.analyses_used is the count of analyses used
+  // usage.free_limit is 5
+  const canViewPicks = !usage || usage.is_subscribed || (usage.analyses_used < usage.free_limit);
+  const isLockedOut = usage && !usage.is_subscribed && usage.analyses_used >= usage.free_limit;
 
   useEffect(() => {
     fetchDailyPicks();
