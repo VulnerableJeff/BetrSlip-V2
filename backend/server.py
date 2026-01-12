@@ -354,6 +354,80 @@ async def admin_password_reset(reset_data: AdminPasswordReset):
     return {"message": "Admin password reset successfully", "success": True}
 
 
+# ===== INITIALIZE SAMPLE DATA (for new deployments) =====
+class InitializeRequest(BaseModel):
+    reset_key: str
+
+@api_router.post("/admin/initialize-picks")
+async def initialize_sample_picks(init_data: InitializeRequest):
+    """
+    Initialize sample daily picks for new deployments.
+    Only works if no picks exist yet.
+    """
+    RESET_KEY = "BetrSlip2026SecureReset"
+    
+    if init_data.reset_key != RESET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid reset key")
+    
+    # Check if picks already exist
+    existing_count = await db.daily_picks.count_documents({})
+    if existing_count > 0:
+        return {"message": f"Picks already exist ({existing_count} picks)", "initialized": False}
+    
+    # Create sample picks
+    sample_picks = [
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Chiefs -3.5 vs Raiders",
+            "description": "Kansas City dominates at home against struggling Raiders defense",
+            "win_probability": 68.0,
+            "odds": "-110",
+            "sport": "NFL",
+            "confidence": 8,
+            "reasoning": ["Chiefs 8-2 ATS at home this season", "Raiders allowing 28+ points last 4 games", "Mahomes excellent at Arrowhead"],
+            "risk_factors": ["Raiders covered in 2 of last 3 vs Chiefs", "Weather could be a factor"],
+            "game_time": "Sunday 4:25 PM ET",
+            "created_by": ADMIN_EMAIL,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": True
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Celtics -6.5 vs Hornets",
+            "description": "Boston coming off rest, Hornets on 2nd of back-to-back",
+            "win_probability": 72.0,
+            "odds": "-108",
+            "sport": "NBA",
+            "confidence": 8,
+            "reasoning": ["Celtics 12-3 ATS at home", "Hornets 3-9 on back-to-backs", "Boston averaging 118 PPG at home"],
+            "risk_factors": ["Large spread could be trap"],
+            "game_time": "Tonight 7:30 PM ET",
+            "created_by": ADMIN_EMAIL,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": True
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Dodgers ML vs Padres",
+            "description": "Los Angeles with their ace on the mound at home",
+            "win_probability": 64.0,
+            "odds": "-145",
+            "sport": "MLB",
+            "confidence": 7,
+            "reasoning": ["Dodgers ace has 2.15 ERA at home", "Padres hitting .220 vs lefties", "Dodgers 7-2 in last 9 home games"],
+            "risk_factors": ["Heavy favorite, reduced value", "Padres have talented lineup"],
+            "game_time": "Tomorrow 10:10 PM ET",
+            "created_by": ADMIN_EMAIL,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": True
+        }
+    ]
+    
+    await db.daily_picks.insert_many(sample_picks)
+    
+    return {"message": f"Initialized {len(sample_picks)} sample picks", "initialized": True, "picks_count": len(sample_picks)}
+
+
 # ===== IMPROVEMENT SUGGESTIONS HELPER =====
 def generate_improvement_suggestions(
     win_probability: float,
