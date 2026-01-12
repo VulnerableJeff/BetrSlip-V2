@@ -57,7 +57,8 @@ const Admin = () => {
 
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, usersRes, topBetsRes, topBetsStatsRes, dailyPicksRes] = await Promise.all([
+      // Fetch all data with individual error handling
+      const results = await Promise.allSettled([
         axios.get(`${BACKEND_URL}/api/admin/stats`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/users?limit=100`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/top-bets?limit=50`, { headers }),
@@ -65,11 +66,20 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/daily-picks`, { headers })
       ]);
 
-      setStats(statsRes.data);
-      setUsers(usersRes.data.users);
-      setTopBets(topBetsRes.data.top_bets);
-      setTopBetsStats(topBetsStatsRes.data);
-      setDailyPicks(dailyPicksRes.data.picks || []);
+      // Check if any request got 403 (not admin)
+      const forbidden = results.find(r => r.status === 'rejected' && r.reason?.response?.status === 403);
+      if (forbidden) {
+        toast.error('Admin access required. Make sure you are logged in with the admin email.');
+        navigate('/dashboard');
+        return;
+      }
+
+      // Set data from successful requests, with defaults for failed ones
+      if (results[0].status === 'fulfilled') setStats(results[0].value.data);
+      if (results[1].status === 'fulfilled') setUsers(results[1].value.data.users || []);
+      if (results[2].status === 'fulfilled') setTopBets(results[2].value.data.top_bets || []);
+      if (results[3].status === 'fulfilled') setTopBetsStats(results[3].value.data);
+      if (results[4].status === 'fulfilled') setDailyPicks(results[4].value.data.picks || []);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
