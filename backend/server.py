@@ -1586,7 +1586,13 @@ async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
 
 
-# Health check endpoint for Kubernetes
+@api_router.get("/health")
+async def api_health_check():
+    """Health check endpoint via API router"""
+    return {"status": "healthy", "service": "betrslip-api"}
+
+
+# Health check endpoint for Kubernetes (root level)
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Kubernetes liveness/readiness probes"""
