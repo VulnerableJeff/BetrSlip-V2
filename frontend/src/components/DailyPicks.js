@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
-import { Trophy, TrendingUp, Flame, Target, Clock, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trophy, TrendingUp, Flame, Target, Clock, ChevronDown, ChevronUp, Zap, Lock, Crown } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-const DailyPicks = () => {
+const DailyPicks = ({ usage, onSubscribe }) => {
   const [picks, setPicks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedPick, setExpandedPick] = useState(null);
+
+  // Check if user can view picks
+  const canViewPicks = usage?.is_subscribed || (usage?.usage_count < 5);
+  const isLockedOut = usage && !usage.is_subscribed && usage.usage_count >= 5;
 
   useEffect(() => {
     fetchDailyPicks();
@@ -75,6 +80,87 @@ const DailyPicks = () => {
     return null; // Don't show section if no picks
   }
 
+  // Show locked state for users who exhausted free tier
+  if (isLockedOut) {
+    return (
+      <Card className="glass border-yellow-500/30 p-6 mb-6 relative overflow-hidden" data-testid="daily-picks-locked">
+        {/* Blurred preview of picks */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900 z-10" />
+        
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold flex items-center gap-2">
+                Today's Top Picks
+                <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                  {picks.length} {picks.length === 1 ? 'Pick' : 'Picks'}
+                </span>
+              </h3>
+              <p className="text-slate-400 text-xs">AI-analyzed high-value bets for today</p>
+            </div>
+          </div>
+          <Lock className="w-6 h-6 text-yellow-400" />
+        </div>
+
+        {/* Blurred picks preview */}
+        <div className="space-y-3 filter blur-sm select-none pointer-events-none">
+          {picks.slice(0, 2).map((pick, index) => (
+            <div
+              key={pick.id}
+              className={`rounded-lg border ${getProbabilityBg(pick.win_probability)} p-4`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{getSportEmoji(pick.sport)}</span>
+                    <span className="text-xs text-slate-400 font-medium uppercase">{pick.sport}</span>
+                  </div>
+                  <h4 className="text-white font-bold text-sm">{pick.title}</h4>
+                  <p className="text-slate-300 text-xs mt-1">{pick.description}</p>
+                </div>
+                <div className="text-right">
+                  <div className={`text-2xl font-black ${getProbabilityColor(pick.win_probability)}`}>
+                    {pick.win_probability}%
+                  </div>
+                  <p className="text-slate-400 text-xs">Win Prob</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Unlock overlay */}
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="bg-slate-900/95 border border-yellow-500/30 rounded-2xl p-6 max-w-sm mx-4 text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-4">
+              <Crown className="w-8 h-8 text-yellow-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Unlock Daily Picks</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              Get access to our AI-curated top picks every day with a Pro subscription.
+            </p>
+            <div className="space-y-2">
+              <Button
+                onClick={onSubscribe}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Go Pro - $5/month
+              </Button>
+              <p className="text-slate-500 text-xs">
+                Includes unlimited analyses + daily picks
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="glass border-yellow-500/30 p-6 mb-6" data-testid="daily-picks-section">
       {/* Header */}
@@ -89,6 +175,11 @@ const DailyPicks = () => {
               <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
                 {picks.length} {picks.length === 1 ? 'Pick' : 'Picks'}
               </span>
+              {usage?.is_subscribed && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                  <Crown className="w-3 h-3" /> PRO
+                </span>
+              )}
             </h3>
             <p className="text-slate-400 text-xs">AI-analyzed high-value bets for today</p>
           </div>
