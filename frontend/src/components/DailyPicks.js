@@ -24,9 +24,12 @@ const DailyPicks = ({ usage, onSubscribe }) => {
   const fetchDailyPicks = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/api/daily-picks`);
-      setPicks(response.data.picks || []);
+      const fetchedPicks = response.data.picks || [];
+      setPicks(fetchedPicks);
     } catch (error) {
       console.error('Error fetching daily picks:', error);
+      // Keep picks empty on error, don't crash
+      setPicks([]);
     } finally {
       setLoading(false);
     }
