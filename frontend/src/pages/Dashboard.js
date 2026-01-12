@@ -281,7 +281,10 @@ const Dashboard = ({ onLogout }) => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Daily Picks Section - Above the main grid */}
-        <DailyPicks />
+        <DailyPicks 
+          usage={usage} 
+          onSubscribe={() => setShowSubscriptionModal(true)} 
+        />
         
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Upload Section */}
