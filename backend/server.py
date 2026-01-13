@@ -1638,8 +1638,6 @@ async def admin_toggle_daily_pick(
 
 async def fetch_upcoming_games():
     """Fetch upcoming games from The Odds API"""
-    import aiohttp
-    
     ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
     if not ODDS_API_KEY:
         return []
