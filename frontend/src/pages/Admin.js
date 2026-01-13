@@ -982,21 +982,40 @@ const Admin = () => {
       {activeTab === 'dailypicks' && (
         <div className="max-w-7xl mx-auto">
           <Card className="glass border-yellow-500/20 overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Flame className="w-5 h-5 text-yellow-400" />
                 Daily Picks Management
               </h2>
-              <Button
-                onClick={() => {
-                  resetPickForm();
-                  setShowPickModal(true);
-                }}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Pick
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleGeneratePicks}
+                  disabled={generatingPicks}
+                  className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-semibold"
+                >
+                  {generatingPicks ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate AI Picks
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => {
+                    resetPickForm();
+                    setShowPickModal(true);
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Manual
+                </Button>
+              </div>
             </div>
             
             <div className="divide-y divide-slate-800">
