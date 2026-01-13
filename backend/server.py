@@ -1753,14 +1753,10 @@ Respond in this exact JSON format:
             session_id=f"auto_picks_{uuid.uuid4()}",
             system_message="You are an elite sports betting analyst. Analyze games and provide the best betting picks with realistic probabilities."
         )
-        response = await chat.send_message_async(
-            model="gpt-4o",
-            messages=[UserMessage(content=prompt)],
-            temperature=0.7
-        )
+        response = await chat.send_message(prompt)
         
         # Parse JSON from response
-        response_text = response.content
+        response_text = response
         
         # Try to find JSON in response
         json_match = re.search(r'\{[\s\S]*\}', response_text)
