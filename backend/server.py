@@ -1753,7 +1753,9 @@ Respond in this exact JSON format:
             session_id=f"auto_picks_{uuid.uuid4()}",
             system_message="You are an elite sports betting analyst. Analyze games and provide the best betting picks with realistic probabilities."
         )
-        response = await chat.send_message(prompt)
+        
+        msg = UserMessage(text=prompt)
+        response = await chat.send_message(msg)
         
         # Parse JSON from response
         response_text = response
