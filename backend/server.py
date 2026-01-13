@@ -1655,6 +1655,263 @@ async def admin_toggle_daily_pick(
     return {"message": f"Pick {'activated' if new_status else 'deactivated'}", "is_active": new_status}
 
 
+# ===== AUTO-GENERATE DAILY PICKS =====
+
+async def fetch_upcoming_games():
+    """Fetch upcoming games from The Odds API"""
+    import aiohttp
+    
+    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+    if not ODDS_API_KEY:
+        return []
+    
+    sports = [
+        'americanfootball_nfl',
+        'basketball_nba', 
+        'baseball_mlb',
+        'icehockey_nhl'
+    ]
+    
+    all_games = []
+    
+    async with aiohttp.ClientSession() as session:
+        for sport in sports:
+            try:
+                url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
+                params = {
+                    'apiKey': ODDS_API_KEY,
+                    'regions': 'us',
+                    'markets': 'spreads,h2h,totals',
+                    'oddsFormat': 'american'
+                }
+                
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as response:
+                    if response.status == 200:
+                        games = await response.json()
+                        for game in games[:5]:  # Limit to 5 games per sport
+                            game['sport_key'] = sport
+                            all_games.append(game)
+            except Exception as e:
+                logging.error(f"Error fetching {sport} odds: {e}")
+                continue
+    
+    return all_games
+
+
+async def analyze_games_with_ai(games: list) -> list:
+    """Use AI to analyze games and pick the best 3"""
+    if not games:
+        return []
+    
+    # Format games for AI analysis
+    games_text = ""
+    for i, game in enumerate(games):
+        sport = game.get('sport_key', '').replace('_', ' ').title()
+        home = game.get('home_team', 'Unknown')
+        away = game.get('away_team', 'Unknown')
+        commence = game.get('commence_time', '')
+        
+        # Get odds
+        spreads = ""
+        moneyline = ""
+        for bookmaker in game.get('bookmakers', [])[:1]:
+            for market in bookmaker.get('markets', []):
+                if market['key'] == 'spreads':
+                    for outcome in market.get('outcomes', []):
+                        if outcome['name'] == home:
+                            spreads = f"{home} {outcome.get('point', '')} ({outcome.get('price', '')})"
+                elif market['key'] == 'h2h':
+                    for outcome in market.get('outcomes', []):
+                        if outcome['name'] == home:
+                            moneyline = f"{home} ML ({outcome.get('price', '')})"
+        
+        games_text += f"\n{i+1}. {sport}: {away} @ {home}"
+        games_text += f"\n   Time: {commence}"
+        if spreads:
+            games_text += f"\n   Spread: {spreads}"
+        if moneyline:
+            games_text += f"\n   Moneyline: {moneyline}"
+        games_text += "\n"
+    
+    # AI prompt to analyze and pick best 3
+    prompt = f"""You are a professional sports betting analyst. Analyze these upcoming games and select the TOP 3 BEST BETS with the highest probability of winning.
+
+GAMES:
+{games_text}
+
+For each of your top 3 picks, provide:
+1. The specific bet (team + spread or moneyline)
+2. Win probability estimate (be realistic, typically 55-75%)
+3. Confidence level (1-10)
+4. 3 key reasons why this bet is good
+5. 1-2 risk factors to watch
+
+IMPORTANT: 
+- Be realistic with probabilities (most good bets are 55-70%)
+- Only pick bets you genuinely think have edge
+- Consider home/away, recent form, injuries, matchups
+
+Respond in this exact JSON format:
+{{
+  "picks": [
+    {{
+      "sport": "NFL/NBA/MLB/NHL",
+      "title": "Team Name -3.5 vs Opponent" or "Team Name ML vs Opponent",
+      "description": "One sentence summary",
+      "win_probability": 65,
+      "odds": "-110",
+      "confidence": 7,
+      "reasoning": ["Reason 1", "Reason 2", "Reason 3"],
+      "risk_factors": ["Risk 1", "Risk 2"],
+      "game_time": "Today 7:30 PM ET",
+      "home_team": "Team Name",
+      "away_team": "Opponent Name"
+    }}
+  ]
+}}"""
+
+    try:
+        chat = LlmChat(api_key=EMERGENT_LLM_KEY)
+        response = await chat.send_message_async(
+            model="gpt-4o",
+            messages=[UserMessage(content=prompt)],
+            temperature=0.7
+        )
+        
+        # Parse JSON from response
+        response_text = response.content
+        
+        # Extract JSON from response
+        import json
+        import re
+        
+        # Try to find JSON in response
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        if json_match:
+            picks_data = json.loads(json_match.group())
+            return picks_data.get('picks', [])
+        
+    except Exception as e:
+        logging.error(f"Error analyzing games with AI: {e}")
+    
+    return []
+
+
+async def auto_generate_daily_picks():
+    """Auto-generate daily picks using real odds and AI analysis"""
+    try:
+        # Check if we already have recent picks (within last 20 hours)
+        twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+        recent_picks = await db.daily_picks.count_documents({
+            "is_active": True,
+            "created_at": {"$gte": twenty_hours_ago},
+            "auto_generated": True
+        })
+        
+        if recent_picks >= 3:
+            return {"message": "Recent picks already exist", "generated": False}
+        
+        # Fetch upcoming games
+        games = await fetch_upcoming_games()
+        if not games:
+            return {"message": "No upcoming games found", "generated": False}
+        
+        # Analyze with AI
+        ai_picks = await analyze_games_with_ai(games)
+        if not ai_picks:
+            return {"message": "AI analysis failed", "generated": False}
+        
+        # Deactivate old auto-generated picks
+        await db.daily_picks.update_many(
+            {"auto_generated": True},
+            {"$set": {"is_active": False}}
+        )
+        
+        # Create new picks
+        created_picks = []
+        for pick in ai_picks[:3]:  # Only top 3
+            new_pick = {
+                "id": str(uuid.uuid4()),
+                "title": pick.get('title', 'Unknown Bet'),
+                "description": pick.get('description', ''),
+                "win_probability": float(pick.get('win_probability', 60)),
+                "odds": str(pick.get('odds', '-110')),
+                "sport": pick.get('sport', 'NFL'),
+                "confidence": int(pick.get('confidence', 7)),
+                "reasoning": pick.get('reasoning', []),
+                "risk_factors": pick.get('risk_factors', []),
+                "game_time": pick.get('game_time', 'TBD'),
+                "created_by": "AI Auto-Generator",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "is_active": True,
+                "auto_generated": True
+            }
+            await db.daily_picks.insert_one(new_pick)
+            created_picks.append(new_pick['title'])
+        
+        return {
+            "message": f"Generated {len(created_picks)} new picks",
+            "generated": True,
+            "picks": created_picks
+        }
+        
+    except Exception as e:
+        logging.error(f"Error auto-generating picks: {e}")
+        return {"message": f"Error: {str(e)}", "generated": False}
+
+
+@api_router.post("/admin/generate-picks")
+async def trigger_auto_generate_picks(admin_user: dict = Depends(get_admin_user)):
+    """Manually trigger auto-generation of daily picks (admin only)"""
+    result = await auto_generate_daily_picks()
+    return result
+
+
+@api_router.post("/cron/generate-picks")
+async def cron_generate_picks(request: Request):
+    """
+    Endpoint for scheduled cron job to auto-generate picks.
+    Protected by a secret key in the request body.
+    """
+    try:
+        body = await request.json()
+        secret_key = body.get('secret_key', '')
+        
+        if secret_key != "BetrSlip2026SecureReset":
+            raise HTTPException(status_code=403, detail="Invalid secret key")
+        
+        result = await auto_generate_daily_picks()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Auto-check and generate picks when fetching daily picks
+@api_router.get("/daily-picks")
+async def get_daily_picks_with_auto_generate():
+    """Get active daily picks - auto-generates if needed"""
+    # Check if we need to auto-generate
+    twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+    
+    active_recent_picks = await db.daily_picks.count_documents({
+        "is_active": True,
+        "created_at": {"$gte": twenty_hours_ago}
+    })
+    
+    # If no recent picks, try to auto-generate
+    if active_recent_picks == 0:
+        logging.info("No recent picks found, attempting auto-generation...")
+        await auto_generate_daily_picks()
+    
+    # Fetch active picks
+    picks = await db.daily_picks.find(
+        {"is_active": True},
+        {"_id": 0}
+    ).sort("win_probability", -1).limit(3).to_list(3)
+    
+    return {"picks": picks, "count": len(picks)}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "BetrSlip API - AI Bet Slip Companion"}
