@@ -1758,10 +1758,6 @@ Respond in this exact JSON format:
         # Parse JSON from response
         response_text = response.content
         
-        # Extract JSON from response
-        import json
-        import re
-        
         # Try to find JSON in response
         json_match = re.search(r'\{[\s\S]*\}', response_text)
         if json_match:
