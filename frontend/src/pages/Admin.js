@@ -293,6 +293,29 @@ const Admin = () => {
     }
   };
 
+  const handleGeneratePicks = async () => {
+    setGeneratingPicks(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/generate-picks`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.generated) {
+        toast.success(`${response.data.message}`);
+        fetchData();
+      } else {
+        toast.info(response.data.message || 'No new picks generated');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error generating picks');
+    } finally {
+      setGeneratingPicks(false);
+    }
+  };
+
   const addReasonField = () => {
     setPickForm(prev => ({ ...prev, reasoning: [...prev.reasoning, ''] }));
   };
