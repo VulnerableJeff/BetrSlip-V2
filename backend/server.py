@@ -1564,30 +1564,6 @@ async def admin_create_daily_pick(
     return {"message": "Daily pick created", "pick": {k: v for k, v in pick.items() if k != '_id'}}
 
 
-@api_router.get("/daily-picks")
-async def get_daily_picks():
-    """Get active daily picks (public endpoint)"""
-    # Get picks from last 24 hours that are active
-    yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-    
-    picks = await db.daily_picks.find(
-        {
-            "is_active": True,
-            "created_at": {"$gte": yesterday}
-        },
-        {"_id": 0}
-    ).sort("win_probability", -1).limit(3).to_list(3)
-    
-    # If no recent picks, get most recent active ones
-    if not picks:
-        picks = await db.daily_picks.find(
-            {"is_active": True},
-            {"_id": 0}
-        ).sort("created_at", -1).limit(3).to_list(3)
-    
-    return {"picks": picks, "count": len(picks)}
-
-
 @api_router.get("/admin/daily-picks")
 async def admin_get_all_daily_picks(
     skip: int = 0,
