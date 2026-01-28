@@ -1634,6 +1634,114 @@ async def admin_toggle_daily_pick(
     return {"message": f"Pick {'activated' if new_status else 'deactivated'}", "is_active": new_status}
 
 
+# ===== DAILY PICKS PERFORMANCE TRACKING =====
+
+class PickOutcomeUpdate(BaseModel):
+    outcome: str  # "won", "lost", "push", "pending"
+
+@api_router.post("/admin/daily-picks/{pick_id}/outcome")
+async def admin_update_pick_outcome(
+    pick_id: str,
+    outcome_data: PickOutcomeUpdate,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Update the outcome of a daily pick"""
+    valid_outcomes = ["won", "lost", "push", "pending"]
+    if outcome_data.outcome.lower() not in valid_outcomes:
+        raise HTTPException(status_code=400, detail=f"Invalid outcome. Must be one of: {valid_outcomes}")
+    
+    pick = await db.daily_picks.find_one({"id": pick_id})
+    if not pick:
+        raise HTTPException(status_code=404, detail="Pick not found")
+    
+    await db.daily_picks.update_one(
+        {"id": pick_id},
+        {"$set": {
+            "outcome": outcome_data.outcome.lower(),
+            "outcome_updated_at": datetime.now(timezone.utc).isoformat(),
+            "outcome_updated_by": admin_user['email']
+        }}
+    )
+    
+    return {"message": f"Pick marked as {outcome_data.outcome}", "success": True}
+
+
+@api_router.get("/admin/picks-performance")
+async def admin_get_picks_performance(admin_user: dict = Depends(get_admin_user)):
+    """Get performance stats for daily picks"""
+    
+    # Count outcomes
+    total_picks = await db.daily_picks.count_documents({})
+    won_picks = await db.daily_picks.count_documents({"outcome": "won"})
+    lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
+    push_picks = await db.daily_picks.count_documents({"outcome": "push"})
+    pending_picks = await db.daily_picks.count_documents({
+        "$or": [
+            {"outcome": {"$exists": False}},
+            {"outcome": "pending"},
+            {"outcome": None}
+        ]
+    })
+    
+    # Calculate win rate (excluding pushes and pending)
+    decided_picks = won_picks + lost_picks
+    win_rate = round((won_picks / decided_picks * 100), 1) if decided_picks > 0 else 0
+    
+    # Get recent picks with outcomes
+    recent_picks = await db.daily_picks.find(
+        {"outcome": {"$in": ["won", "lost", "push"]}},
+        {"_id": 0, "id": 1, "title": 1, "sport": 1, "win_probability": 1, "outcome": 1, "created_at": 1}
+    ).sort("outcome_updated_at", -1).limit(20).to_list(20)
+    
+    # Calculate streaks
+    all_outcomes = await db.daily_picks.find(
+        {"outcome": {"$in": ["won", "lost"]}},
+        {"_id": 0, "outcome": 1}
+    ).sort("outcome_updated_at", -1).to_list(100)
+    
+    current_streak = 0
+    streak_type = None
+    for pick in all_outcomes:
+        if streak_type is None:
+            streak_type = pick['outcome']
+            current_streak = 1
+        elif pick['outcome'] == streak_type:
+            current_streak += 1
+        else:
+            break
+    
+    return {
+        "total_picks": total_picks,
+        "won": won_picks,
+        "lost": lost_picks,
+        "push": push_picks,
+        "pending": pending_picks,
+        "decided": decided_picks,
+        "win_rate": win_rate,
+        "current_streak": current_streak,
+        "streak_type": streak_type,
+        "recent_picks": recent_picks
+    }
+
+
+@api_router.get("/picks-performance")
+async def get_public_picks_performance():
+    """Get public performance stats for daily picks (for landing page)"""
+    
+    won_picks = await db.daily_picks.count_documents({"outcome": "won"})
+    lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
+    
+    decided_picks = won_picks + lost_picks
+    win_rate = round((won_picks / decided_picks * 100), 1) if decided_picks > 0 else 0
+    
+    return {
+        "won": won_picks,
+        "lost": lost_picks,
+        "win_rate": win_rate,
+        "total_decided": decided_picks
+    }
+
+
 # ===== AUTO-GENERATE DAILY PICKS =====
 
 async def fetch_upcoming_games():
