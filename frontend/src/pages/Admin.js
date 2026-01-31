@@ -319,6 +319,21 @@ const Admin = () => {
     }
   };
 
+  const handleUpdateOutcome = async (pickId, outcome) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/daily-picks/${pickId}/outcome`,
+        { outcome },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Pick marked as ${outcome}`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error updating outcome');
+    }
+  };
+
   const addReasonField = () => {
     setPickForm(prev => ({ ...prev, reasoning: [...prev.reasoning, ''] }));
   };
