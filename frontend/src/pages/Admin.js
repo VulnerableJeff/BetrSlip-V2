@@ -65,7 +65,8 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/users?limit=100`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/top-bets?limit=50`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/top-bets/stats`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/daily-picks`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/daily-picks`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/picks-performance`, { headers })
       ]);
 
       // Check if any request got 403 (not admin)
@@ -82,6 +83,7 @@ const Admin = () => {
       if (results[2].status === 'fulfilled') setTopBets(results[2].value.data.top_bets || []);
       if (results[3].status === 'fulfilled') setTopBetsStats(results[3].value.data);
       if (results[4].status === 'fulfilled') setDailyPicks(results[4].value.data.picks || []);
+      if (results[5].status === 'fulfilled') setPicksPerformance(results[5].value.data);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
