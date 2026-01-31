@@ -476,6 +476,117 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Proven Results Section - Show recent wins */}
+      {performance && performance.total_decided > 0 && (
+        <section className="py-16 bg-gradient-to-b from-violet-950/20 to-slate-950 border-t border-slate-800/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-4">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 text-sm font-semibold uppercase tracking-wider">
+                  Verified Results
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+                Our Picks Actually Win
+              </h2>
+              <p className="text-slate-400 max-w-2xl mx-auto">
+                Unlike paid Telegram groups that never deliver, our AI picks are transparent and tracked. 
+                See our real results below.
+              </p>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+              <div className="bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-emerald-400">{performance.won}</p>
+                <p className="text-slate-400 text-sm mt-1">Wins</p>
+              </div>
+              <div className="bg-slate-900/80 border border-red-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-red-400">{performance.lost}</p>
+                <p className="text-slate-400 text-sm mt-1">Losses</p>
+              </div>
+              <div className="bg-slate-900/80 border border-yellow-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-yellow-400">{performance.win_rate}%</p>
+                <p className="text-slate-400 text-sm mt-1">Win Rate</p>
+              </div>
+              <div className={`bg-slate-900/80 border rounded-2xl p-6 text-center ${
+                performance.streak_type === 'won' ? 'border-emerald-500/30' : 'border-red-500/30'
+              }`}>
+                <p className={`text-4xl font-black ${
+                  performance.streak_type === 'won' ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {performance.current_streak || 0}
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  {performance.streak_type === 'won' ? '🔥 Win Streak' : 'Current Streak'}
+                </p>
+              </div>
+            </div>
+
+            {/* Recent Results */}
+            {performance.recent_results && performance.recent_results.length > 0 && (
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  Recent Pick Results
+                </h3>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {performance.recent_results.map((pick, index) => (
+                    <div 
+                      key={pick.id || index}
+                      className={`rounded-xl p-4 border ${
+                        pick.outcome === 'won' 
+                          ? 'bg-emerald-500/10 border-emerald-500/30' 
+                          : pick.outcome === 'lost'
+                          ? 'bg-red-500/10 border-red-500/30'
+                          : 'bg-yellow-500/10 border-yellow-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getSportEmoji(pick.sport)}</span>
+                          <span className="text-xs text-slate-400 uppercase">{pick.sport}</span>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          pick.outcome === 'won' 
+                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            : pick.outcome === 'lost'
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {pick.outcome === 'won' && '✓ '}{pick.outcome.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-white font-semibold text-sm">{pick.title}</p>
+                      <div className="flex items-center justify-between mt-2 text-xs">
+                        <span className="text-slate-400">Predicted: {pick.win_probability}%</span>
+                        <span className="text-slate-400">{pick.odds}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="text-center mt-10">
+              <p className="text-slate-400 mb-4">
+                Stop losing money on fake "expert" picks. Try our AI-powered analysis.
+              </p>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-emerald-500/25"
+                onClick={() => navigate('/auth')}
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Start Winning - 5 Free Analyses
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features Section */}
       <section className="py-20 bg-slate-950/50 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
