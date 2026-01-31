@@ -1728,6 +1728,12 @@ async def admin_get_picks_performance(admin_user: dict = Depends(get_admin_user)
 async def get_public_picks_performance():
     """Get public performance stats for daily picks (for landing page)"""
     
+    # Auto-resolve any pending picks before fetching stats
+    try:
+        await auto_resolve_pick_outcomes()
+    except Exception as e:
+        logging.warning(f"Auto-resolve failed in picks-performance: {e}")
+    
     won_picks = await db.daily_picks.count_documents({"outcome": "won"})
     lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
     push_picks = await db.daily_picks.count_documents({"outcome": "push"})
