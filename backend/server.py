@@ -1730,15 +1730,43 @@ async def get_public_picks_performance():
     
     won_picks = await db.daily_picks.count_documents({"outcome": "won"})
     lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
+    push_picks = await db.daily_picks.count_documents({"outcome": "push"})
     
     decided_picks = won_picks + lost_picks
     win_rate = round((won_picks / decided_picks * 100), 1) if decided_picks > 0 else 0
     
+    # Get recent completed picks (last 7 with outcomes) for display
+    recent_results = await db.daily_picks.find(
+        {"outcome": {"$in": ["won", "lost", "push"]}},
+        {"_id": 0, "id": 1, "title": 1, "sport": 1, "win_probability": 1, "outcome": 1, "odds": 1, "created_at": 1}
+    ).sort("outcome_updated_at", -1).limit(6).to_list(6)
+    
+    # Calculate streak
+    all_outcomes = await db.daily_picks.find(
+        {"outcome": {"$in": ["won", "lost"]}},
+        {"_id": 0, "outcome": 1}
+    ).sort("outcome_updated_at", -1).to_list(50)
+    
+    current_streak = 0
+    streak_type = None
+    for pick in all_outcomes:
+        if streak_type is None:
+            streak_type = pick['outcome']
+            current_streak = 1
+        elif pick['outcome'] == streak_type:
+            current_streak += 1
+        else:
+            break
+    
     return {
         "won": won_picks,
         "lost": lost_picks,
+        "push": push_picks,
         "win_rate": win_rate,
-        "total_decided": decided_picks
+        "total_decided": decided_picks,
+        "current_streak": current_streak,
+        "streak_type": streak_type,
+        "recent_results": recent_results
     }
 
 
