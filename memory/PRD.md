@@ -173,6 +173,29 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
    - Highlights DraftKings, FanDuel, Hard Rock support
    - Full sportsbook badges: DraftKings, FanDuel, Hard Rock, BetMGM, Caesars, + Any App
 
+7. **Daily Picks Auto-Generation** ✅
+   - AI automatically generates daily picks using real-time odds data
+   - Admin can manually trigger new pick generation via "Generate New Picks" button
+   - Uses The Odds API + GPT-4o for intelligent pick selection
+
+8. **Picks Performance Tracking** ✅
+   - Admin can mark picks as Won/Lost/Push with timestamp tracking
+   - Performance stats in admin dashboard: Win Rate, Streak, Total Decided
+   - Public API endpoint `/api/picks-performance` for displaying results
+
+9. **"Proven Results" Landing Page Section** ✅
+   - "VERIFIED RESULTS" badge with "Our Picks Actually Win" headline
+   - Stats row showing: Wins, Losses, Win Rate, Current Streak
+   - Recent Pick Results grid displaying last 5 decided picks
+   - Color-coded outcome badges (green WON, red LOST, yellow PUSH)
+   - Sport emojis and odds displayed per pick
+   - Strong CTA: "Start Winning - 5 Free Analyses"
+
+10. **Deployment Fixes** ✅
+    - bcrypt pinned to v4.0.1 for passlib compatibility
+    - Added /health and /api/health endpoints
+    - Key-protected admin reset endpoints for live database initialization
+
 ---
 
-*Last Updated: January 9, 2026*
+*Last Updated: January 31, 2026*
