@@ -196,6 +196,15 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Added /health and /api/health endpoints
     - Key-protected admin reset endpoints for live database initialization
 
+11. **Auto-Resolution of Pick Outcomes** ✅
+    - Automatic outcome tracking based on completed game scores from The Odds API
+    - Background job runs every 2 hours to check for completed games
+    - Matches picks to games using team names and sport
+    - Determines Won/Lost/Push based on actual scores vs pick (spread or moneyline)
+    - Admin "Auto-Resolve" button for manual triggering
+    - Runs on server startup to catch any recent games
+    - No more manual tracking needed - fully automated!
+
 ---
 
 *Last Updated: January 31, 2026*
