@@ -998,7 +998,72 @@ const Admin = () => {
 
       {/* Daily Picks Tab Content */}
       {activeTab === 'dailypicks' && (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Performance Stats Cards */}
+          {picksPerformance && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Card className="glass border-emerald-500/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-emerald-400">{picksPerformance.won}</p>
+                    <p className="text-slate-400 text-xs">Wins</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="glass border-red-500/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <X className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-red-400">{picksPerformance.lost}</p>
+                    <p className="text-slate-400 text-xs">Losses</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="glass border-yellow-500/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-yellow-400">{picksPerformance.win_rate}%</p>
+                    <p className="text-slate-400 text-xs">Win Rate</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="glass border-slate-500/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-slate-500/20 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-slate-300">{picksPerformance.pending}</p>
+                    <p className="text-slate-400 text-xs">Pending</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className={`glass p-4 ${picksPerformance.streak_type === 'won' ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${picksPerformance.streak_type === 'won' ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
+                    <Flame className={`w-5 h-5 ${picksPerformance.streak_type === 'won' ? 'text-emerald-400' : 'text-red-400'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-2xl font-bold ${picksPerformance.streak_type === 'won' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {picksPerformance.current_streak || 0}
+                    </p>
+                    <p className="text-slate-400 text-xs">
+                      {picksPerformance.streak_type === 'won' ? 'Win Streak' : picksPerformance.streak_type === 'lost' ? 'Loss Streak' : 'Streak'}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
           <Card className="glass border-yellow-500/20 overflow-hidden">
             <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
