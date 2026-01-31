@@ -1997,6 +1997,301 @@ async def cron_generate_picks(request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ===== AUTO-RESOLVE PICK OUTCOMES =====
+
+async def fetch_completed_scores():
+    """Fetch completed game scores from The Odds API"""
+    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+    if not ODDS_API_KEY:
+        logging.warning("No ODDS_API_KEY found for score fetching")
+        return []
+    
+    sports = [
+        'americanfootball_nfl',
+        'basketball_nba', 
+        'baseball_mlb',
+        'icehockey_nhl'
+    ]
+    
+    all_scores = []
+    
+    async with aiohttp.ClientSession() as session:
+        for sport in sports:
+            try:
+                url = f"https://api.the-odds-api.com/v4/sports/{sport}/scores"
+                params = {
+                    'apiKey': ODDS_API_KEY,
+                    'daysFrom': 3  # Look back 3 days for completed games
+                }
+                
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as response:
+                    if response.status == 200:
+                        games = await response.json()
+                        for game in games:
+                            if game.get('completed', False):
+                                game['sport_key'] = sport
+                                all_scores.append(game)
+            except Exception as e:
+                logging.error(f"Error fetching {sport} scores: {e}")
+                continue
+    
+    return all_scores
+
+
+def normalize_team_name(name: str) -> str:
+    """Normalize team name for matching"""
+    if not name:
+        return ""
+    # Remove common suffixes and lowercase
+    name = name.lower().strip()
+    # Remove city prefixes for better matching
+    name = re.sub(r'^(los angeles|la|new york|ny|san francisco|sf|golden state|gs)\s+', '', name)
+    # Remove common words
+    name = re.sub(r'\s+(fc|sc|city|united)$', '', name)
+    return name
+
+
+def parse_pick_details(title: str):
+    """Parse pick title to extract team, bet type, and line"""
+    title_lower = title.lower()
+    
+    # Try to match spread pattern: "Team -3.5 vs Opponent" or "Team +3.5 vs Opponent"
+    spread_match = re.search(r'(.+?)\s+([\+\-]\d+\.?\d*)\s+vs\s+(.+)', title_lower)
+    if spread_match:
+        team = spread_match.group(1).strip()
+        spread = float(spread_match.group(2))
+        opponent = spread_match.group(3).strip()
+        return {'type': 'spread', 'team': team, 'spread': spread, 'opponent': opponent}
+    
+    # Try to match moneyline pattern: "Team ML vs Opponent"
+    ml_match = re.search(r'(.+?)\s+ml\s+vs\s+(.+)', title_lower)
+    if ml_match:
+        team = ml_match.group(1).strip()
+        opponent = ml_match.group(2).strip()
+        return {'type': 'moneyline', 'team': team, 'opponent': opponent}
+    
+    # Try simple "Team vs Opponent" pattern
+    vs_match = re.search(r'(.+?)\s+vs\s+(.+)', title_lower)
+    if vs_match:
+        team = vs_match.group(1).strip()
+        opponent = vs_match.group(2).strip()
+        return {'type': 'moneyline', 'team': team, 'opponent': opponent}
+    
+    return None
+
+
+def determine_outcome(pick_details: dict, game_scores: dict) -> str:
+    """Determine if a pick won, lost, or pushed based on game scores"""
+    if not pick_details or not game_scores:
+        return None
+    
+    home_team = normalize_team_name(game_scores.get('home_team', ''))
+    away_team = normalize_team_name(game_scores.get('away_team', ''))
+    
+    # Get scores
+    scores = game_scores.get('scores', [])
+    if not scores or len(scores) < 2:
+        return None
+    
+    home_score = None
+    away_score = None
+    for score in scores:
+        if normalize_team_name(score.get('name', '')) == home_team:
+            home_score = int(score.get('score', 0))
+        elif normalize_team_name(score.get('name', '')) == away_team:
+            away_score = int(score.get('score', 0))
+    
+    if home_score is None or away_score is None:
+        return None
+    
+    # Determine which team we picked
+    pick_team = normalize_team_name(pick_details.get('team', ''))
+    
+    # Match pick team to home or away
+    picked_home = pick_team in home_team or home_team in pick_team
+    picked_away = pick_team in away_team or away_team in pick_team
+    
+    if not picked_home and not picked_away:
+        # Try matching with just key words
+        for word in pick_team.split():
+            if len(word) > 3:
+                if word in home_team:
+                    picked_home = True
+                    break
+                elif word in away_team:
+                    picked_away = True
+                    break
+    
+    if not picked_home and not picked_away:
+        return None  # Can't determine which team was picked
+    
+    picked_score = home_score if picked_home else away_score
+    opponent_score = away_score if picked_home else home_score
+    
+    bet_type = pick_details.get('type', 'moneyline')
+    
+    if bet_type == 'spread':
+        spread = pick_details.get('spread', 0)
+        # Add spread to picked team's score
+        adjusted_score = picked_score + spread
+        
+        if adjusted_score > opponent_score:
+            return 'won'
+        elif adjusted_score < opponent_score:
+            return 'lost'
+        else:
+            return 'push'
+    
+    elif bet_type == 'moneyline':
+        if picked_score > opponent_score:
+            return 'won'
+        elif picked_score < opponent_score:
+            return 'lost'
+        else:
+            return 'push'
+    
+    return None
+
+
+def match_pick_to_game(pick: dict, completed_games: list) -> dict:
+    """Find the matching completed game for a pick"""
+    pick_details = parse_pick_details(pick.get('title', ''))
+    if not pick_details:
+        return None
+    
+    pick_team = normalize_team_name(pick_details.get('team', ''))
+    pick_opponent = normalize_team_name(pick_details.get('opponent', ''))
+    pick_sport = pick.get('sport', '').lower()
+    
+    # Map sport names to API sport keys
+    sport_map = {
+        'nfl': 'americanfootball_nfl',
+        'nba': 'basketball_nba',
+        'mlb': 'baseball_mlb',
+        'nhl': 'icehockey_nhl',
+        'football': 'americanfootball_nfl',
+        'basketball': 'basketball_nba',
+        'baseball': 'baseball_mlb',
+        'hockey': 'icehockey_nhl'
+    }
+    
+    expected_sport = sport_map.get(pick_sport, '')
+    
+    for game in completed_games:
+        game_sport = game.get('sport_key', '')
+        
+        # Check sport match (if we know the sport)
+        if expected_sport and game_sport != expected_sport:
+            continue
+        
+        home_team = normalize_team_name(game.get('home_team', ''))
+        away_team = normalize_team_name(game.get('away_team', ''))
+        
+        # Check if pick team matches either home or away
+        team_match = (
+            pick_team in home_team or home_team in pick_team or
+            pick_team in away_team or away_team in pick_team
+        )
+        
+        # Also check opponent
+        opponent_match = (
+            pick_opponent in home_team or home_team in pick_opponent or
+            pick_opponent in away_team or away_team in pick_opponent
+        )
+        
+        # If both team and opponent match, we found our game
+        if team_match and opponent_match:
+            return game
+        
+        # If just team matches strongly, also consider it
+        if team_match:
+            # Check for strong match (team name is substantial part)
+            for word in pick_team.split():
+                if len(word) > 4 and (word in home_team or word in away_team):
+                    return game
+    
+    return None
+
+
+async def auto_resolve_pick_outcomes():
+    """Automatically resolve pending pick outcomes based on completed game scores"""
+    try:
+        # Get pending picks (no outcome set or outcome is 'pending')
+        pending_picks = await db.daily_picks.find({
+            "$or": [
+                {"outcome": {"$exists": False}},
+                {"outcome": None},
+                {"outcome": "pending"}
+            ]
+        }, {"_id": 0}).to_list(100)
+        
+        if not pending_picks:
+            return {"message": "No pending picks to resolve", "resolved": 0}
+        
+        # Fetch completed game scores
+        completed_games = await fetch_completed_scores()
+        if not completed_games:
+            return {"message": "No completed game scores available", "resolved": 0}
+        
+        resolved_count = 0
+        resolved_picks = []
+        
+        for pick in pending_picks:
+            # Try to match pick to a completed game
+            matching_game = match_pick_to_game(pick, completed_games)
+            
+            if matching_game:
+                # Parse pick details
+                pick_details = parse_pick_details(pick.get('title', ''))
+                
+                if pick_details:
+                    # Determine outcome
+                    outcome = determine_outcome(pick_details, matching_game)
+                    
+                    if outcome:
+                        # Update the pick with the outcome
+                        await db.daily_picks.update_one(
+                            {"id": pick['id']},
+                            {"$set": {
+                                "outcome": outcome,
+                                "outcome_updated_at": datetime.now(timezone.utc).isoformat(),
+                                "outcome_updated_by": "Auto-Resolver",
+                                "matched_game": {
+                                    "home_team": matching_game.get('home_team'),
+                                    "away_team": matching_game.get('away_team'),
+                                    "scores": matching_game.get('scores'),
+                                    "completed_at": matching_game.get('commence_time')
+                                }
+                            }}
+                        )
+                        resolved_count += 1
+                        resolved_picks.append({
+                            "title": pick.get('title'),
+                            "outcome": outcome,
+                            "game": f"{matching_game.get('away_team')} @ {matching_game.get('home_team')}"
+                        })
+                        logging.info(f"Auto-resolved pick '{pick.get('title')}' as {outcome}")
+        
+        return {
+            "message": f"Auto-resolved {resolved_count} picks",
+            "resolved": resolved_count,
+            "picks": resolved_picks
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in auto_resolve_pick_outcomes: {e}")
+        return {"message": f"Error: {str(e)}", "resolved": 0}
+
+
+@api_router.post("/admin/auto-resolve-picks")
+async def admin_trigger_auto_resolve(
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Manually trigger auto-resolution of pick outcomes (admin only)"""
+    result = await auto_resolve_pick_outcomes()
+    return result
+
+
 # Auto-check and generate picks when fetching daily picks
 @api_router.get("/daily-picks")
 async def get_daily_picks_with_auto_generate():
