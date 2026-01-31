@@ -19,6 +19,7 @@ const Admin = () => {
   const [topBets, setTopBets] = useState([]);
   const [topBetsStats, setTopBetsStats] = useState(null);
   const [dailyPicks, setDailyPicks] = useState([]);
+  const [picksPerformance, setPicksPerformance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users'); // 'users', 'topbets', or 'dailypicks'
   const [selectedUser, setSelectedUser] = useState(null);
