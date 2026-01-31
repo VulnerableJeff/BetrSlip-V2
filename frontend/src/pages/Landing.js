@@ -1,9 +1,39 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown } from 'lucide-react';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [performance, setPerformance] = useState(null);
+
+  useEffect(() => {
+    fetchPerformance();
+  }, []);
+
+  const fetchPerformance = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/picks-performance`);
+      setPerformance(response.data);
+    } catch (error) {
+      console.error('Error fetching performance:', error);
+    }
+  };
+
+  const getSportEmoji = (sport) => {
+    const emojis = {
+      'NFL': '🏈',
+      'NBA': '🏀',
+      'MLB': '⚾',
+      'NHL': '🏒',
+      'Soccer': '⚽',
+      'UFC': '🥊',
+    };
+    return emojis[sport] || '🎯';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-violet-950/20 to-slate-950">
