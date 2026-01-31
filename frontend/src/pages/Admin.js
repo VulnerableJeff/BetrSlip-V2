@@ -1134,6 +1134,16 @@ const Admin = () => {
                       }`}>{pick.win_probability}%</p>
                       <p className="text-slate-400 text-xs">Odds: {pick.odds}</p>
                       <p className="text-violet-400 text-xs">Conf: {pick.confidence}/10</p>
+                      {/* Outcome Badge */}
+                      {pick.outcome && pick.outcome !== 'pending' && (
+                        <p className={`mt-1 px-2 py-0.5 rounded-full text-xs font-bold inline-block ${
+                          pick.outcome === 'won' ? 'bg-emerald-500/20 text-emerald-400' :
+                          pick.outcome === 'lost' ? 'bg-red-500/20 text-red-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {pick.outcome.toUpperCase()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <Button
@@ -1153,6 +1163,42 @@ const Admin = () => {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                  </div>
+                  
+                  {/* Outcome Buttons */}
+                  <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-2">
+                    <span className="text-slate-400 text-xs mr-2">Mark Result:</span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdateOutcome(pick.id, 'won')}
+                      className={`${pick.outcome === 'won' ? 'bg-emerald-500 text-white' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'}`}
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" /> Won
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdateOutcome(pick.id, 'lost')}
+                      className={`${pick.outcome === 'lost' ? 'bg-red-500 text-white' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                    >
+                      <X className="w-3 h-3 mr-1" /> Lost
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdateOutcome(pick.id, 'push')}
+                      className={`${pick.outcome === 'push' ? 'bg-yellow-500 text-black' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'}`}
+                    >
+                      Push
+                    </Button>
+                    {pick.outcome && pick.outcome !== 'pending' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUpdateOutcome(pick.id, 'pending')}
+                        className="text-slate-400 hover:text-slate-300"
+                      >
+                        Reset
+                      </Button>
+                    )}
                   </div>
                   
                   {/* Reasoning Preview */}
