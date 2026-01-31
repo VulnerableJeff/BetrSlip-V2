@@ -34,6 +34,7 @@ const Admin = () => {
   const [expandedUser, setExpandedUser] = useState(null);
   const [expandedBet, setExpandedBet] = useState(null);
   const [generatingPicks, setGeneratingPicks] = useState(false);
+  const [autoResolving, setAutoResolving] = useState(false);
   
   // Daily Pick Form State
   const [pickForm, setPickForm] = useState({
