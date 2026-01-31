@@ -320,6 +320,29 @@ const Admin = () => {
     }
   };
 
+  const handleAutoResolve = async () => {
+    setAutoResolving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/auto-resolve-picks`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.resolved > 0) {
+        toast.success(`Auto-resolved ${response.data.resolved} pick(s)!`);
+        fetchData();
+      } else {
+        toast.info(response.data.message || 'No picks to auto-resolve');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error auto-resolving picks');
+    } finally {
+      setAutoResolving(false);
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
