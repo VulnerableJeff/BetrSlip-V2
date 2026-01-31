@@ -1096,6 +1096,24 @@ const Admin = () => {
               </h2>
               <div className="flex items-center gap-2">
                 <Button
+                  onClick={handleAutoResolve}
+                  disabled={autoResolving}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold"
+                  data-testid="auto-resolve-btn"
+                >
+                  {autoResolving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Resolving...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Auto-Resolve
+                    </>
+                  )}
+                </Button>
+                <Button
                   onClick={handleGeneratePicks}
                   disabled={generatingPicks}
                   className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-semibold"
