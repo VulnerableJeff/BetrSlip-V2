@@ -2354,6 +2354,48 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Background task for auto-resolving picks
+import asyncio
+
+async def periodic_auto_resolve():
+    """Background task to auto-resolve pick outcomes every 2 hours"""
+    while True:
+        try:
+            await asyncio.sleep(7200)  # Wait 2 hours
+            logging.info("Running scheduled auto-resolution of pick outcomes...")
+            result = await auto_resolve_pick_outcomes()
+            logging.info(f"Auto-resolution result: {result}")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.error(f"Error in periodic_auto_resolve: {e}")
+            await asyncio.sleep(300)  # Wait 5 min on error before retry
+
+_background_tasks = []
+
+@app.on_event("startup")
+async def startup_event():
+    """Run on startup - initialize background tasks"""
+    # Start the periodic auto-resolve task
+    task = asyncio.create_task(periodic_auto_resolve())
+    _background_tasks.append(task)
+    logging.info("Started periodic auto-resolution background task")
+    
+    # Run initial auto-resolution on startup
+    try:
+        logging.info("Running initial auto-resolution on startup...")
+        result = await auto_resolve_pick_outcomes()
+        logging.info(f"Initial auto-resolution: {result}")
+    except Exception as e:
+        logging.warning(f"Initial auto-resolution failed: {e}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    # Cancel background tasks
+    for task in _background_tasks:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
     client.close()
