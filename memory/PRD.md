@@ -227,6 +227,14 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Cleaner separation of concerns
     - More maintainable codebase
 
+15. **Multiple Payment Methods** ✅ (Feb 3, 2026)
+    - **Stripe** (Card): Existing recurring subscription ($5/month)
+    - **PayPal**: One-time $5 payment with instant activation
+    - **CashApp**: Manual payment to $BetrSlip, admin approval required
+    - New subscription modal with payment method selector (Card/PayPal/CashApp tabs)
+    - Admin CashApp management tab to approve/reject pending requests
+    - Full transaction tracking for all payment methods
+
 ---
 
 *Last Updated: January 31, 2026*
