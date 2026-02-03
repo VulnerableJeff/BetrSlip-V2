@@ -124,14 +124,6 @@ async def get_live_games():
             "api_detected": len(api_games)
         }
     }
-                                    })
-        except Exception as e:
-            logger.warning(f"Error fetching live scores: {e}")
-    
-    # Combine admin streams with API games
-    all_games = streams + live_from_api
-    
-    return {"games": all_games, "total": len(all_games)}
 
 
 class LiveStreamCreate(BaseModel):
