@@ -245,6 +245,16 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Created services module for business logic
     - Backwards-compatible API endpoints maintained
 
+17. **Live Game Streaming** ✅ (Feb 3, 2026)
+    - Live Games section on Dashboard showing currently live games
+    - Real-time scores from The Odds API
+    - Admin can add custom stream links (embed or external URLs)
+    - **Free users**: 5-second ad before stream loads (promotes Pro)
+    - **Pro users**: Instant ad-free streaming experience
+    - Watch button opens video player modal
+    - Admin "Live Streams" tab to manage stream links
+    - Sport emojis and live score display
+
 ---
 
 *Last Updated: January 31, 2026*
