@@ -255,6 +255,34 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Admin "Live Streams" tab to manage stream links
     - Sport emojis and live score display
 
+18. **Enhanced Stream Sources** ✅ (Feb 3, 2026)
+    - New `StreamSourcesService` for aggregating streaming sources
+    - Network badges (ESPN, CBS, TNT, etc.) displayed on games
+    - Multiple stream source suggestions per game
+    - Official streaming links for each sport:
+      - NBA: NBA League Pass, ESPN, TNT
+      - NFL: NFL+, ESPN, CBS, FOX
+      - NHL: ESPN+, NHL.tv
+      - MLB: MLB.tv, ESPN
+    - Automatic detection of live games from API
+    - Admin streams can override/supplement API games
+
+19. **Enhanced Sports Intelligence for AI** ✅ (Feb 3, 2026)
+    - New `EnhancedSportsIntelligence` service with comprehensive data:
+      - Team recent form (last 10 games)
+      - Home/away performance splits
+      - Against-the-spread (ATS) records
+      - Rest days analysis
+      - Head-to-head historical matchups
+      - Weather data for outdoor sports (NFL, MLB)
+      - Public betting percentages
+      - Line movement tracking
+      - Key statistical matchups
+    - AI prompt now includes ALL intelligence data
+    - Picks include matchup data, weather impact, public betting %
+    - Data caching for performance (1 hour TTL)
+    - Version upgraded to v3_enhanced_intel
+
 ---
 
 *Last Updated: January 31, 2026*
