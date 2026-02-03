@@ -1,3 +1,7 @@
+"""
+BetrSlip API - Main Application Entry Point
+Refactored modular architecture
+"""
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
@@ -6,23 +10,29 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-import jwt
-from passlib.context import CryptContext
 import base64
 import aiohttp
 import json
 import re
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import asyncio
 
+# Load environment
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
-# Import sports data service
-import sys
-sys.path.append(os.path.dirname(__file__))
+# Import route modules
+from routes.deps import db, client, get_current_user, get_admin_user, security
+from routes import auth, subscriptions, picks
+
+# Import services
+from services.smart_picks_service import SmartPicksService
+from services.auto_resolver_service import AutoResolverService
+
+# Import existing helpers
 from sports_data_service import get_enhanced_context_for_analysis, SportsDataService
 from injury_weather_service import get_enhanced_game_context
 from admin_subscription import (
@@ -32,1476 +42,209 @@ from admin_subscription import (
     create_subscription_record, update_subscription_status,
     FREE_ANALYSIS_LIMIT, SUBSCRIPTION_PRICE, ADMIN_EMAIL
 )
-from services.smart_picks_service import SmartPicksService
-from services.auto_resolver_service import AutoResolverService
 
+# LLM Integration
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'test_database')]
-
-# JWT and password hashing
-JWT_SECRET = os.environ.get('JWT_SECRET', 'your-super-secret-jwt-key-change-in-production')
-JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_HOURS = 24 * 7  # 1 week
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# LLM Configuration
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
-
-# Stripe Configuration
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
-
-# Create the main app without a prefix
-app = FastAPI()
-
-# Create a router with the /api prefix
+# App setup
+app = FastAPI(title="BetrSlip API", version="2.0.0")
 api_router = APIRouter(prefix="/api")
 
-security = HTTPBearer()
+# Environment variables
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
-# ===== UTILITY FUNCTIONS =====
-def american_to_decimal(american_odds: str) -> float:
-    """Convert American odds to decimal odds"""
-    try:
-        odds = float(american_odds.replace('+', '').replace('-', ''))
-        if american_odds.startswith('-'):
-            return 1 + (100 / odds)
-        else:
-            return 1 + (odds / 100)
-    except:
-        return 2.0  # Default to even odds
-
-def decimal_to_implied_prob(decimal_odds: float) -> float:
-    """Convert decimal odds to implied probability"""
-    return (1 / decimal_odds) * 100
-
-def calculate_kelly_criterion(win_prob: float, decimal_odds: float) -> float:
-    """
-    Calculate Kelly Criterion percentage
-    Kelly % = (bp - q) / b
-    where b = decimal_odds - 1, p = win probability, q = 1 - p
-    """
-    b = decimal_odds - 1
-    p = win_prob / 100
-    q = 1 - p
-    kelly = (b * p - q) / b
-    # Cap at 25% max for safety (fractional Kelly)
-    return max(0, min(kelly * 100, 25))
-
-def calculate_expected_value(win_prob: float, decimal_odds: float, stake: float = 100) -> float:
-    """
-    Calculate Expected Value
-    EV = (win_prob * profit) - (loss_prob * stake)
-    """
-    p = win_prob / 100
-    profit = stake * (decimal_odds - 1)
-    ev = (p * profit) - ((1 - p) * stake)
-    return (ev / stake) * 100  # Return as percentage
-
-def probability_to_american_odds(prob: float) -> str:
-    """Convert probability to American odds format"""
-    if prob >= 50:
-        odds = -(prob / (100 - prob)) * 100
-        return f"{int(odds)}"
-    else:
-        odds = ((100 - prob) / prob) * 100
-        return f"+{int(odds)}"
-
-def get_bet_recommendation(ev: float, kelly: float, confidence: int) -> str:
-    """Determine bet recommendation based on metrics"""
-    if ev > 5 and kelly > 2 and confidence >= 7:
-        return "STRONG BET"
-    elif ev > 0 and kelly > 0:
-        return "BET"
-    elif ev > -2:
-        return "SMALL/SKIP"
-    else:
-        return "PASS"
+# ===== INCLUDE ROUTE MODULES =====
+api_router.include_router(auth.router)
+api_router.include_router(subscriptions.router)
+api_router.include_router(picks.router)
 
 
-# ===== MODELS =====
-class User(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    email: EmailStr
-    password_hash: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# ===== HEALTH ENDPOINTS =====
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "betrslip-api"}
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
+@api_router.get("/health")
+async def api_health_check():
+    return {"status": "healthy", "service": "betrslip-api"}
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
-class UserResponse(BaseModel):
+# ===== BET SLIP ANALYSIS =====
+class AnalysisResult(BaseModel):
     id: str
-    email: str
-    created_at: datetime
+    image_url: str
+    analysis: dict
+    created_at: str
 
-class TokenResponse(BaseModel):
-    token: str
-    user: UserResponse
-
-class BetAnalysis(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    image_data: str  # base64 encoded
-    win_probability: float
-    analysis_text: str
-    bet_details: Optional[str] = None
-    individual_bets: Optional[List[dict]] = None
-    risk_factors: Optional[List[str]] = None
-    positive_factors: Optional[List[str]] = None
-    # Advanced Analytics
-    expected_value: Optional[float] = None
-    kelly_percentage: Optional[float] = None
-    true_odds: Optional[str] = None
-    recommendation: Optional[str] = None
-    confidence_score: Optional[int] = None
-    parlay_vs_straight: Optional[dict] = None
-    estimated_roi: Optional[float] = None
-    # Real-Time Intelligence
-    injuries_data: Optional[List[dict]] = None
-    weather_data: Optional[dict] = None
-    team_form_data: Optional[List[dict]] = None
-    # Game Status
-    games_status: Optional[dict] = None  # {"has_expired": bool, "expired_games": [], "upcoming_games": []}
-    # Historical Tracking
-    actual_outcome: Optional[str] = None  # "won", "lost", "push", "pending"
-    outcome_marked_at: Optional[datetime] = None
-    stake_amount: Optional[float] = None  # User's actual stake
-    payout_amount: Optional[float] = None  # Actual payout
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class BetImprovementSuggestion(BaseModel):
-    """Suggestions for improving low probability bets"""
-    type: str  # "remove_leg", "bet_individually", "alternative"
-    title: str
-    description: str
-    impact: Optional[str] = None  # e.g., "Increases probability from 12% to 35%"
-    new_probability: Optional[float] = None
-
-class BetAnalysisResponse(BaseModel):
-    id: str
-    win_probability: float
-    analysis_text: str
-    bet_details: Optional[str]
-    individual_bets: Optional[List[dict]] = None
-    risk_factors: Optional[List[str]] = None
-    positive_factors: Optional[List[str]] = None
-    # Advanced Analytics
-    expected_value: Optional[float] = None  # EV percentage
-    kelly_percentage: Optional[float] = None  # Kelly stake percentage
-    true_odds: Optional[str] = None  # What odds should be
-    recommendation: Optional[str] = None  # BET/PASS/SMALL
-    confidence_score: Optional[int] = None  # 1-10 scale
-    parlay_vs_straight: Optional[dict] = None  # Comparison if parlay
-    estimated_roi: Optional[float] = None  # Expected ROI
-    # Real-Time Intelligence
-    injuries_data: Optional[List[dict]] = None  # Injury reports
-    weather_data: Optional[dict] = None  # Weather conditions
-    team_form_data: Optional[List[dict]] = None  # Team recent form
-    # Game Status
-    games_status: Optional[dict] = None  # Expired/upcoming game info
-    # Improvement Suggestions (for low probability bets)
-    improvement_suggestions: Optional[List[dict]] = None  # Smart suggestions to improve odds
-    risk_level: Optional[str] = None  # "low", "medium", "high", "extreme"
-    educational_tips: Optional[List[str]] = None  # Educational content
-    created_at: datetime
-
-class BetHistoryResponse(BaseModel):
-    id: str
-    win_probability: float
-    analysis_text: str
-    bet_details: Optional[str]
-    individual_bets: Optional[List[dict]] = None
-    risk_factors: Optional[List[str]] = None
-    positive_factors: Optional[List[str]] = None
-    expected_value: Optional[float] = None
-    kelly_percentage: Optional[float] = None
-    recommendation: Optional[str] = None
-    confidence_score: Optional[int] = None
-    image_data: str
-    created_at: datetime
-
-
-# ===== AUTH UTILITIES =====
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_jwt_token(user_id: str, email: str) -> str:
-    expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
-    payload = {
-        'user_id': user_id,
-        'email': email,
-        'exp': expiration
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
-# ===== AUTH ROUTES =====
-@api_router.post("/auth/signup", response_model=TokenResponse)
-async def signup(user_data: UserCreate):
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data.email}, {"_id": 0})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Create user
-    password_hash = hash_password(user_data.password)
-    user = User(email=user_data.email, password_hash=password_hash)
-    
-    # Save to database
-    user_dict = user.model_dump()
-    user_dict['created_at'] = user_dict['created_at'].isoformat()
-    await db.users.insert_one(user_dict)
-    
-    # Create token
-    token = create_jwt_token(user.id, user.email)
-    
-    user_response = UserResponse(
-        id=user.id,
-        email=user.email,
-        created_at=user.created_at
-    )
-    
-    return TokenResponse(token=token, user=user_response)
-
-@api_router.post("/auth/login", response_model=TokenResponse)
-async def login(user_data: UserLogin):
-    # Find user
-    user_doc = await db.users.find_one({"email": user_data.email}, {"_id": 0})
-    if not user_doc:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Verify password
-    if not verify_password(user_data.password, user_doc['password_hash']):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Create token
-    token = create_jwt_token(user_doc['id'], user_doc['email'])
-    
-    user_response = UserResponse(
-        id=user_doc['id'],
-        email=user_doc['email'],
-        created_at=datetime.fromisoformat(user_doc['created_at']) if isinstance(user_doc['created_at'], str) else user_doc['created_at']
-    )
-    
-    return TokenResponse(token=token, user=user_response)
-
-
-# ===== ADMIN PASSWORD RESET (One-time use after deployment) =====
-class AdminPasswordReset(BaseModel):
-    email: str
-    new_password: str
-    reset_key: str
-
-@api_router.post("/auth/admin-reset")
-async def admin_password_reset(reset_data: AdminPasswordReset):
-    """
-    Reset admin password using a secret key.
-    This is a secure endpoint for resetting admin password after deployment.
-    """
-    # Secret reset key - only works for admin email
-    RESET_KEY = "BetrSlip2026SecureReset"
-    
-    if reset_data.reset_key != RESET_KEY:
-        raise HTTPException(status_code=403, detail="Invalid reset key")
-    
-    if reset_data.email.lower() != ADMIN_EMAIL.lower():
-        raise HTTPException(status_code=403, detail="This endpoint is only for admin password reset")
-    
-    # Find admin user
-    admin_user = await db.users.find_one({"email": reset_data.email.lower()})
-    if not admin_user:
-        # If admin doesn't exist on live site, create them
-        password_hash = hash_password(reset_data.new_password)
-        user = User(email=reset_data.email.lower(), password_hash=password_hash, is_admin=True)
-        user_dict = user.model_dump()
-        user_dict['created_at'] = user_dict['created_at'].isoformat()
-        await db.users.insert_one(user_dict)
-        return {"message": "Admin account created successfully", "success": True}
-    
-    # Update password
-    new_hash = hash_password(reset_data.new_password)
-    await db.users.update_one(
-        {"email": reset_data.email.lower()},
-        {"$set": {"password_hash": new_hash}}
-    )
-    
-    return {"message": "Admin password reset successfully", "success": True}
-
-
-# ===== INITIALIZE SAMPLE DATA (for new deployments) =====
-class InitializeRequest(BaseModel):
-    reset_key: str
-
-@api_router.post("/admin/initialize-picks")
-async def initialize_sample_picks(init_data: InitializeRequest):
-    """
-    Initialize sample daily picks for new deployments.
-    Only works if no picks exist yet.
-    """
-    RESET_KEY = "BetrSlip2026SecureReset"
-    
-    if init_data.reset_key != RESET_KEY:
-        raise HTTPException(status_code=403, detail="Invalid reset key")
-    
-    # Check if picks already exist
-    existing_count = await db.daily_picks.count_documents({})
-    if existing_count > 0:
-        return {"message": f"Picks already exist ({existing_count} picks)", "initialized": False}
-    
-    # Create sample picks
-    sample_picks = [
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Chiefs -3.5 vs Raiders",
-            "description": "Kansas City dominates at home against struggling Raiders defense",
-            "win_probability": 68.0,
-            "odds": "-110",
-            "sport": "NFL",
-            "confidence": 8,
-            "reasoning": ["Chiefs 8-2 ATS at home this season", "Raiders allowing 28+ points last 4 games", "Mahomes excellent at Arrowhead"],
-            "risk_factors": ["Raiders covered in 2 of last 3 vs Chiefs", "Weather could be a factor"],
-            "game_time": "Sunday 4:25 PM ET",
-            "created_by": ADMIN_EMAIL,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_active": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Celtics -6.5 vs Hornets",
-            "description": "Boston coming off rest, Hornets on 2nd of back-to-back",
-            "win_probability": 72.0,
-            "odds": "-108",
-            "sport": "NBA",
-            "confidence": 8,
-            "reasoning": ["Celtics 12-3 ATS at home", "Hornets 3-9 on back-to-backs", "Boston averaging 118 PPG at home"],
-            "risk_factors": ["Large spread could be trap"],
-            "game_time": "Tonight 7:30 PM ET",
-            "created_by": ADMIN_EMAIL,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_active": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Dodgers ML vs Padres",
-            "description": "Los Angeles with their ace on the mound at home",
-            "win_probability": 64.0,
-            "odds": "-145",
-            "sport": "MLB",
-            "confidence": 7,
-            "reasoning": ["Dodgers ace has 2.15 ERA at home", "Padres hitting .220 vs lefties", "Dodgers 7-2 in last 9 home games"],
-            "risk_factors": ["Heavy favorite, reduced value", "Padres have talented lineup"],
-            "game_time": "Tomorrow 10:10 PM ET",
-            "created_by": ADMIN_EMAIL,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_active": True
-        }
-    ]
-    
-    await db.daily_picks.insert_many(sample_picks)
-    
-    return {"message": f"Initialized {len(sample_picks)} sample picks", "initialized": True, "picks_count": len(sample_picks)}
-
-
-# ===== IMPROVEMENT SUGGESTIONS HELPER =====
-def generate_improvement_suggestions(
-    win_probability: float,
-    individual_bets: List[dict],
-    expected_value: float,
-    kelly_percentage: float,
-    bet_type: str = "parlay"
-) -> dict:
-    """
-    Generate smart suggestions for improving low probability bets.
-    Returns suggestions, risk level, and educational tips.
-    """
-    suggestions = []
-    educational_tips = []
-    
-    # Determine risk level
-    if win_probability >= 50:
-        risk_level = "low"
-    elif win_probability >= 35:
-        risk_level = "medium"
-    elif win_probability >= 20:
-        risk_level = "high"
-    else:
-        risk_level = "extreme"
-    
-    num_legs = len(individual_bets) if individual_bets else 0
-    
-    # === SMART SUGGESTIONS ===
-    
-    # 1. Find the weakest leg(s) to remove
-    if individual_bets and num_legs >= 2:
-        # Sort bets by probability (lowest first)
-        sorted_bets = sorted(
-            [(i, bet) for i, bet in enumerate(individual_bets) if bet.get('individual_probability')],
-            key=lambda x: x[1].get('individual_probability', 50)
-        )
-        
-        if sorted_bets and len(sorted_bets) >= 2:
-            weakest_idx, weakest_bet = sorted_bets[0]
-            weakest_prob = weakest_bet.get('individual_probability', 50)
-            
-            # Calculate new probability without weakest leg
-            remaining_probs = [
-                bet.get('individual_probability', 50) / 100 
-                for i, bet in enumerate(individual_bets) 
-                if i != weakest_idx and bet.get('individual_probability')
-            ]
-            
-            if remaining_probs:
-                new_prob = 1.0
-                for p in remaining_probs:
-                    new_prob *= p
-                new_prob *= 100
-                
-                if new_prob > win_probability * 1.3:  # At least 30% improvement
-                    suggestions.append({
-                        "type": "remove_leg",
-                        "title": f"🎯 Remove weakest leg",
-                        "description": f"Remove \"{weakest_bet.get('description', 'Leg ' + str(weakest_idx + 1))}\" ({weakest_prob:.0f}% chance)",
-                        "impact": f"Increases probability from {win_probability:.1f}% → {new_prob:.1f}%",
-                        "new_probability": round(new_prob, 1),
-                        "remove_index": weakest_idx
-                    })
-    
-    # 2. Suggest betting individually for parlays
-    if num_legs >= 2 and bet_type.lower() in ['parlay', 'same game parlay', 'sgp']:
-        # Calculate average individual probability
-        avg_individual = sum(
-            bet.get('individual_probability', 50) 
-            for bet in individual_bets
-        ) / num_legs if num_legs > 0 else 50
-        
-        suggestions.append({
-            "type": "bet_individually",
-            "title": "📊 Bet legs individually",
-            "description": f"Instead of a {num_legs}-leg parlay, bet each leg separately",
-            "impact": f"Average win rate: {avg_individual:.0f}% per bet vs {win_probability:.1f}% combined",
-            "new_probability": round(avg_individual, 1)
-        })
-    
-    # 3. Find best 2-leg combo if 3+ legs
-    if num_legs >= 3 and individual_bets:
-        best_combo_prob = 0
-        best_combo = None
-        
-        for i, bet1 in enumerate(individual_bets):
-            for j, bet2 in enumerate(individual_bets):
-                if i < j:
-                    p1 = bet1.get('individual_probability', 50) / 100
-                    p2 = bet2.get('individual_probability', 50) / 100
-                    combo_prob = p1 * p2 * 100
-                    
-                    if combo_prob > best_combo_prob:
-                        best_combo_prob = combo_prob
-                        best_combo = (bet1, bet2)
-        
-        if best_combo and best_combo_prob > win_probability * 1.5:
-            suggestions.append({
-                "type": "alternative",
-                "title": "💡 Try this 2-leg combo instead",
-                "description": f"Combine your two strongest picks for better odds",
-                "impact": f"Win probability: {best_combo_prob:.1f}% (vs {win_probability:.1f}%)",
-                "new_probability": round(best_combo_prob, 1),
-                "recommended_legs": [best_combo[0].get('description'), best_combo[1].get('description')]
-            })
-    
-    # 4. Kelly Criterion suggestion
-    if kelly_percentage is not None and kelly_percentage <= 0:
-        suggestions.append({
-            "type": "stake_warning",
-            "title": "⚠️ Kelly says: Don't bet this",
-            "description": "The Kelly Criterion suggests 0% stake - the odds don't justify the risk",
-            "impact": "Consider skipping this bet entirely or betting minimum",
-            "new_probability": None
-        })
-    elif kelly_percentage is not None and kelly_percentage < 2:
-        suggestions.append({
-            "type": "stake_advice",
-            "title": "💰 Reduce your stake",
-            "description": f"Kelly suggests only {kelly_percentage:.1f}% of bankroll",
-            "impact": "Small stake protects your bankroll on risky bets",
-            "new_probability": None
-        })
-    
-    # === EDUCATIONAL TIPS ===
-    
-    # Parlay education
-    if num_legs >= 3:
-        educational_tips.append(
-            f"📚 Parlay math: A {num_legs}-leg parlay with 50% legs = only {(0.5 ** num_legs * 100):.1f}% win rate"
-        )
-    
-    if num_legs >= 2:
-        educational_tips.append(
-            "💡 Sportsbooks love parlays because the house edge compounds with each leg"
-        )
-    
-    # EV education
-    if expected_value is not None and expected_value < -5:
-        educational_tips.append(
-            f"📉 Negative EV ({expected_value:.1f}%) means you lose ${abs(expected_value):.2f} per $100 bet on average"
-        )
-    
-    # Risk education based on probability
-    if win_probability < 15:
-        educational_tips.append(
-            "🎰 Bets under 15% are lottery tickets - fun but expect to lose"
-        )
-    elif win_probability < 25:
-        educational_tips.append(
-            "⚠️ Low probability bets should be a small % of your betting activity"
-        )
-    
-    # Bankroll tip
-    if risk_level in ["high", "extreme"]:
-        educational_tips.append(
-            "💵 Bankroll tip: Never bet more than 2-5% of your bankroll on risky bets"
-        )
-    
-    return {
-        "suggestions": suggestions,
-        "risk_level": risk_level,
-        "educational_tips": educational_tips[:4]  # Max 4 tips
-    }
-
-
-# ===== BET ANALYSIS ROUTES =====
-@api_router.post("/analyze", response_model=BetAnalysisResponse)
+@api_router.post("/analyze")
 async def analyze_bet_slip(
     request: Request,
-    file: UploadFile = File(...), 
+    file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    # Check if user is banned or over usage limit
-    fingerprint = generate_device_fingerprint(request, None)
-    ip_address = get_client_ip(request)
+    """Analyze a bet slip image using AI"""
+    user_id = current_user['user_id']
     
-    usage_status = await check_usage_limit(db, current_user['user_id'], fingerprint, ip_address)
+    # Check usage limits
+    usage = await db.user_usage.find_one({"user_id": user_id})
+    subscription = await db.subscriptions.find_one({"user_id": user_id})
     
-    if not usage_status['allowed']:
+    is_subscribed = subscription and subscription.get('subscription_status') == 'active'
+    analyses_count = usage.get('analyses_count', 0) if usage else 0
+    
+    if not is_subscribed and analyses_count >= FREE_ANALYSIS_LIMIT:
         raise HTTPException(
-            status_code=403, 
-            detail={
-                "message": usage_status['reason'],
-                "show_subscription": usage_status.get('show_subscription', False),
-                "analyses_remaining": usage_status['analyses_remaining']
-            }
+            status_code=402,
+            detail="Free analysis limit reached. Please subscribe to continue."
         )
     
+    # Read and encode image
+    contents = await file.read()
+    base64_image = base64.b64encode(contents).decode('utf-8')
+    
+    # Get enhanced sports context
+    sports_context = ""
     try:
-        # Read and encode image
-        image_bytes = await file.read()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-        
-        # Create AI chat instance
+        sports_service = SportsDataService()
+        context_data = await get_enhanced_context_for_analysis()
+        if context_data:
+            sports_context = f"\n\nREAL-TIME SPORTS DATA:\n{json.dumps(context_data, indent=2)}"
+    except Exception as e:
+        logger.warning(f"Failed to get sports context: {e}")
+    
+    # AI Analysis prompt
+    analysis_prompt = f"""You are an expert sports betting analyst. Analyze this bet slip image and provide:
+
+1. **Bet Details**: Extract all bets from the image (teams, spreads, odds, totals, etc.)
+2. **Win Probability**: Estimate the probability of each bet winning (be realistic, most bets are 45-65%)
+3. **Overall Probability**: If parlay, calculate combined probability
+4. **Key Factors**: What factors support or work against these bets
+5. **Risk Assessment**: Rate overall risk (Low/Medium/High/Very High)
+6. **Kelly Criterion**: Suggested bet size based on edge
+7. **Expected Value**: Calculate EV for each bet
+8. **Recommendation**: Should they place this bet? Why or why not?
+{sports_context}
+
+Respond in JSON format:
+{{
+    "bets": [
+        {{
+            "description": "Team A -3.5 vs Team B",
+            "odds": "-110",
+            "win_probability": 52,
+            "ev_percent": -2.3,
+            "analysis": "Brief analysis"
+        }}
+    ],
+    "overall_probability": 45,
+    "risk_level": "Medium",
+    "kelly_fraction": 0.02,
+    "recommendation": "Your recommendation",
+    "key_factors": ["Factor 1", "Factor 2"],
+    "improvements": ["Suggestion 1", "Suggestion 2"]
+}}"""
+
+    try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
-            session_id=f"bet_analysis_{uuid.uuid4()}",
-            system_message="""You are an elite sports betting analyst with OCR expertise and access to real-time market data. 
-            
-Your analysis must be:
-1. PRECISE: Extract ALL text from bet slips accurately - odds, teams, amounts, bet types
-2. DATA-DRIVEN: Use real-time odds, line movements, and market indicators provided
-3. REALISTIC: Most bets have negative EV - don't be overly optimistic
-4. SHARP: Consider sharp money indicators, line movement, and market efficiency
-
-When real-time data is provided, heavily weight it in your analysis."""
-        )
-        chat.with_model("openai", "gpt-4o")
-        
-        # STEP 1: Dedicated OCR/Extraction Pass
-        # This improves accuracy by focusing solely on text extraction first
-        image_content = ImageContent(image_base64=image_base64)
-        
-        extraction_prompt = """STEP 1: EXTRACT ALL TEXT FROM THIS BET SLIP IMAGE
-
-Focus on extracting EVERY piece of text visible. Be meticulous and accurate.
-
-Return a structured extraction:
-```
-SPORTSBOOK: [App name - DraftKings, FanDuel, Hard Rock, BetMGM, etc.]
-BET_TYPE: [Single, Parlay, Same Game Parlay, Teaser, Round Robin, etc.]
-TOTAL_STAKE: [Amount wagered with $ symbol]
-POTENTIAL_PAYOUT: [Potential win amount]
-TOTAL_ODDS: [Combined odds if shown]
-
-INDIVIDUAL SELECTIONS:
-1. Team/Player: [exact name]
-   Bet Type: [Moneyline, Spread, Over/Under, Player Prop, etc.]
-   Line: [spread or total if applicable]
-   Odds: [American format odds]
-   
-2. Team/Player: [exact name]
-   Bet Type: [...]
-   Line: [...]
-   Odds: [...]
-
-[Continue for all selections...]
-
-OTHER VISIBLE TEXT:
-- [Any other relevant text like game dates, times, leagues]
-```
-
-Be EXACT with names, numbers and odds. If something is unclear, note it as [unclear]."""
-
-        extraction_msg = UserMessage(
-            text=extraction_prompt,
-            file_contents=[image_content]
+            session_id=f"analysis_{uuid.uuid4()}",
+            system_message="You are an expert sports betting analyst providing detailed, honest analysis."
         )
         
-        extracted_data = await chat.send_message(extraction_msg)
-        logger.info(f"Extracted bet slip data: {extracted_data[:500]}...")
-        
-        # STEP 2: Get Enhanced Context with Real-Time Data
-        enhanced_context = ""
-        injuries_data = []
-        weather_data = None
-        team_form_data = []
-        
-        try:
-            # Extract team names from the extracted text
-            team_names = SportsDataService.extract_team_names(extracted_data)
-            logger.info(f"Extracted teams: {team_names}")
-            
-            # Fetch real-time data for each team
-            from injury_weather_service import InjuryWeatherService
-            
-            for team in team_names[:2]:  # Max 2 teams
-                # Get injuries
-                team_injuries = await InjuryWeatherService.get_injuries_for_team(team)
-                if team_injuries:
-                    injuries_data.extend([{**inj, 'team': team.title()} for inj in team_injuries])
-                
-                # Get weather (usually just need one location)
-                if not weather_data:
-                    team_weather = await InjuryWeatherService.get_weather_for_game(team)
-                    if team_weather and 'note' not in team_weather:
-                        weather_data = team_weather
-                
-                # Get team form
-                recent_games = await SportsDataService.get_recent_games(team, limit=5)
-                if recent_games:
-                    form = SportsDataService.calculate_form_rating(recent_games)
-                    record = await SportsDataService.get_team_record(team)
-                    team_form_data.append({
-                        'team': record.get('team_name', team.title()) if record else team.title(),
-                        'record': record.get('overall', 'N/A') if record else 'N/A',
-                        'form': form.get('form', ''),
-                        'rating': form.get('rating', 'Unknown'),
-                        'avg_margin': form.get('avg_margin', 0),
-                        'recent': [f"{g['result']} vs {g['opponent']}" for g in recent_games[:3]]
-                    })
-            
-            # Get real-time sports odds data context
-            odds_context = await get_enhanced_context_for_analysis([], extracted_data)
-            
-            # Get injury and weather context
-            injury_weather_context = await get_enhanced_game_context(team_names)
-            
-            # Combine all contexts
-            enhanced_context = odds_context + injury_weather_context
-            
-            logger.info(f"Enhanced context length: {len(enhanced_context)}")
-            logger.info(f"Injuries found: {len(injuries_data)}, Weather: {weather_data is not None}, Team forms: {len(team_form_data)}")
-        except Exception as e:
-            logger.error(f"Error getting enhanced context: {str(e)}")
-            enhanced_context = ""
-        
-        # STEP 2.5: Check if games have already ended
-        games_status = None
-        try:
-            team_names_for_status = SportsDataService.extract_team_names(extracted_data)
-            games_status = await SportsDataService.check_games_status(team_names_for_status)
-            if games_status.get('warning_message'):
-                logger.info(f"Game status warning: {games_status['warning_message']}")
-        except Exception as e:
-            logger.error(f"Error checking games status: {str(e)}")
-        
-        # STEP 3: Full Analysis with Extracted Data + Context
-        analysis_prompt = f"""STEP 2: ANALYZE THIS BET SLIP
-
-EXTRACTED BET SLIP DATA:
-{extracted_data}
-
-{enhanced_context}
-
-Now provide your COMPREHENSIVE analysis in JSON format:
-
-{{
-    "win_probability": <realistic number 0-100>,
-    "confidence_score": <1-10, how confident in this probability>,
-    "bet_type": "<single/parlay/teaser etc>",
-    "total_stake": "<stake amount if visible>",
-    "total_odds": "<combined odds>",
-    "potential_payout": "<payout if visible>",
-    "individual_bets": [
-        {{
-            "description": "<team/player and bet type>",
-            "odds": "<American odds format e.g. -140, +200>",
-            "individual_probability": <win chance 0-100>,
-            "reasoning": "<brief analysis citing specific data if available>"
-        }}
-    ],
-    "risk_factors": [
-        "<specific concern with data support>",
-        "<another concern>",
-        "<another concern>"
-    ],
-    "positive_factors": [
-        "<strength with reasoning>",
-        "<another strength>"
-    ],
-    "analysis": "<2-3 sentences overall assessment>",
-    "bet_details": "<concise summary: stakes, odds, potential payout>",
-    "sharp_analysis": "<based on line movement, book count, and market data - is this sharp or public money>"
-}}
-
-IMPORTANT ANALYSIS GUIDELINES:
-- Use the EXTRACTED DATA above for accurate bet details
-- If real-time market data is provided, USE IT to adjust probabilities  
-- Compare user's odds to current market odds - identify value or no-value
-- Consider team form, injuries, and weather if provided
-- Single bets: 30-70% probability range (be critical)
-- 2-leg parlays: 20-50% range  
-- 3-leg parlays: 10-35% range
-- 4+ leg parlays: 5-20% range
-- Confidence score: 8-10 = market data supports analysis, 5-7 = moderate data, 1-4 = limited data
-- Always include odds in American format (e.g., -140, +200)
-- Be realistic and critical - most bets have negative EV"""
-        
-        analysis_msg = UserMessage(text=analysis_prompt)
-        
-        # Get AI response
-        response = await chat.send_message(analysis_msg)
-        
-        # Parse response and calculate advanced analytics
-        import json
-        import re
-        try:
-            # Try to extract JSON from response
-            json_match = re.search(r'\{[^{}]*"win_probability"[^{}]*"analysis"[^{}]*\}', response, re.DOTALL)
-            if not json_match:
-                json_match = re.search(r'\{(?:[^{}]|{[^{}]*})*\}', response, re.DOTALL)
-            
-            if json_match:
-                result = json.loads(json_match.group())
-                win_probability = float(result.get('win_probability', 50.0))
-                confidence_score = int(result.get('confidence_score', 5))
-                analysis_text = result.get('analysis', 'Analysis completed')
-                bet_details = result.get('bet_details', None)
-                individual_bets = result.get('individual_bets', [])
-                risk_factors = result.get('risk_factors', [])
-                positive_factors = result.get('positive_factors', [])
-                total_odds = result.get('total_odds', None)
-                
-                # Calculate advanced analytics
-                decimal_odds = 2.0  # Default
-                if total_odds:
-                    decimal_odds = american_to_decimal(total_odds)
-                elif individual_bets and len(individual_bets) > 0:
-                    # Calculate parlay odds from individual bets
-                    combined_decimal = 1.0
-                    for bet in individual_bets:
-                        if bet.get('odds'):
-                            combined_decimal *= american_to_decimal(bet['odds'])
-                    decimal_odds = combined_decimal
-                
-                # Calculate Expected Value
-                expected_value = calculate_expected_value(win_probability, decimal_odds)
-                
-                # Calculate Kelly Criterion
-                kelly_percentage = calculate_kelly_criterion(win_probability, decimal_odds)
-                
-                # Calculate true odds based on AI probability
-                true_odds = probability_to_american_odds(win_probability)
-                
-                # Get recommendation
-                recommendation = get_bet_recommendation(expected_value, kelly_percentage, confidence_score)
-                
-                # Calculate ROI
-                estimated_roi = expected_value
-                
-                # Parlay vs Straight comparison (if multiple bets)
-                parlay_vs_straight = None
-                if individual_bets and len(individual_bets) > 1:
-                    # Calculate if betting each leg straight
-                    straight_ev_total = 0
-                    parlay_combined_prob = win_probability
-                    
-                    for bet in individual_bets:
-                        if bet.get('individual_probability') and bet.get('odds'):
-                            bet_decimal_odds = american_to_decimal(bet['odds'])
-                            bet_ev = calculate_expected_value(bet['individual_probability'], bet_decimal_odds, 100)
-                            straight_ev_total += bet_ev
-                    
-                    parlay_vs_straight = {
-                        "parlay_ev": round(expected_value, 2),
-                        "straight_bets_ev": round(straight_ev_total, 2),
-                        "recommendation": "Bet individually" if straight_ev_total > expected_value else "Parlay is better",
-                        "difference": round(abs(straight_ev_total - expected_value), 2)
-                    }
-                
-            else:
-                # Fallback parsing
-                prob_match = re.search(r'(\d+(?:\.\d+)?)\s*%', response)
-                win_probability = float(prob_match.group(1)) if prob_match else 50.0
-                confidence_score = 5
-                analysis_text = response.replace('```json', '').replace('```', '').strip()
-                bet_details = None
-                individual_bets = []
-                risk_factors = []
-                positive_factors = []
-                expected_value = 0.0
-                kelly_percentage = 0.0
-                true_odds = probability_to_american_odds(win_probability)
-                recommendation = "REVIEW"
-                estimated_roi = 0.0
-                parlay_vs_straight = None
-                
-        except Exception as e:
-            logging.error(f"Error parsing AI response: {str(e)}")
-            win_probability = 50.0
-            confidence_score = 5
-            analysis_text = response.replace('```json', '').replace('```', '').strip()
-            bet_details = None
-            individual_bets = []
-            risk_factors = []
-            positive_factors = []
-            expected_value = 0.0
-            kelly_percentage = 0.0
-            true_odds = "EVEN"
-            recommendation = "REVIEW"
-            estimated_roi = 0.0
-            parlay_vs_straight = None
-        
-        # Save analysis
-        bet_analysis = BetAnalysis(
-            user_id=current_user['user_id'],
-            image_data=image_base64,
-            win_probability=win_probability,
-            analysis_text=analysis_text,
-            bet_details=bet_details,
-            individual_bets=individual_bets,
-            risk_factors=risk_factors,
-            positive_factors=positive_factors,
-            expected_value=expected_value,
-            kelly_percentage=kelly_percentage,
-            true_odds=true_odds,
-            recommendation=recommendation,
-            confidence_score=confidence_score,
-            parlay_vs_straight=parlay_vs_straight,
-            estimated_roi=estimated_roi,
-            injuries_data=injuries_data if injuries_data else None,
-            weather_data=weather_data,
-            team_form_data=team_form_data if team_form_data else None,
-            games_status=games_status
+        image_content = ImageContent(
+            base64_image=base64_image,
+            media_type=file.content_type or "image/jpeg"
         )
+        msg = UserMessage(text=analysis_prompt, images=[image_content])
         
-        analysis_dict = bet_analysis.model_dump()
-        analysis_dict['created_at'] = analysis_dict['created_at'].isoformat()
-        await db.bet_analyses.insert_one(analysis_dict)
+        response = await chat.send_message(msg)
         
-        # Generate improvement suggestions for low probability bets
-        improvement_data = generate_improvement_suggestions(
-            win_probability=win_probability,
-            individual_bets=individual_bets or [],
-            expected_value=expected_value or 0,
-            kelly_percentage=kelly_percentage or 0,
-            bet_type=bet_details or "parlay"
-        )
+        # Parse JSON from response
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            analysis_data = json.loads(json_match.group())
+        else:
+            analysis_data = {"raw_analysis": response, "error": "Could not parse structured response"}
         
-        response = BetAnalysisResponse(
-            id=bet_analysis.id,
-            win_probability=win_probability,
-            analysis_text=analysis_text,
-            bet_details=bet_details,
-            individual_bets=individual_bets,
-            risk_factors=risk_factors,
-            positive_factors=positive_factors,
-            expected_value=expected_value,
-            kelly_percentage=kelly_percentage,
-            true_odds=true_odds,
-            recommendation=recommendation,
-            confidence_score=confidence_score,
-            parlay_vs_straight=parlay_vs_straight,
-            estimated_roi=estimated_roi,
-            injuries_data=injuries_data if injuries_data else None,
-            weather_data=weather_data,
-            team_form_data=team_form_data if team_form_data else None,
-            games_status=games_status,
-            improvement_suggestions=improvement_data["suggestions"] if improvement_data["suggestions"] else None,
-            risk_level=improvement_data["risk_level"],
-            educational_tips=improvement_data["educational_tips"] if improvement_data["educational_tips"] else None,
-            created_at=bet_analysis.created_at
-        )
-        
-        # Increment usage count after successful analysis
-        await increment_usage(db, current_user['user_id'])
-        
-        # Store high-percentage bets for admin review (60%+ win probability)
-        HIGH_PERCENTAGE_THRESHOLD = 60
-        if win_probability >= HIGH_PERCENTAGE_THRESHOLD:
-            top_bet = {
-                "id": str(uuid.uuid4()),
-                "analysis_id": bet_analysis.id,
-                "user_id": current_user['user_id'],
-                "user_email": current_user['email'],
-                "win_probability": win_probability,
-                "confidence_score": confidence_score,
-                "expected_value": expected_value,
-                "kelly_percentage": kelly_percentage,
-                "recommendation": recommendation,
-                "bet_details": bet_details,
-                "individual_bets": individual_bets,
-                "risk_factors": risk_factors,
-                "positive_factors": positive_factors,
-                "team_form_data": team_form_data,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-            await db.top_bets.insert_one(top_bet)
-            logger.info(f"Stored high-percentage bet: {win_probability}% for user {current_user['email']}")
-        
-        return response
-        
-    except HTTPException:
-        raise
     except Exception as e:
-        logging.error(f"Error analyzing bet slip: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error analyzing bet slip: {str(e)}")
-
-
-@api_router.get("/history", response_model=List[BetHistoryResponse])
-async def get_bet_history(current_user: dict = Depends(get_current_user)):
-    # Get user's bet history
-    analyses = await db.bet_analyses.find(
-        {"user_id": current_user['user_id']},
-        {"_id": 0}
-    ).sort("created_at", -1).limit(50).to_list(50)
+        logger.error(f"AI analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
     
-    # Convert timestamps
-    for analysis in analyses:
-        if isinstance(analysis['created_at'], str):
-            analysis['created_at'] = datetime.fromisoformat(analysis['created_at'])
-    
-    return [
-        BetHistoryResponse(
-            id=a['id'],
-            win_probability=a['win_probability'],
-            analysis_text=a['analysis_text'],
-            bet_details=a.get('bet_details'),
-            individual_bets=a.get('individual_bets'),
-            risk_factors=a.get('risk_factors'),
-            positive_factors=a.get('positive_factors'),
-            expected_value=a.get('expected_value'),
-            kelly_percentage=a.get('kelly_percentage'),
-            recommendation=a.get('recommendation'),
-            confidence_score=a.get('confidence_score'),
-            image_data=a['image_data'],
-            created_at=a['created_at']
-        )
-        for a in analyses
-    ]
-
-
-class MarkOutcomeRequest(BaseModel):
-    outcome: str  # "won", "lost", "push"
-    stake_amount: Optional[float] = None
-    payout_amount: Optional[float] = None
-
-
-@api_router.post("/analysis/{analysis_id}/outcome")
-async def mark_bet_outcome(
-    analysis_id: str,
-    outcome_data: MarkOutcomeRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """Mark a bet as won/lost/push"""
-    # Verify ownership
-    bet = await db.bet_analyses.find_one(
-        {"id": analysis_id, "user_id": current_user['user_id']},
-        {"_id": 0}
-    )
-    
-    if not bet:
-        raise HTTPException(status_code=404, detail="Bet analysis not found")
-    
-    # Update outcome
-    update_data = {
-        "actual_outcome": outcome_data.outcome,
-        "outcome_marked_at": datetime.now(timezone.utc).isoformat()
+    # Save analysis
+    analysis_id = str(uuid.uuid4())
+    analysis_record = {
+        "id": analysis_id,
+        "user_id": user_id,
+        "image_data": base64_image[:100] + "...",  # Store preview only
+        "analysis": analysis_data,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    if outcome_data.stake_amount is not None:
-        update_data["stake_amount"] = outcome_data.stake_amount
-    if outcome_data.payout_amount is not None:
-        update_data["payout_amount"] = outcome_data.payout_amount
+    await db.analyses.insert_one(analysis_record)
     
-    await db.bet_analyses.update_one(
-        {"id": analysis_id},
-        {"$set": update_data}
-    )
-    
-    return {"message": "Outcome marked successfully", "outcome": outcome_data.outcome}
-
-
-@api_router.get("/stats")
-async def get_user_stats(current_user: dict = Depends(get_current_user)):
-    """Get user's betting statistics and AI accuracy"""
-    # Get all completed bets (with outcomes)
-    completed_bets = await db.bet_analyses.find(
-        {
-            "user_id": current_user['user_id'],
-            "actual_outcome": {"$in": ["won", "lost", "push"]}
-        },
-        {"_id": 0}
-    ).to_list(1000)
-    
-    if not completed_bets:
-        return {
-            "total_analyzed": 0,
-            "total_tracked": 0,
-            "accuracy_rate": 0,
-            "total_profit": 0,
-            "roi": 0,
-            "bets_won": 0,
-            "bets_lost": 0,
-            "bets_push": 0,
-            "followed_recommendations": 0
-        }
-    
-    # Calculate stats
-    total_bets = len(completed_bets)
-    bets_won = sum(1 for b in completed_bets if b.get('actual_outcome') == 'won')
-    bets_lost = sum(1 for b in completed_bets if b.get('actual_outcome') == 'lost')
-    bets_push = sum(1 for b in completed_bets if b.get('actual_outcome') == 'push')
-    
-    # Calculate AI accuracy (predicted > 50% should win)
-    correct_predictions = 0
-    for bet in completed_bets:
-        if bet.get('actual_outcome') == 'push':
-            continue
-        predicted_win = bet.get('win_probability', 0) > 50
-        actually_won = bet.get('actual_outcome') == 'won'
-        if predicted_win == actually_won:
-            correct_predictions += 1
-    
-    accuracy_rate = (correct_predictions / (total_bets - bets_push) * 100) if (total_bets - bets_push) > 0 else 0
-    
-    # Calculate profit/loss
-    total_stake = sum(b.get('stake_amount', 0) for b in completed_bets if b.get('stake_amount'))
-    total_payout = sum(b.get('payout_amount', 0) for b in completed_bets if b.get('payout_amount'))
-    total_profit = total_payout - total_stake
-    roi = (total_profit / total_stake * 100) if total_stake > 0 else 0
-    
-    # Check how many followed recommendations
-    followed_recs = sum(
-        1 for b in completed_bets 
-        if b.get('recommendation') in ['BET', 'STRONG BET'] and b.get('actual_outcome') == 'won'
-    )
-    
-    # Get total analyzed (including pending)
-    total_analyzed = await db.bet_analyses.count_documents({"user_id": current_user['user_id']})
-    
-    return {
-        "total_analyzed": total_analyzed,
-        "total_tracked": total_bets,
-        "accuracy_rate": round(accuracy_rate, 1),
-        "total_profit": round(total_profit, 2),
-        "roi": round(roi, 1),
-        "bets_won": bets_won,
-        "bets_lost": bets_lost,
-        "bets_push": bets_push,
-        "followed_recommendations": followed_recs,
-        "win_rate": round((bets_won / (bets_won + bets_lost) * 100) if (bets_won + bets_lost) > 0 else 0, 1)
-    }
-
-
-# ===== SUBSCRIPTION & USAGE ROUTES =====
-
-class DeviceFingerprintData(BaseModel):
-    """Client-side device fingerprint data"""
-    screen_resolution: Optional[str] = None
-    timezone: Optional[str] = None
-    platform: Optional[str] = None
-    canvas_hash: Optional[str] = None
-    webgl_hash: Optional[str] = None
-
-
-@api_router.get("/usage")
-async def get_usage_status(request: Request, current_user: dict = Depends(get_current_user)):
-    """Get user's usage status and subscription info"""
-    subscription = await get_user_subscription(db, current_user['user_id'])
-    return subscription
-
-
-@api_router.post("/check-usage")
-async def check_analysis_usage(
-    request: Request,
-    fingerprint_data: Optional[DeviceFingerprintData] = None,
-    current_user: dict = Depends(get_current_user)
-):
-    """Check if user can perform analysis (free limit or subscription)"""
-    # Generate device fingerprint
-    fingerprint = generate_device_fingerprint(
-        request, 
-        fingerprint_data.model_dump() if fingerprint_data else None
-    )
-    ip_address = get_client_ip(request)
-    
-    # Update user's device fingerprint
-    await update_device_fingerprint(db, current_user['user_id'], fingerprint, ip_address)
-    
-    # Check usage limit
-    usage_status = await check_usage_limit(db, current_user['user_id'], fingerprint, ip_address)
-    
-    return usage_status
-
-
-# ===== STRIPE SUBSCRIPTION ROUTES =====
-
-class CreateCheckoutRequest(BaseModel):
-    origin_url: str
-
-
-@api_router.post("/subscription/create-checkout")
-async def create_subscription_checkout(
-    request: Request,
-    checkout_request: CreateCheckoutRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """Create Stripe checkout session for subscription"""
-    try:
-        host_url = str(request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        # Build URLs from provided origin
-        success_url = f"{checkout_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{checkout_request.origin_url}/subscription/cancel"
-        
-        # Create checkout session for $5/month subscription
-        checkout_req = CheckoutSessionRequest(
-            amount=SUBSCRIPTION_PRICE,
-            currency="usd",
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
-                "user_id": current_user['user_id'],
-                "email": current_user['email'],
-                "type": "subscription"
-            }
-        )
-        
-        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_req)
-        
-        # Store pending transaction
-        await db.payment_transactions.insert_one({
-            "session_id": session.session_id,
-            "user_id": current_user['user_id'],
-            "email": current_user['email'],
-            "amount": SUBSCRIPTION_PRICE,
-            "currency": "usd",
-            "payment_status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        return {"url": session.url, "session_id": session.session_id}
-        
-    except Exception as e:
-        logger.error(f"Error creating checkout session: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error creating checkout: {str(e)}")
-
-
-@api_router.get("/subscription/status/{session_id}")
-async def get_checkout_status(session_id: str, current_user: dict = Depends(get_current_user)):
-    """Check Stripe checkout session status"""
-    try:
-        host_url = os.environ.get('BACKEND_URL', os.environ.get('REACT_APP_BACKEND_URL', ''))
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
-        
-        # Update transaction and subscription if paid
-        if status.payment_status == 'paid':
-            # Check if already processed
-            existing = await db.payment_transactions.find_one({
-                "session_id": session_id,
-                "payment_status": "paid"
-            })
-            
-            if not existing:
-                # Update transaction
-                await db.payment_transactions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {
-                        "payment_status": "paid",
-                        "paid_at": datetime.now(timezone.utc).isoformat()
-                    }}
-                )
-                
-                # Create/update subscription
-                await create_subscription_record(
-                    db,
-                    current_user['user_id'],
-                    current_user['email'],
-                    "",  # stripe_customer_id - would come from webhook in production
-                    session_id
-                )
-        
-        return {
-            "status": status.status,
-            "payment_status": status.payment_status,
-            "amount": status.amount_total / 100,  # Convert from cents
-            "currency": status.currency
-        }
-        
-    except Exception as e:
-        logger.error(f"Error checking checkout status: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error checking status: {str(e)}")
-
-
-@api_router.post("/webhook/stripe")
-async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks"""
-    try:
-        body = await request.body()
-        host_url = str(request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        webhook_response = await stripe_checkout.handle_webhook(
-            body,
-            request.headers.get("Stripe-Signature")
-        )
-        
-        if webhook_response.payment_status == 'paid':
-            # Update subscription status
-            user_id = webhook_response.metadata.get('user_id')
-            if user_id:
-                await update_subscription_status(db, user_id, 'active')
-        
-        return {"status": "processed"}
-        
-    except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
-        return {"status": "error", "message": str(e)}
-
-
-# ===== PAYPAL & CASHAPP PAYMENT ROUTES =====
-
-class PayPalConfirmRequest(BaseModel):
-    order_id: str
-    payer_email: Optional[str] = None
-    amount: Optional[str] = None
-
-@api_router.post("/subscription/paypal-confirm")
-async def confirm_paypal_payment(
-    request: PayPalConfirmRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """Confirm PayPal payment and activate subscription"""
-    try:
-        # Store PayPal transaction
-        await db.payment_transactions.insert_one({
-            "type": "paypal",
-            "order_id": request.order_id,
-            "user_id": current_user['user_id'],
-            "email": current_user['email'],
-            "payer_email": request.payer_email,
-            "amount": request.amount or "5.00",
-            "currency": "usd",
-            "payment_status": "paid",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        # Activate subscription
-        await db.subscriptions.update_one(
-            {"user_id": current_user['user_id']},
-            {"$set": {
-                "user_id": current_user['user_id'],
-                "email": current_user['email'],
-                "subscription_status": "active",
-                "payment_method": "paypal",
-                "paypal_order_id": request.order_id,
-                "subscription_start": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }},
-            upsert=True
-        )
-        
-        return {"message": "PayPal payment confirmed, subscription activated", "success": True}
-        
-    except Exception as e:
-        logger.error(f"PayPal confirmation error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error confirming payment: {str(e)}")
-
-
-@api_router.post("/subscription/cashapp-request")
-async def request_cashapp_payment(
-    current_user: dict = Depends(get_current_user)
-):
-    """Submit a CashApp payment request for admin approval"""
-    try:
-        # Check if already has pending request
-        existing = await db.cashapp_requests.find_one({
-            "user_id": current_user['user_id'],
-            "status": "pending"
-        })
-        
-        if existing:
-            return {"message": "You already have a pending CashApp request", "success": True}
-        
-        # Create CashApp request
-        await db.cashapp_requests.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": current_user['user_id'],
-            "email": current_user['email'],
-            "amount": 5.00,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        return {"message": "CashApp request submitted. Send $5 to $BetrSlip and we'll activate within 24 hours.", "success": True}
-        
-    except Exception as e:
-        logger.error(f"CashApp request error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error submitting request: {str(e)}")
-
-
-# ===== ADMIN ROUTES =====
-
-async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify user is admin"""
-    user = await get_current_user(credentials)
-    if not is_admin(user['email']):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
-
-
-# CashApp Admin Endpoints
-@api_router.get("/admin/cashapp-requests")
-async def admin_get_cashapp_requests(
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Get all pending CashApp payment requests (admin only)"""
-    requests = await db.cashapp_requests.find(
-        {"status": "pending"},
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(50)
-    
-    return {"requests": requests, "total": len(requests)}
-
-
-@api_router.post("/admin/cashapp-requests/{request_id}/approve")
-async def admin_approve_cashapp(
-    request_id: str,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Approve a CashApp payment and activate user subscription (admin only)"""
-    cashapp_req = await db.cashapp_requests.find_one({"id": request_id})
-    if not cashapp_req:
-        raise HTTPException(status_code=404, detail="Request not found")
-    
-    await db.cashapp_requests.update_one(
-        {"id": request_id},
-        {"$set": {
-            "status": "approved",
-            "approved_by": admin_user['email'],
-            "approved_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
-    
-    await db.subscriptions.update_one(
-        {"user_id": cashapp_req['user_id']},
-        {"$set": {
-            "user_id": cashapp_req['user_id'],
-            "email": cashapp_req['email'],
-            "subscription_status": "active",
-            "payment_method": "cashapp",
-            "subscription_start": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }},
+    # Increment usage
+    await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$inc": {"analyses_count": 1}},
         upsert=True
     )
     
-    await db.payment_transactions.insert_one({
-        "type": "cashapp",
-        "user_id": cashapp_req['user_id'],
-        "email": cashapp_req['email'],
-        "amount": "5.00",
-        "currency": "usd",
-        "payment_status": "paid",
-        "approved_by": admin_user['email'],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
+    # Check if high probability - add to top bets
+    overall_prob = analysis_data.get('overall_probability', 0)
+    if overall_prob >= 70:
+        await db.top_bets.insert_one({
+            "id": str(uuid.uuid4()),
+            "analysis_id": analysis_id,
+            "user_id": user_id,
+            "win_probability": overall_prob,
+            "analysis_summary": analysis_data,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
     
-    return {"message": f"CashApp payment approved. {cashapp_req['email']} is now Pro!", "success": True}
+    return {
+        "id": analysis_id,
+        "analysis": analysis_data,
+        "usage": {
+            "count": analyses_count + 1,
+            "limit": FREE_ANALYSIS_LIMIT,
+            "is_subscribed": is_subscribed
+        }
+    }
 
 
-@api_router.post("/admin/cashapp-requests/{request_id}/reject")
-async def admin_reject_cashapp(
-    request_id: str,
-    admin_user: dict = Depends(get_admin_user)
+@api_router.get("/analyses")
+async def get_user_analyses(
+    skip: int = 0,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user)
 ):
-    """Reject a CashApp payment request (admin only)"""
-    result = await db.cashapp_requests.update_one(
-        {"id": request_id},
-        {"$set": {
-            "status": "rejected",
-            "rejected_by": admin_user['email'],
-            "rejected_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    """Get user's analysis history"""
+    analyses = await db.analyses.find(
+        {"user_id": current_user['user_id']},
+        {"_id": 0, "image_data": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Request not found")
+    total = await db.analyses.count_documents({"user_id": current_user['user_id']})
     
-    return {"message": "CashApp request rejected", "success": True}
+    return {"analyses": analyses, "total": total}
 
 
+# ===== ADMIN ROUTES =====
 @api_router.get("/admin/stats")
 async def admin_get_stats(admin_user: dict = Depends(get_admin_user)):
-    """Get admin dashboard statistics"""
     stats = await get_admin_stats(db)
     return stats
-
 
 @api_router.get("/admin/users")
 async def admin_get_users(
@@ -1509,14 +252,11 @@ async def admin_get_users(
     limit: int = 50,
     admin_user: dict = Depends(get_admin_user)
 ):
-    """Get all users for admin dashboard"""
     users = await get_all_users(db, skip, limit)
     return {"users": users, "total": await db.users.count_documents({})}
 
-
 class BanUserRequest(BaseModel):
     reason: Optional[str] = None
-
 
 @api_router.post("/admin/users/{user_id}/ban")
 async def admin_ban_user(
@@ -1524,59 +264,34 @@ async def admin_ban_user(
     ban_request: BanUserRequest,
     admin_user: dict = Depends(get_admin_user)
 ):
-    """Ban a user"""
-    # Don't allow banning yourself
     if user_id == admin_user['user_id']:
         raise HTTPException(status_code=400, detail="Cannot ban yourself")
-    
     success = await ban_user(db, user_id, ban_request.reason)
     if success:
-        return {"message": f"User {user_id} has been banned", "success": True}
+        return {"message": "User banned"}
     raise HTTPException(status_code=404, detail="User not found")
-
 
 @api_router.post("/admin/users/{user_id}/unban")
 async def admin_unban_user(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Unban a user"""
     success = await unban_user(db, user_id)
     if success:
-        return {"message": f"User {user_id} has been unbanned", "success": True}
+        return {"message": "User unbanned"}
     raise HTTPException(status_code=404, detail="User not found")
-
 
 @api_router.get("/admin/user/{user_id}")
 async def admin_get_user_details(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Get detailed user info for admin"""
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     usage = await db.user_usage.find_one({"user_id": user_id}, {"_id": 0})
     subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
-    analyses = await db.bet_analyses.count_documents({"user_id": user_id})
+    analyses = await db.analyses.count_documents({"user_id": user_id})
     
-    return {
-        "user": user,
-        "usage": usage,
-        "subscription": subscription,
-        "total_analyses": analyses
-    }
-
-
-@api_router.post("/admin/users/{user_id}/reset-usage")
-async def admin_reset_usage(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Reset a user's free analysis usage count"""
-    result = await db.user_usage.update_one(
-        {"user_id": user_id},
-        {"$set": {"analyses_count": 0}},
-        upsert=True
-    )
-    return {"message": f"Usage reset for user {user_id}", "success": True}
-
+    return {"user": user, "usage": usage, "subscription": subscription, "total_analyses": analyses}
 
 @api_router.post("/admin/users/{user_id}/grant-subscription")
 async def admin_grant_subscription(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Grant Pro subscription to a user (free)"""
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -1588,934 +303,125 @@ async def admin_grant_subscription(user_id: str, admin_user: dict = Depends(get_
             "email": user.get('email', ''),
             "subscription_status": "active",
             "subscription_start": datetime.now(timezone.utc).isoformat(),
-            "granted_by_admin": True,
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "granted_by_admin": True
         }},
         upsert=True
     )
-    return {"message": f"Pro subscription granted to {user.get('email')}", "success": True}
-
+    return {"message": f"Pro subscription granted to {user.get('email')}"}
 
 @api_router.post("/admin/users/{user_id}/revoke-subscription")
 async def admin_revoke_subscription(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Revoke Pro subscription from a user"""
     result = await db.subscriptions.update_one(
         {"user_id": user_id},
-        {"$set": {
-            "subscription_status": "revoked",
-            "revoked_at": datetime.now(timezone.utc).isoformat(),
-            "revoked_by_admin": True
-        }}
+        {"$set": {"subscription_status": "revoked", "revoked_at": datetime.now(timezone.utc).isoformat()}}
     )
     if result.modified_count > 0:
-        return {"message": f"Subscription revoked for user {user_id}", "success": True}
+        return {"message": "Subscription revoked"}
     raise HTTPException(status_code=404, detail="No subscription found")
 
+# CashApp Admin
+@api_router.get("/admin/cashapp-requests")
+async def admin_get_cashapp_requests(admin_user: dict = Depends(get_admin_user)):
+    requests = await db.cashapp_requests.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"requests": requests, "total": len(requests)}
 
-@api_router.delete("/admin/users/{user_id}")
-async def admin_delete_user(user_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Permanently delete a user and all their data"""
-    if user_id == admin_user['user_id']:
-        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+@api_router.post("/admin/cashapp-requests/{request_id}/approve")
+async def admin_approve_cashapp(request_id: str, admin_user: dict = Depends(get_admin_user)):
+    cashapp_req = await db.cashapp_requests.find_one({"id": request_id})
+    if not cashapp_req:
+        raise HTTPException(status_code=404, detail="Request not found")
     
-    # Delete from all collections
-    await db.users.delete_one({"id": user_id})
-    await db.user_usage.delete_one({"user_id": user_id})
-    await db.subscriptions.delete_one({"user_id": user_id})
-    await db.bet_analyses.delete_many({"user_id": user_id})
+    await db.cashapp_requests.update_one({"id": request_id}, {"$set": {"status": "approved", "approved_by": admin_user['email'], "approved_at": datetime.now(timezone.utc).isoformat()}})
+    await db.subscriptions.update_one({"user_id": cashapp_req['user_id']}, {"$set": {"user_id": cashapp_req['user_id'], "email": cashapp_req['email'], "subscription_status": "active", "payment_method": "cashapp", "subscription_start": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    await db.payment_transactions.insert_one({"type": "cashapp", "user_id": cashapp_req['user_id'], "email": cashapp_req['email'], "amount": "5.00", "payment_status": "paid", "approved_by": admin_user['email'], "created_at": datetime.now(timezone.utc).isoformat()})
     
-    return {"message": f"User {user_id} deleted permanently", "success": True}
+    return {"message": f"CashApp approved. {cashapp_req['email']} is now Pro!"}
 
+@api_router.post("/admin/cashapp-requests/{request_id}/reject")
+async def admin_reject_cashapp(request_id: str, admin_user: dict = Depends(get_admin_user)):
+    result = await db.cashapp_requests.update_one({"id": request_id}, {"$set": {"status": "rejected", "rejected_at": datetime.now(timezone.utc).isoformat()}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"message": "Request rejected"}
 
-# ===== TOP BETS (HIGH PERCENTAGE) ROUTES =====
-
+# Top Bets Admin
 @api_router.get("/admin/top-bets")
-async def admin_get_top_bets(
-    skip: int = 0,
-    limit: int = 50,
-    min_probability: float = 60,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Get all high-percentage bets for admin review"""
-    top_bets = await db.top_bets.find(
-        {"win_probability": {"$gte": min_probability}},
-        {"_id": 0}
-    ).sort("win_probability", -1).skip(skip).limit(limit).to_list(limit)
-    
-    total = await db.top_bets.count_documents({"win_probability": {"$gte": min_probability}})
-    
-    return {
-        "top_bets": top_bets,
-        "total": total,
-        "threshold": min_probability
-    }
-
+async def admin_get_top_bets(limit: int = 50, admin_user: dict = Depends(get_admin_user)):
+    top_bets = await db.top_bets.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"top_bets": top_bets}
 
 @api_router.get("/admin/top-bets/stats")
 async def admin_get_top_bets_stats(admin_user: dict = Depends(get_admin_user)):
-    """Get statistics about top bets"""
-    total_top_bets = await db.top_bets.count_documents({})
-    elite_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 80}})
-    strong_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 70, "$lt": 80}})
-    good_bets = await db.top_bets.count_documents({"win_probability": {"$gte": 60, "$lt": 70}})
+    total = await db.top_bets.count_documents({})
+    avg_pipeline = [{"$group": {"_id": None, "avg_prob": {"$avg": "$win_probability"}}}]
+    avg_result = await db.top_bets.aggregate(avg_pipeline).to_list(1)
+    avg_prob = round(avg_result[0]['avg_prob'], 1) if avg_result else 0
     
-    # Get average probability
-    pipeline = [
-        {"$group": {"_id": None, "avg_probability": {"$avg": "$win_probability"}}}
-    ]
-    avg_result = await db.top_bets.aggregate(pipeline).to_list(1)
-    avg_probability = avg_result[0]["avg_probability"] if avg_result else 0
-    
-    return {
-        "total_top_bets": total_top_bets,
-        "elite_bets_80_plus": elite_bets,
-        "strong_bets_70_79": strong_bets,
-        "good_bets_60_69": good_bets,
-        "average_probability": round(avg_probability, 1) if avg_probability else 0
-    }
+    return {"total_top_bets": total, "average_probability": avg_prob}
 
 
-@api_router.delete("/admin/top-bets/{bet_id}")
-async def admin_delete_top_bet(bet_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Delete a top bet from the collection"""
-    result = await db.top_bets.delete_one({"id": bet_id})
-    if result.deleted_count > 0:
-        return {"message": f"Top bet {bet_id} deleted", "success": True}
-    raise HTTPException(status_code=404, detail="Top bet not found")
+# ===== STRIPE WEBHOOK =====
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    try:
+        body = await request.body()
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+        webhook_response = await stripe_checkout.process_webhook(body, request.headers.get("Stripe-Signature"))
+        
+        if webhook_response.payment_status == 'paid':
+            user_id = webhook_response.metadata.get('user_id')
+            if user_id:
+                await update_subscription_status(db, user_id, 'active')
+        
+        return {"status": "processed"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error"}
 
 
-@api_router.delete("/admin/top-bets")
-async def admin_clear_top_bets(admin_user: dict = Depends(get_admin_user)):
-    """Clear all top bets (use with caution)"""
-    result = await db.top_bets.delete_many({})
-    return {"message": f"Deleted {result.deleted_count} top bets", "success": True}
+# ===== BACKGROUND TASKS =====
+_background_tasks = []
 
-
-# ===== DAILY PICKS (Featured Bets) ROUTES =====
-
-class DailyPickCreate(BaseModel):
-    """Model for creating a daily pick"""
-    title: str  # e.g., "Chiefs -3.5 vs Raiders"
-    description: str  # Brief explanation
-    win_probability: float  # 0-100
-    odds: str  # e.g., "-110"
-    sport: str  # e.g., "NFL", "NBA", "MLB"
-    confidence: int  # 1-10
-    reasoning: List[str]  # List of reasons
-    risk_factors: Optional[List[str]] = None
-    game_time: Optional[str] = None  # e.g., "Sunday 4:25 PM ET"
-
-
-@api_router.post("/admin/daily-picks")
-async def admin_create_daily_pick(
-    pick_data: DailyPickCreate,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Create a new daily pick (admin only)"""
-    pick = {
-        "id": str(uuid.uuid4()),
-        "title": pick_data.title,
-        "description": pick_data.description,
-        "win_probability": pick_data.win_probability,
-        "odds": pick_data.odds,
-        "sport": pick_data.sport,
-        "confidence": pick_data.confidence,
-        "reasoning": pick_data.reasoning,
-        "risk_factors": pick_data.risk_factors or [],
-        "game_time": pick_data.game_time,
-        "created_by": admin_user['email'],
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "is_active": True
-    }
-    await db.daily_picks.insert_one(pick)
-    return {"message": "Daily pick created", "pick": {k: v for k, v in pick.items() if k != '_id'}}
-
-
-@api_router.get("/admin/daily-picks")
-async def admin_get_all_daily_picks(
-    skip: int = 0,
-    limit: int = 20,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Get all daily picks (admin only)"""
-    picks = await db.daily_picks.find(
-        {},
-        {"_id": 0}
-    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
-    total = await db.daily_picks.count_documents({})
-    return {"picks": picks, "total": total}
-
-
-@api_router.put("/admin/daily-picks/{pick_id}")
-async def admin_update_daily_pick(
-    pick_id: str,
-    pick_data: DailyPickCreate,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Update a daily pick"""
-    update_data = pick_data.model_dump()
-    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    update_data["updated_by"] = admin_user['email']
-    
-    result = await db.daily_picks.update_one(
-        {"id": pick_id},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count > 0:
-        return {"message": "Daily pick updated", "success": True}
-    raise HTTPException(status_code=404, detail="Pick not found")
-
-
-@api_router.delete("/admin/daily-picks/{pick_id}")
-async def admin_delete_daily_pick(
-    pick_id: str,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Delete a daily pick"""
-    result = await db.daily_picks.delete_one({"id": pick_id})
-    if result.deleted_count > 0:
-        return {"message": "Daily pick deleted", "success": True}
-    raise HTTPException(status_code=404, detail="Pick not found")
-
-
-@api_router.post("/admin/daily-picks/{pick_id}/toggle")
-async def admin_toggle_daily_pick(
-    pick_id: str,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Toggle a daily pick active/inactive"""
-    pick = await db.daily_picks.find_one({"id": pick_id})
-    if not pick:
-        raise HTTPException(status_code=404, detail="Pick not found")
-    
-    new_status = not pick.get("is_active", True)
-    await db.daily_picks.update_one(
-        {"id": pick_id},
-        {"$set": {"is_active": new_status}}
-    )
-    return {"message": f"Pick {'activated' if new_status else 'deactivated'}", "is_active": new_status}
-
-
-# ===== DAILY PICKS PERFORMANCE TRACKING =====
-
-class PickOutcomeUpdate(BaseModel):
-    outcome: str  # "won", "lost", "push", "pending"
-
-@api_router.post("/admin/daily-picks/{pick_id}/outcome")
-async def admin_update_pick_outcome(
-    pick_id: str,
-    outcome_data: PickOutcomeUpdate,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Update the outcome of a daily pick"""
-    valid_outcomes = ["won", "lost", "push", "pending"]
-    if outcome_data.outcome.lower() not in valid_outcomes:
-        raise HTTPException(status_code=400, detail=f"Invalid outcome. Must be one of: {valid_outcomes}")
-    
-    pick = await db.daily_picks.find_one({"id": pick_id})
-    if not pick:
-        raise HTTPException(status_code=404, detail="Pick not found")
-    
-    await db.daily_picks.update_one(
-        {"id": pick_id},
-        {"$set": {
-            "outcome": outcome_data.outcome.lower(),
-            "outcome_updated_at": datetime.now(timezone.utc).isoformat(),
-            "outcome_updated_by": admin_user['email']
-        }}
-    )
-    
-    return {"message": f"Pick marked as {outcome_data.outcome}", "success": True}
-
-
-@api_router.get("/admin/picks-performance")
-async def admin_get_picks_performance(admin_user: dict = Depends(get_admin_user)):
-    """Get performance stats for daily picks"""
-    
-    # Count outcomes
-    total_picks = await db.daily_picks.count_documents({})
-    won_picks = await db.daily_picks.count_documents({"outcome": "won"})
-    lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
-    push_picks = await db.daily_picks.count_documents({"outcome": "push"})
-    pending_picks = await db.daily_picks.count_documents({
-        "$or": [
-            {"outcome": {"$exists": False}},
-            {"outcome": "pending"},
-            {"outcome": None}
-        ]
-    })
-    
-    # Calculate win rate (excluding pushes and pending)
-    decided_picks = won_picks + lost_picks
-    win_rate = round((won_picks / decided_picks * 100), 1) if decided_picks > 0 else 0
-    
-    # Get recent picks with outcomes
-    recent_picks = await db.daily_picks.find(
-        {"outcome": {"$in": ["won", "lost", "push"]}},
-        {"_id": 0, "id": 1, "title": 1, "sport": 1, "win_probability": 1, "outcome": 1, "created_at": 1}
-    ).sort("outcome_updated_at", -1).limit(20).to_list(20)
-    
-    # Calculate streaks
-    all_outcomes = await db.daily_picks.find(
-        {"outcome": {"$in": ["won", "lost"]}},
-        {"_id": 0, "outcome": 1}
-    ).sort("outcome_updated_at", -1).to_list(100)
-    
-    current_streak = 0
-    streak_type = None
-    for pick in all_outcomes:
-        if streak_type is None:
-            streak_type = pick['outcome']
-            current_streak = 1
-        elif pick['outcome'] == streak_type:
-            current_streak += 1
-        else:
+async def periodic_auto_resolve():
+    """Auto-resolve picks every 2 hours"""
+    while True:
+        try:
+            await asyncio.sleep(7200)
+            logger.info("Running scheduled auto-resolution...")
+            resolver = AutoResolverService(db)
+            result = await resolver.resolve_picks()
+            logger.info(f"Auto-resolution: {result}")
+        except asyncio.CancelledError:
             break
+        except Exception as e:
+            logger.error(f"Auto-resolve error: {e}")
+            await asyncio.sleep(300)
+
+@app.on_event("startup")
+async def startup_event():
+    task = asyncio.create_task(periodic_auto_resolve())
+    _background_tasks.append(task)
+    logger.info("Started background tasks")
     
-    return {
-        "total_picks": total_picks,
-        "won": won_picks,
-        "lost": lost_picks,
-        "push": push_picks,
-        "pending": pending_picks,
-        "decided": decided_picks,
-        "win_rate": win_rate,
-        "current_streak": current_streak,
-        "streak_type": streak_type,
-        "recent_picks": recent_picks
-    }
-
-
-@api_router.get("/admin/ai-learning-stats")
-async def admin_get_ai_learning_stats(admin_user: dict = Depends(get_admin_user)):
-    """Get detailed AI learning statistics (admin only)"""
-    smart_service = SmartPicksService(db)
-    performance = await smart_service.get_historical_performance()
-    return {
-        "learning_data": performance,
-        "message": "This data is used by the AI to improve pick selection"
-    }
-
-
-@api_router.get("/picks-performance")
-async def get_public_picks_performance():
-    """Get public performance stats for daily picks (for landing page)"""
-    
-    won_picks = await db.daily_picks.count_documents({"outcome": "won"})
-    lost_picks = await db.daily_picks.count_documents({"outcome": "lost"})
-    push_picks = await db.daily_picks.count_documents({"outcome": "push"})
-    
-    decided_picks = won_picks + lost_picks
-    win_rate = round((won_picks / decided_picks * 100), 1) if decided_picks > 0 else 0
-    
-    # Get recent completed picks (last 7 with outcomes) for display
-    recent_results = await db.daily_picks.find(
-        {"outcome": {"$in": ["won", "lost", "push"]}},
-        {"_id": 0, "id": 1, "title": 1, "sport": 1, "win_probability": 1, "outcome": 1, "odds": 1, "created_at": 1}
-    ).sort("outcome_updated_at", -1).limit(6).to_list(6)
-    
-    # Calculate streak
-    all_outcomes = await db.daily_picks.find(
-        {"outcome": {"$in": ["won", "lost"]}},
-        {"_id": 0, "outcome": 1}
-    ).sort("outcome_updated_at", -1).to_list(50)
-    
-    current_streak = 0
-    streak_type = None
-    for pick in all_outcomes:
-        if streak_type is None:
-            streak_type = pick['outcome']
-            current_streak = 1
-        elif pick['outcome'] == streak_type:
-            current_streak += 1
-        else:
-            break
-    
-    return {
-        "won": won_picks,
-        "lost": lost_picks,
-        "push": push_picks,
-        "win_rate": win_rate,
-        "total_decided": decided_picks,
-        "current_streak": current_streak,
-        "streak_type": streak_type,
-        "recent_results": recent_results
-    }
-
-
-# ===== AUTO-GENERATE DAILY PICKS =====
-
-async def fetch_upcoming_games():
-    """Fetch upcoming games from The Odds API"""
-    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
-    if not ODDS_API_KEY:
-        return []
-    
-    sports = [
-        'americanfootball_nfl',
-        'basketball_nba', 
-        'baseball_mlb',
-        'icehockey_nhl'
-    ]
-    
-    all_games = []
-    
-    async with aiohttp.ClientSession() as session:
-        for sport in sports:
-            try:
-                url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
-                params = {
-                    'apiKey': ODDS_API_KEY,
-                    'regions': 'us',
-                    'markets': 'spreads,h2h,totals',
-                    'oddsFormat': 'american'
-                }
-                
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as response:
-                    if response.status == 200:
-                        games = await response.json()
-                        for game in games[:5]:  # Limit to 5 games per sport
-                            game['sport_key'] = sport
-                            all_games.append(game)
-            except Exception as e:
-                logging.error(f"Error fetching {sport} odds: {e}")
-                continue
-    
-    return all_games
-
-
-async def analyze_games_with_ai(games: list) -> list:
-    """Use AI to analyze games and pick the best 3"""
-    if not games:
-        return []
-    
-    # Format games for AI analysis
-    games_text = ""
-    for i, game in enumerate(games):
-        sport = game.get('sport_key', '').replace('_', ' ').title()
-        home = game.get('home_team', 'Unknown')
-        away = game.get('away_team', 'Unknown')
-        commence = game.get('commence_time', '')
-        
-        # Get odds
-        spreads = ""
-        moneyline = ""
-        for bookmaker in game.get('bookmakers', [])[:1]:
-            for market in bookmaker.get('markets', []):
-                if market['key'] == 'spreads':
-                    for outcome in market.get('outcomes', []):
-                        if outcome['name'] == home:
-                            spreads = f"{home} {outcome.get('point', '')} ({outcome.get('price', '')})"
-                elif market['key'] == 'h2h':
-                    for outcome in market.get('outcomes', []):
-                        if outcome['name'] == home:
-                            moneyline = f"{home} ML ({outcome.get('price', '')})"
-        
-        games_text += f"\n{i+1}. {sport}: {away} @ {home}"
-        games_text += f"\n   Time: {commence}"
-        if spreads:
-            games_text += f"\n   Spread: {spreads}"
-        if moneyline:
-            games_text += f"\n   Moneyline: {moneyline}"
-        games_text += "\n"
-    
-    # AI prompt to analyze and pick best 3
-    prompt = f"""You are a professional sports betting analyst. Analyze these upcoming games and select the TOP 3 BEST BETS with the highest probability of winning.
-
-GAMES:
-{games_text}
-
-For each of your top 3 picks, provide:
-1. The specific bet (team + spread or moneyline)
-2. Win probability estimate (be realistic, typically 55-75%)
-3. Confidence level (1-10)
-4. 3 key reasons why this bet is good
-5. 1-2 risk factors to watch
-
-IMPORTANT: 
-- Be realistic with probabilities (most good bets are 55-70%)
-- Only pick bets you genuinely think have edge
-- Consider home/away, recent form, injuries, matchups
-
-Respond in this exact JSON format:
-{{
-  "picks": [
-    {{
-      "sport": "NFL/NBA/MLB/NHL",
-      "title": "Team Name -3.5 vs Opponent" or "Team Name ML vs Opponent",
-      "description": "One sentence summary",
-      "win_probability": 65,
-      "odds": "-110",
-      "confidence": 7,
-      "reasoning": ["Reason 1", "Reason 2", "Reason 3"],
-      "risk_factors": ["Risk 1", "Risk 2"],
-      "game_time": "Today 7:30 PM ET",
-      "home_team": "Team Name",
-      "away_team": "Opponent Name"
-    }}
-  ]
-}}"""
-
+    # Initial auto-resolve
     try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"auto_picks_{uuid.uuid4()}",
-            system_message="You are an elite sports betting analyst. Analyze games and provide the best betting picks with realistic probabilities."
-        )
-        
-        msg = UserMessage(text=prompt)
-        response = await chat.send_message(msg)
-        
-        # Parse JSON from response
-        response_text = response
-        
-        # Try to find JSON in response
-        json_match = re.search(r'\{[\s\S]*\}', response_text)
-        if json_match:
-            picks_data = json.loads(json_match.group())
-            return picks_data.get('picks', [])
-        
+        resolver = AutoResolverService(db)
+        await resolver.resolve_picks()
     except Exception as e:
-        logging.error(f"Error analyzing games with AI: {e}")
-    
-    return []
+        logger.warning(f"Initial auto-resolve failed: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    for task in _background_tasks:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+    client.close()
 
 
-async def auto_generate_daily_picks():
-    """Auto-generate daily picks using real odds and AI analysis"""
-    try:
-        # Check if we already have recent picks (within last 20 hours)
-        twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
-        recent_picks = await db.daily_picks.count_documents({
-            "is_active": True,
-            "created_at": {"$gte": twenty_hours_ago},
-            "auto_generated": True
-        })
-        
-        if recent_picks >= 3:
-            return {"message": "Recent picks already exist", "generated": False}
-        
-        # Fetch upcoming games
-        games = await fetch_upcoming_games()
-        if not games:
-            return {"message": "No upcoming games found", "generated": False}
-        
-        # Analyze with AI
-        ai_picks = await analyze_games_with_ai(games)
-        if not ai_picks:
-            return {"message": "AI analysis failed", "generated": False}
-        
-        # Deactivate old auto-generated picks
-        await db.daily_picks.update_many(
-            {"auto_generated": True},
-            {"$set": {"is_active": False}}
-        )
-        
-        # Create new picks
-        created_picks = []
-        for pick in ai_picks[:3]:  # Only top 3
-            new_pick = {
-                "id": str(uuid.uuid4()),
-                "title": pick.get('title', 'Unknown Bet'),
-                "description": pick.get('description', ''),
-                "win_probability": float(pick.get('win_probability', 60)),
-                "odds": str(pick.get('odds', '-110')),
-                "sport": pick.get('sport', 'NFL'),
-                "confidence": int(pick.get('confidence', 7)),
-                "reasoning": pick.get('reasoning', []),
-                "risk_factors": pick.get('risk_factors', []),
-                "game_time": pick.get('game_time', 'TBD'),
-                "created_by": "AI Auto-Generator",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "is_active": True,
-                "auto_generated": True
-            }
-            await db.daily_picks.insert_one(new_pick)
-            created_picks.append(new_pick['title'])
-        
-        return {
-            "message": f"Generated {len(created_picks)} new picks",
-            "generated": True,
-            "picks": created_picks
-        }
-        
-    except Exception as e:
-        logging.error(f"Error auto-generating picks: {e}")
-        return {"message": f"Error: {str(e)}", "generated": False}
-
-
-@api_router.post("/admin/generate-picks")
-async def trigger_auto_generate_picks(admin_user: dict = Depends(get_admin_user)):
-    """Manually trigger smart AI pick generation with learning (admin only)"""
-    smart_service = SmartPicksService(db)
-    result = await smart_service.generate_smart_picks(force=True)
-    return result
-
-
-@api_router.post("/cron/generate-picks")
-async def cron_generate_picks(request: Request):
-    """
-    Endpoint for scheduled cron job to auto-generate picks.
-    Protected by a secret key in the request body.
-    """
-    try:
-        body = await request.json()
-        secret_key = body.get('secret_key', '')
-        
-        if secret_key != "BetrSlip2026SecureReset":
-            raise HTTPException(status_code=403, detail="Invalid secret key")
-        
-        smart_service = SmartPicksService(db)
-        result = await smart_service.generate_smart_picks()
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-# ===== AUTO-RESOLVE PICK OUTCOMES =====
-
-async def fetch_completed_scores():
-    """Fetch completed game scores from The Odds API"""
-    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
-    if not ODDS_API_KEY:
-        logging.warning("No ODDS_API_KEY found for score fetching")
-        return []
-    
-    sports = [
-        'americanfootball_nfl',
-        'basketball_nba', 
-        'baseball_mlb',
-        'icehockey_nhl'
-    ]
-    
-    all_scores = []
-    
-    async with aiohttp.ClientSession() as session:
-        for sport in sports:
-            try:
-                url = f"https://api.the-odds-api.com/v4/sports/{sport}/scores"
-                params = {
-                    'apiKey': ODDS_API_KEY,
-                    'daysFrom': 3  # Look back 3 days for completed games
-                }
-                
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as response:
-                    if response.status == 200:
-                        games = await response.json()
-                        for game in games:
-                            if game.get('completed', False):
-                                game['sport_key'] = sport
-                                all_scores.append(game)
-            except Exception as e:
-                logging.error(f"Error fetching {sport} scores: {e}")
-                continue
-    
-    return all_scores
-
-
-def normalize_team_name(name: str) -> str:
-    """Normalize team name for matching"""
-    if not name:
-        return ""
-    # Remove common suffixes and lowercase
-    name = name.lower().strip()
-    # Remove city prefixes for better matching
-    name = re.sub(r'^(los angeles|la|new york|ny|san francisco|sf|golden state|gs)\s+', '', name)
-    # Remove common words
-    name = re.sub(r'\s+(fc|sc|city|united)$', '', name)
-    return name
-
-
-def parse_pick_details(title: str):
-    """Parse pick title to extract team, bet type, and line"""
-    title_lower = title.lower()
-    
-    # Try to match spread pattern: "Team -3.5 vs Opponent" or "Team +3.5 vs Opponent"
-    spread_match = re.search(r'(.+?)\s+([\+\-]\d+\.?\d*)\s+vs\s+(.+)', title_lower)
-    if spread_match:
-        team = spread_match.group(1).strip()
-        spread = float(spread_match.group(2))
-        opponent = spread_match.group(3).strip()
-        return {'type': 'spread', 'team': team, 'spread': spread, 'opponent': opponent}
-    
-    # Try to match moneyline pattern: "Team ML vs Opponent"
-    ml_match = re.search(r'(.+?)\s+ml\s+vs\s+(.+)', title_lower)
-    if ml_match:
-        team = ml_match.group(1).strip()
-        opponent = ml_match.group(2).strip()
-        return {'type': 'moneyline', 'team': team, 'opponent': opponent}
-    
-    # Try simple "Team vs Opponent" pattern
-    vs_match = re.search(r'(.+?)\s+vs\s+(.+)', title_lower)
-    if vs_match:
-        team = vs_match.group(1).strip()
-        opponent = vs_match.group(2).strip()
-        return {'type': 'moneyline', 'team': team, 'opponent': opponent}
-    
-    return None
-
-
-def determine_outcome(pick_details: dict, game_scores: dict) -> str:
-    """Determine if a pick won, lost, or pushed based on game scores"""
-    if not pick_details or not game_scores:
-        return None
-    
-    home_team = normalize_team_name(game_scores.get('home_team', ''))
-    away_team = normalize_team_name(game_scores.get('away_team', ''))
-    
-    # Get scores
-    scores = game_scores.get('scores', [])
-    if not scores or len(scores) < 2:
-        return None
-    
-    home_score = None
-    away_score = None
-    for score in scores:
-        if normalize_team_name(score.get('name', '')) == home_team:
-            home_score = int(score.get('score', 0))
-        elif normalize_team_name(score.get('name', '')) == away_team:
-            away_score = int(score.get('score', 0))
-    
-    if home_score is None or away_score is None:
-        return None
-    
-    # Determine which team we picked
-    pick_team = normalize_team_name(pick_details.get('team', ''))
-    
-    # Match pick team to home or away
-    picked_home = pick_team in home_team or home_team in pick_team
-    picked_away = pick_team in away_team or away_team in pick_team
-    
-    if not picked_home and not picked_away:
-        # Try matching with just key words
-        for word in pick_team.split():
-            if len(word) > 3:
-                if word in home_team:
-                    picked_home = True
-                    break
-                elif word in away_team:
-                    picked_away = True
-                    break
-    
-    if not picked_home and not picked_away:
-        return None  # Can't determine which team was picked
-    
-    picked_score = home_score if picked_home else away_score
-    opponent_score = away_score if picked_home else home_score
-    
-    bet_type = pick_details.get('type', 'moneyline')
-    
-    if bet_type == 'spread':
-        spread = pick_details.get('spread', 0)
-        # Add spread to picked team's score
-        adjusted_score = picked_score + spread
-        
-        if adjusted_score > opponent_score:
-            return 'won'
-        elif adjusted_score < opponent_score:
-            return 'lost'
-        else:
-            return 'push'
-    
-    elif bet_type == 'moneyline':
-        if picked_score > opponent_score:
-            return 'won'
-        elif picked_score < opponent_score:
-            return 'lost'
-        else:
-            return 'push'
-    
-    return None
-
-
-def match_pick_to_game(pick: dict, completed_games: list) -> dict:
-    """Find the matching completed game for a pick"""
-    pick_details = parse_pick_details(pick.get('title', ''))
-    if not pick_details:
-        return None
-    
-    pick_team = normalize_team_name(pick_details.get('team', ''))
-    pick_opponent = normalize_team_name(pick_details.get('opponent', ''))
-    pick_sport = pick.get('sport', '').lower()
-    
-    # Map sport names to API sport keys
-    sport_map = {
-        'nfl': 'americanfootball_nfl',
-        'nba': 'basketball_nba',
-        'mlb': 'baseball_mlb',
-        'nhl': 'icehockey_nhl',
-        'football': 'americanfootball_nfl',
-        'basketball': 'basketball_nba',
-        'baseball': 'baseball_mlb',
-        'hockey': 'icehockey_nhl'
-    }
-    
-    expected_sport = sport_map.get(pick_sport, '')
-    
-    for game in completed_games:
-        game_sport = game.get('sport_key', '')
-        
-        # Check sport match (if we know the sport)
-        if expected_sport and game_sport != expected_sport:
-            continue
-        
-        home_team = normalize_team_name(game.get('home_team', ''))
-        away_team = normalize_team_name(game.get('away_team', ''))
-        
-        # Check if pick team matches either home or away
-        team_match = (
-            pick_team in home_team or home_team in pick_team or
-            pick_team in away_team or away_team in pick_team
-        )
-        
-        # Also check opponent
-        opponent_match = (
-            pick_opponent in home_team or home_team in pick_opponent or
-            pick_opponent in away_team or away_team in pick_opponent
-        )
-        
-        # If both team and opponent match, we found our game
-        if team_match and opponent_match:
-            return game
-        
-        # If just team matches strongly, also consider it
-        if team_match:
-            # Check for strong match (team name is substantial part)
-            for word in pick_team.split():
-                if len(word) > 4 and (word in home_team or word in away_team):
-                    return game
-    
-    return None
-
-
-async def auto_resolve_pick_outcomes():
-    """Automatically resolve pending pick outcomes based on completed game scores"""
-    try:
-        # Get pending picks (no outcome set or outcome is 'pending')
-        pending_picks = await db.daily_picks.find({
-            "$or": [
-                {"outcome": {"$exists": False}},
-                {"outcome": None},
-                {"outcome": "pending"}
-            ]
-        }, {"_id": 0}).to_list(100)
-        
-        if not pending_picks:
-            return {"message": "No pending picks to resolve", "resolved": 0}
-        
-        # Fetch completed game scores
-        completed_games = await fetch_completed_scores()
-        if not completed_games:
-            return {"message": "No completed game scores available", "resolved": 0}
-        
-        resolved_count = 0
-        resolved_picks = []
-        
-        for pick in pending_picks:
-            # Try to match pick to a completed game
-            matching_game = match_pick_to_game(pick, completed_games)
-            
-            if matching_game:
-                # Parse pick details
-                pick_details = parse_pick_details(pick.get('title', ''))
-                
-                if pick_details:
-                    # Determine outcome
-                    outcome = determine_outcome(pick_details, matching_game)
-                    
-                    if outcome:
-                        # Update the pick with the outcome
-                        await db.daily_picks.update_one(
-                            {"id": pick['id']},
-                            {"$set": {
-                                "outcome": outcome,
-                                "outcome_updated_at": datetime.now(timezone.utc).isoformat(),
-                                "outcome_updated_by": "Auto-Resolver",
-                                "matched_game": {
-                                    "home_team": matching_game.get('home_team'),
-                                    "away_team": matching_game.get('away_team'),
-                                    "scores": matching_game.get('scores'),
-                                    "completed_at": matching_game.get('commence_time')
-                                }
-                            }}
-                        )
-                        resolved_count += 1
-                        resolved_picks.append({
-                            "title": pick.get('title'),
-                            "outcome": outcome,
-                            "game": f"{matching_game.get('away_team')} @ {matching_game.get('home_team')}"
-                        })
-                        logging.info(f"Auto-resolved pick '{pick.get('title')}' as {outcome}")
-        
-        return {
-            "message": f"Auto-resolved {resolved_count} picks",
-            "resolved": resolved_count,
-            "picks": resolved_picks
-        }
-        
-    except Exception as e:
-        logging.error(f"Error in auto_resolve_pick_outcomes: {e}")
-        return {"message": f"Error: {str(e)}", "resolved": 0}
-
-
-@api_router.post("/admin/auto-resolve-picks")
-async def admin_trigger_auto_resolve(
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Manually trigger auto-resolution of pick outcomes (admin only)"""
-    resolver = AutoResolverService(db)
-    result = await resolver.resolve_picks()
-    return result
-
-
-# Auto-check and generate picks when fetching daily picks
-@api_router.get("/daily-picks")
-async def get_daily_picks_with_auto_generate():
-    """Get active daily picks - auto-generates if needed using smart AI"""
-    # Check if we need to auto-generate
-    twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
-    
-    active_recent_picks = await db.daily_picks.count_documents({
-        "is_active": True,
-        "created_at": {"$gte": twenty_hours_ago}
-    })
-    
-    # If no recent picks, try to auto-generate using smart service
-    if active_recent_picks == 0:
-        logging.info("No recent picks found, attempting smart AI generation...")
-        smart_service = SmartPicksService(db)
-        await smart_service.generate_smart_picks()
-    
-    # Fetch active picks
-    picks = await db.daily_picks.find(
-        {"is_active": True},
-        {"_id": 0}
-    ).sort("win_probability", -1).limit(3).to_list(3)
-    
-    return {"picks": picks, "count": len(picks)}
-
-
-@api_router.get("/")
-async def root():
-    return {"message": "BetrSlip API - AI Bet Slip Companion"}
-
-
-@api_router.get("/health")
-async def api_health_check():
-    """Health check endpoint via API router"""
-    return {"status": "healthy", "service": "betrslip-api"}
-
-
-# Health check endpoint for Kubernetes (root level)
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for Kubernetes liveness/readiness probes"""
-    return {"status": "healthy", "service": "betrslip-api"}
-
-
-# Include the router in the main app
+# ===== MOUNT ROUTER & MIDDLEWARE =====
 app.include_router(api_router)
 
 app.add_middleware(
@@ -2525,58 +431,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-# Background task for auto-resolving picks
-import asyncio
-
-async def periodic_auto_resolve():
-    """Background task to auto-resolve pick outcomes every 2 hours"""
-    while True:
-        try:
-            await asyncio.sleep(7200)  # Wait 2 hours
-            logging.info("Running scheduled auto-resolution of pick outcomes...")
-            resolver = AutoResolverService(db)
-            result = await resolver.resolve_picks()
-            logging.info(f"Auto-resolution result: {result}")
-        except asyncio.CancelledError:
-            break
-        except Exception as e:
-            logging.error(f"Error in periodic_auto_resolve: {e}")
-            await asyncio.sleep(300)  # Wait 5 min on error before retry
-
-_background_tasks = []
-
-@app.on_event("startup")
-async def startup_event():
-    """Run on startup - initialize background tasks"""
-    # Start the periodic auto-resolve task
-    task = asyncio.create_task(periodic_auto_resolve())
-    _background_tasks.append(task)
-    logging.info("Started periodic auto-resolution background task")
-    
-    # Run initial auto-resolution on startup
-    try:
-        logging.info("Running initial auto-resolution on startup...")
-        resolver = AutoResolverService(db)
-        result = await resolver.resolve_picks()
-        logging.info(f"Initial auto-resolution: {result}")
-    except Exception as e:
-        logging.warning(f"Initial auto-resolution failed: {e}")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    # Cancel background tasks
-    for task in _background_tasks:
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-    client.close()
