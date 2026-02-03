@@ -2369,7 +2369,8 @@ async def periodic_auto_resolve():
         try:
             await asyncio.sleep(7200)  # Wait 2 hours
             logging.info("Running scheduled auto-resolution of pick outcomes...")
-            result = await auto_resolve_pick_outcomes()
+            resolver = AutoResolverService(db)
+            result = await resolver.resolve_picks()
             logging.info(f"Auto-resolution result: {result}")
         except asyncio.CancelledError:
             break
@@ -2390,7 +2391,8 @@ async def startup_event():
     # Run initial auto-resolution on startup
     try:
         logging.info("Running initial auto-resolution on startup...")
-        result = await auto_resolve_pick_outcomes()
+        resolver = AutoResolverService(db)
+        result = await resolver.resolve_picks()
         logging.info(f"Initial auto-resolution: {result}")
     except Exception as e:
         logging.warning(f"Initial auto-resolution failed: {e}")
