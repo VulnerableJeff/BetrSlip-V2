@@ -32,6 +32,8 @@ from admin_subscription import (
     create_subscription_record, update_subscription_status,
     FREE_ANALYSIS_LIMIT, SUBSCRIPTION_PRICE, ADMIN_EMAIL
 )
+from services.smart_picks_service import SmartPicksService
+from services.auto_resolver_service import AutoResolverService
 
 
 ROOT_DIR = Path(__file__).parent
