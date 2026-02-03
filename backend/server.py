@@ -1726,6 +1726,17 @@ async def admin_get_picks_performance(admin_user: dict = Depends(get_admin_user)
     }
 
 
+@api_router.get("/admin/ai-learning-stats")
+async def admin_get_ai_learning_stats(admin_user: dict = Depends(get_admin_user)):
+    """Get detailed AI learning statistics (admin only)"""
+    smart_service = SmartPicksService(db)
+    performance = await smart_service.get_historical_performance()
+    return {
+        "learning_data": performance,
+        "message": "This data is used by the AI to improve pick selection"
+    }
+
+
 @api_router.get("/picks-performance")
 async def get_public_picks_performance():
     """Get public performance stats for daily picks (for landing page)"""
