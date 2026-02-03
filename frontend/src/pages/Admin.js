@@ -1772,6 +1772,167 @@ const Admin = () => {
           </Card>
         </div>
       )}
+
+      {/* Live Streams Tab */}
+      {activeTab === 'streams' && (
+        <div className="max-w-4xl mx-auto">
+          <Card className="glass border-red-500/30 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Live Streams Management</h2>
+                  <p className="text-slate-400 text-sm">Add stream links for live games</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowStreamModal(true)}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Stream
+              </Button>
+            </div>
+
+            {liveStreams.length === 0 ? (
+              <div className="text-center py-12">
+                <Activity className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400">No live streams configured</p>
+                <p className="text-slate-500 text-sm mt-1">Add stream links for ongoing games</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {liveStreams.map((stream) => (
+                  <div key={stream.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-semibold">{stream.title}</p>
+                          {stream.is_active ? (
+                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                          ) : (
+                            <span className="bg-slate-600 text-white text-xs px-2 py-0.5 rounded-full">OFF</span>
+                          )}
+                        </div>
+                        <p className="text-slate-400 text-sm">{stream.sport} • {stream.network || 'Stream'}</p>
+                        {stream.stream_url && <p className="text-blue-400 text-xs truncate max-w-md">{stream.stream_url}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => handleToggleStream(stream.id)} variant="outline" size="sm" className="border-slate-600">
+                          {stream.is_active ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button onClick={() => handleDeleteStream(stream.id)} variant="outline" size="sm" className="border-red-500/50 text-red-400">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* Add Stream Modal */}
+      {showStreamModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <Card className="glass border-red-500/30 p-6 max-w-lg w-full">
+            <h2 className="text-xl font-bold text-white mb-4">Add Live Stream</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-slate-400 text-sm">Game Title *</label>
+                <input
+                  type="text"
+                  value={streamForm.title}
+                  onChange={(e) => setStreamForm({ ...streamForm, title: e.target.value })}
+                  placeholder="Lakers vs Celtics"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 text-sm">Sport</label>
+                  <select
+                    value={streamForm.sport}
+                    onChange={(e) => setStreamForm({ ...streamForm, sport: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  >
+                    <option>NBA</option>
+                    <option>NFL</option>
+                    <option>MLB</option>
+                    <option>NHL</option>
+                    <option>UFC</option>
+                    <option>Soccer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 text-sm">Network</label>
+                  <input
+                    type="text"
+                    value={streamForm.network}
+                    onChange={(e) => setStreamForm({ ...streamForm, network: e.target.value })}
+                    placeholder="ESPN, TNT, etc."
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">Embed Stream URL</label>
+                <input
+                  type="text"
+                  value={streamForm.stream_url}
+                  onChange={(e) => setStreamForm({ ...streamForm, stream_url: e.target.value })}
+                  placeholder="https://embed.example.com/stream"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">External Link (fallback)</label>
+                <input
+                  type="text"
+                  value={streamForm.external_url}
+                  onChange={(e) => setStreamForm({ ...streamForm, external_url: e.target.value })}
+                  placeholder="https://example.com/watch"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 text-sm">Score (optional)</label>
+                  <input
+                    type="text"
+                    value={streamForm.score}
+                    onChange={(e) => setStreamForm({ ...streamForm, score: e.target.value })}
+                    placeholder="102 - 98"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 text-sm">Quarter/Period</label>
+                  <input
+                    type="text"
+                    value={streamForm.quarter}
+                    onChange={(e) => setStreamForm({ ...streamForm, quarter: e.target.value })}
+                    placeholder="Q3, 2nd Half, etc."
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button onClick={() => setShowStreamModal(false)} variant="outline" className="flex-1 border-slate-600">
+                  Cancel
+                </Button>
+                <Button onClick={handleAddStream} className="flex-1 bg-red-500 hover:bg-red-600">
+                  Add Stream
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
