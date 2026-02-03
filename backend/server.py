@@ -91,6 +91,108 @@ async def get_usage_compat(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ===== LIVE GAMES STREAMING =====
+@api_router.get("/live-games")
+async def get_live_games():
+    """Get currently live games with stream links"""
+    # Get admin-configured streams
+    streams = await db.live_streams.find(
+        {"is_active": True},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(20)
+    
+    # Also try to get live games from The Odds API
+    live_from_api = []
+    if ODDS_API_KEY:
+        try:
+            async with aiohttp.ClientSession() as session:
+                for sport in ['basketball_nba', 'americanfootball_nfl', 'icehockey_nhl']:
+                    url = f"https://api.the-odds-api.com/v4/sports/{sport}/scores"
+                    params = {'apiKey': ODDS_API_KEY, 'daysFrom': 1}
+                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            games = await resp.json()
+                            for game in games:
+                                if not game.get('completed') and game.get('scores'):
+                                    # Game is in progress
+                                    sport_name = {'basketball_nba': 'NBA', 'americanfootball_nfl': 'NFL', 'icehockey_nhl': 'NHL'}.get(sport, sport)
+                                    scores = game.get('scores', [])
+                                    score_str = f"{scores[0].get('score', 0)} - {scores[1].get('score', 0)}" if len(scores) >= 2 else ""
+                                    
+                                    live_from_api.append({
+                                        "id": game.get('id', str(uuid.uuid4())),
+                                        "title": f"{game.get('away_team', '')} vs {game.get('home_team', '')}",
+                                        "sport": sport_name,
+                                        "score": score_str,
+                                        "quarter": "LIVE",
+                                        "stream_url": None,
+                                        "external_url": None,
+                                        "is_live": True
+                                    })
+        except Exception as e:
+            logger.warning(f"Error fetching live scores: {e}")
+    
+    # Combine admin streams with API games
+    all_games = streams + live_from_api
+    
+    return {"games": all_games, "total": len(all_games)}
+
+
+class LiveStreamCreate(BaseModel):
+    title: str
+    sport: str
+    stream_url: Optional[str] = None
+    external_url: Optional[str] = None
+    score: Optional[str] = None
+    quarter: Optional[str] = None
+    network: Optional[str] = None
+
+@api_router.post("/admin/live-streams")
+async def admin_create_stream(
+    stream: LiveStreamCreate,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Add a live stream link (admin only)"""
+    new_stream = {
+        "id": str(uuid.uuid4()),
+        **stream.dict(),
+        "is_active": True,
+        "created_by": admin_user['email'],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.live_streams.insert_one(new_stream)
+    return {"message": "Stream added", "stream_id": new_stream["id"]}
+
+
+@api_router.get("/admin/live-streams")
+async def admin_get_streams(admin_user: dict = Depends(get_admin_user)):
+    """Get all live streams (admin only)"""
+    streams = await db.live_streams.find({}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"streams": streams, "total": len(streams)}
+
+
+@api_router.delete("/admin/live-streams/{stream_id}")
+async def admin_delete_stream(stream_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Delete a live stream (admin only)"""
+    result = await db.live_streams.delete_one({"id": stream_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Stream not found")
+    return {"message": "Stream deleted"}
+
+
+@api_router.post("/admin/live-streams/{stream_id}/toggle")
+async def admin_toggle_stream(stream_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Toggle stream active status (admin only)"""
+    stream = await db.live_streams.find_one({"id": stream_id})
+    if not stream:
+        raise HTTPException(status_code=404, detail="Stream not found")
+    
+    new_status = not stream.get('is_active', True)
+    await db.live_streams.update_one({"id": stream_id}, {"$set": {"is_active": new_status}})
+    return {"message": f"Stream {'activated' if new_status else 'deactivated'}"}
+
+
 # ===== HEALTH ENDPOINTS =====
 @app.get("/health")
 async def health_check():
