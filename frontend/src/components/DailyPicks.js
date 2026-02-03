@@ -11,11 +11,10 @@ const DailyPicks = ({ usage, onSubscribe }) => {
   const [loading, setLoading] = useState(true);
   const [expandedPick, setExpandedPick] = useState(null);
 
-  // Check if user can view picks - only after usage is loaded
-  // usage.analyses_used is the count of analyses used
-  // usage.free_limit is 5
-  // Show picks while loading usage, or if subscribed, or if under free limit
-  const isLockedOut = usage && !usage.is_subscribed && usage.analyses_used >= (usage.free_limit || 5);
+  // Daily Picks is a PRO-ONLY feature
+  // Users must be subscribed to see the actual picks
+  const isProUser = usage?.is_subscribed === true;
+  const isLockedOut = !isProUser;
 
   useEffect(() => {
     fetchDailyPicks();
