@@ -346,6 +346,37 @@ const Admin = () => {
     }
   };
 
+  // CashApp Management Functions
+  const handleApproveCashApp = async (requestId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/cashapp-requests/${requestId}/approve`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(response.data.message || 'CashApp payment approved!');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error approving payment');
+    }
+  };
+
+  const handleRejectCashApp = async (requestId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/cashapp-requests/${requestId}/reject`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('CashApp request rejected');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error rejecting request');
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
