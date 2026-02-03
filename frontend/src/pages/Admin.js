@@ -1626,6 +1626,86 @@ const Admin = () => {
           </Card>
         </div>
       )}
+
+      {/* CashApp Tab Content */}
+      {activeTab === 'cashapp' && (
+        <div className="max-w-4xl mx-auto">
+          <Card className="glass border-emerald-500/30 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">CashApp Payment Requests</h2>
+                  <p className="text-slate-400 text-sm">
+                    Pending requests: {cashAppRequests.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {cashAppRequests.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400">No pending CashApp requests</p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Requests will appear here when users submit CashApp payments
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {cashAppRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-semibold">{request.email}</p>
+                        <p className="text-emerald-400 font-mono text-sm">
+                          ${request.amount?.toFixed(2) || '5.00'}
+                        </p>
+                        <p className="text-slate-500 text-xs mt-1">
+                          Requested: {new Date(request.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleApproveCashApp(request.id)}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                          size="sm"
+                          data-testid={`approve-cashapp-${request.id}`}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          onClick={() => handleRejectCashApp(request.id)}
+                          variant="outline"
+                          className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                          size="sm"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+              <h3 className="text-white font-semibold mb-2">CashApp Tag</h3>
+              <p className="text-emerald-400 font-mono text-xl font-bold">$BetrSlip</p>
+              <p className="text-slate-500 text-xs mt-2">
+                Users send $5 to this tag and include their email in the note
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
