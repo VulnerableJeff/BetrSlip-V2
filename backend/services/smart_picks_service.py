@@ -260,35 +260,41 @@ class SmartPicksService:
             logger.error("No EMERGENT_LLM_KEY found")
             return []
         
-        # Format games for analysis
-        games_text = self._format_games_for_ai(games)
+        # Format games for analysis with enhanced intelligence
+        games_text = self._format_games_for_ai_enhanced(games)
         
         # Build learning context
         learning_context = self._build_learning_context(performance)
         
-        prompt = f"""You are an ELITE sports betting analyst with access to historical performance data. Your goal is to find the HIGHEST PROBABILITY winning bets.
+        prompt = f"""You are an ELITE sports betting analyst with access to historical performance data AND real-time game intelligence. Your goal is to find the HIGHEST PROBABILITY winning bets.
 
 ## YOUR HISTORICAL PERFORMANCE (LEARN FROM THIS):
 {learning_context}
 
-## TODAY'S AVAILABLE GAMES:
+## TODAY'S AVAILABLE GAMES WITH INTELLIGENCE:
 {games_text}
 
 ## YOUR TASK:
-Select the TOP 3 BEST BETS with the highest probability of winning. Apply what you've learned from historical performance.
+Select the TOP 3 BEST BETS with the highest probability of winning. Use ALL available intelligence data.
+
+## INTELLIGENCE FACTORS TO ANALYZE:
+1. **Recent Form** - Team's last 10 game performance
+2. **Rest Advantage** - Days since last game (fresh vs tired)
+3. **Home/Away Splits** - Performance at home vs on road
+4. **Head-to-Head** - Historical matchup results
+5. **ATS Record** - Against-the-spread performance
+6. **Injury Impact** - Key players out or questionable
+7. **Weather** (outdoor sports) - Wind, rain, cold affecting play
+8. **Public Betting %** - Fade the public when appropriate
+9. **Line Movement** - Sharp money indicators
 
 ## SELECTION CRITERIA (PRIORITIZE):
 1. **Avoid recent losing patterns** - Don't pick teams/bet types that have been losing
 2. **Favor high-performing sports** - Pick from sports with better historical win rates
-3. **Calibrate confidence properly** - If high confidence picks have been losing, be more conservative
-4. **Look for value** - Find bets where true probability exceeds implied odds probability
-5. **Consider key factors**: Home advantage, rest days, injuries, recent form, head-to-head history
-
-## ADVANCED ANALYSIS REQUIRED:
-- Calculate implied probability from odds
-- Estimate true probability based on team strength, matchup, and situational factors
-- Identify any edge (true prob - implied prob)
-- Only pick bets with positive expected value
+3. **Exploit rest advantages** - Teams with more rest often perform better
+4. **Consider weather** - Bad weather = lower scoring, affects passing/kicking
+5. **Fade heavy public action** - When public is >70% on one side, consider opposite
+6. **Trust sharp money** - Follow line movement from professional bettors
 
 ## OUTPUT FORMAT (JSON):
 {{
@@ -302,14 +308,17 @@ Select the TOP 3 BEST BETS with the highest probability of winning. Apply what y
       "odds": "-110",
       "confidence": 8,
       "reasoning": [
-        "Key reason 1 with specific data",
+        "Key reason 1 with specific data (form, rest, etc.)",
         "Key reason 2 with specific data", 
         "Key reason 3 with specific data"
       ],
       "risk_factors": ["Main risk to watch"],
       "game_time": "Today 7:30 PM ET",
       "edge_analysis": "Implied prob: 52.4%, Our estimate: 62%, Edge: +9.6%",
-      "historical_context": "Similar picks have won X% of the time"
+      "historical_context": "Similar picks have won X% of the time",
+      "matchup_data": "Key matchup advantage summary",
+      "weather_impact": "Weather conditions and impact (if applicable)",
+      "public_betting": "X% public on this side"
     }}
   ]
 }}
