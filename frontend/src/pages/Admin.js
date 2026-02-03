@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Users, Ban, CheckCircle, BarChart3, DollarSign, Shield, ArrowLeft, RefreshCw,
   Search, Eye, Gift, Trash2, Download, Crown, Clock, Activity,
-  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2
+  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2, MessageSquare
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -20,8 +20,9 @@ const Admin = () => {
   const [topBetsStats, setTopBetsStats] = useState(null);
   const [dailyPicks, setDailyPicks] = useState([]);
   const [picksPerformance, setPicksPerformance] = useState(null);
+  const [cashAppRequests, setCashAppRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'topbets', or 'dailypicks'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'topbets', 'dailypicks', or 'cashapp'
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [banReason, setBanReason] = useState('');
