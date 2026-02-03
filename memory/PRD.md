@@ -160,13 +160,12 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
    - Added Open Graph and Twitter Card meta tags
    - Removed "Made with Emergent" badge from HTML
 
-5. **Daily Picks Feature (NEW)** ✅
+5. **Daily Picks Feature** ✅
    - "Today's Top Picks" section on Dashboard showing 1-3 featured bets
    - Admin can create, edit, activate/deactivate, and delete picks
    - Picks include: sport, title, description, win probability, odds, confidence, reasoning, risk factors, game time
-   - Public API endpoint for fetching active picks
-   - **PREMIUM FEATURE**: Daily Picks are locked for users who have exhausted their 5 free analyses
-   - Locked state shows blurred picks with "Unlock Daily Picks" overlay and "Go Pro - $5/month" button
+   - **PRO-ONLY FEATURE**: Daily Picks are locked for ALL free users
+   - Locked state shows blurred picks with "Pro Feature" overlay and "Go Pro - $5/month" button
    - Pro/subscribed users see full picks with "PRO" badge
 
 6. **"How It Works" Landing Page Section (NEW)** ✅
