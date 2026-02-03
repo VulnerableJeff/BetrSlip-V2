@@ -70,6 +70,27 @@ api_router.include_router(subscriptions.router)
 api_router.include_router(picks.router)
 
 
+# ===== BACKWARDS COMPATIBLE ROUTES =====
+# These redirect old endpoints to new structure
+@api_router.get("/usage")
+async def get_usage_compat(current_user: dict = Depends(get_current_user)):
+    """Backwards compatible usage endpoint"""
+    user_id = current_user['user_id']
+    usage = await db.user_usage.find_one({"user_id": user_id}, {"_id": 0})
+    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    
+    is_subscribed = subscription and subscription.get('subscription_status') == 'active'
+    analyses_count = usage.get('analyses_count', 0) if usage else 0
+    
+    return {
+        "analyses_used": analyses_count,
+        "analyses_remaining": max(0, 5 - analyses_count) if not is_subscribed else 999,
+        "free_limit": 5,
+        "is_subscribed": is_subscribed,
+        "can_analyze": is_subscribed or analyses_count < 5
+    }
+
+
 # ===== HEALTH ENDPOINTS =====
 @app.get("/health")
 async def health_check():
