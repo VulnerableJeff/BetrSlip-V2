@@ -1,6 +1,7 @@
 """
 Smart Picks Service - Enhanced AI-powered sports betting analysis
 Includes historical performance tracking, learning from past picks, and advanced analytics
+Now with enhanced sports intelligence for smarter predictions
 """
 
 import os
@@ -32,10 +33,18 @@ SPORT_NAMES = {v: k for k, v in SPORT_KEYS.items()}
 
 
 class SmartPicksService:
-    """Enhanced AI picks service with learning capabilities"""
+    """Enhanced AI picks service with learning capabilities and advanced analytics"""
     
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
+        self._intelligence = None
+    
+    async def _get_intelligence(self):
+        """Lazy load enhanced intelligence service"""
+        if self._intelligence is None:
+            from services.enhanced_sports_intelligence import EnhancedSportsIntelligence
+            self._intelligence = EnhancedSportsIntelligence(self.db)
+        return self._intelligence
     
     async def get_historical_performance(self) -> Dict:
         """Get historical performance stats to inform AI decisions"""
