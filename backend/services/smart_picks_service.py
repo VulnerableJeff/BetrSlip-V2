@@ -351,8 +351,99 @@ IMPORTANT RULES:
         
         return []
     
+    def _format_games_for_ai_enhanced(self, games: List[Dict]) -> str:
+        """Format games with enhanced intelligence data for AI analysis"""
+        output = ""
+        for i, game in enumerate(games):
+            sport = game.get('sport_name', 'Unknown')
+            home = game.get('home_team', 'Unknown')
+            away = game.get('away_team', 'Unknown')
+            commence = game.get('commence_time', '')
+            intel = game.get('intelligence', {})
+            
+            # Parse commence time
+            try:
+                dt = datetime.fromisoformat(commence.replace('Z', '+00:00'))
+                time_str = dt.strftime('%A %I:%M %p ET')
+            except:
+                time_str = commence
+            
+            output += f"\n{'='*50}"
+            output += f"\n{i+1}. [{sport}] {away} @ {home}"
+            output += f"\n   Time: {time_str}"
+            
+            # Extract odds from bookmakers
+            for bookmaker in game.get('bookmakers', [])[:1]:
+                for market in bookmaker.get('markets', []):
+                    if market['key'] == 'spreads':
+                        for outcome in market.get('outcomes', []):
+                            point = outcome.get('point', 0)
+                            price = outcome.get('price', 0)
+                            sign = '+' if point > 0 else ''
+                            output += f"\n   Spread: {outcome['name']} {sign}{point} ({price})"
+                    elif market['key'] == 'h2h':
+                        for outcome in market.get('outcomes', []):
+                            price = outcome.get('price', 0)
+                            output += f"\n   ML: {outcome['name']} ({price})"
+            
+            # Add enhanced intelligence
+            if intel:
+                matchup = intel.get('matchup', {})
+                weather = intel.get('weather', {})
+                public = intel.get('public_betting', {})
+                
+                # Team intelligence
+                team1_intel = matchup.get('team1_intel', {})
+                team2_intel = matchup.get('team2_intel', {})
+                
+                output += f"\n   --- INTELLIGENCE DATA ---"
+                
+                # Recent form
+                if team1_intel.get('recent_form'):
+                    form1 = team1_intel['recent_form']
+                    output += f"\n   {home} Form: {form1.get('wins', 0)}-{form1.get('losses', 0)} ({form1.get('win_pct', 50)}%)"
+                if team2_intel.get('recent_form'):
+                    form2 = team2_intel['recent_form']
+                    output += f"\n   {away} Form: {form2.get('wins', 0)}-{form2.get('losses', 0)} ({form2.get('win_pct', 50)}%)"
+                
+                # Rest days
+                rest1 = team1_intel.get('rest_days', 0)
+                rest2 = team2_intel.get('rest_days', 0)
+                if rest1 or rest2:
+                    output += f"\n   Rest: {home} ({rest1} days) vs {away} ({rest2} days)"
+                
+                # ATS records
+                ats1 = team1_intel.get('ats_record', {})
+                ats2 = team2_intel.get('ats_record', {})
+                if ats1.get('cover_pct'):
+                    output += f"\n   ATS: {home} covers {ats1.get('cover_pct')}%, {away} covers {ats2.get('cover_pct', 50)}%"
+                
+                # Advantages
+                advantages = matchup.get('advantages', [])
+                if advantages:
+                    output += f"\n   Key Advantages: {'; '.join(advantages[:3])}"
+                
+                # Weather (outdoor sports)
+                if weather:
+                    output += f"\n   Weather: {weather.get('temp_f', 70)}°F, {weather.get('condition', 'Clear')}"
+                    if weather.get('wind_mph', 0) > 10:
+                        output += f", Wind: {weather.get('wind_mph')} mph"
+                    if weather.get('impact'):
+                        output += f"\n   Weather Impact: {weather.get('impact')}"
+                
+                # Public betting
+                spread_public = public.get('spread', {})
+                if spread_public:
+                    output += f"\n   Public Betting: {spread_public.get('home_pct', 50)}% on {home}, {spread_public.get('away_pct', 50)}% on {away}"
+                    if spread_public.get('sharp_money'):
+                        output += f" (Sharp money: {spread_public.get('sharp_money')})"
+            
+            output += "\n"
+        
+        return output
+    
     def _format_games_for_ai(self, games: List[Dict]) -> str:
-        """Format games data for AI analysis"""
+        """Format games data for AI analysis (legacy)"""
         output = ""
         for i, game in enumerate(games):
             sport = game.get('sport_name', 'Unknown')
