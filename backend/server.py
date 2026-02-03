@@ -1975,8 +1975,9 @@ async def auto_generate_daily_picks():
 
 @api_router.post("/admin/generate-picks")
 async def trigger_auto_generate_picks(admin_user: dict = Depends(get_admin_user)):
-    """Manually trigger auto-generation of daily picks (admin only)"""
-    result = await auto_generate_daily_picks()
+    """Manually trigger smart AI pick generation with learning (admin only)"""
+    smart_service = SmartPicksService(db)
+    result = await smart_service.generate_smart_picks(force=True)
     return result
 
 
@@ -1993,7 +1994,8 @@ async def cron_generate_picks(request: Request):
         if secret_key != "BetrSlip2026SecureReset":
             raise HTTPException(status_code=403, detail="Invalid secret key")
         
-        result = await auto_generate_daily_picks()
+        smart_service = SmartPicksService(db)
+        result = await smart_service.generate_smart_picks()
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
