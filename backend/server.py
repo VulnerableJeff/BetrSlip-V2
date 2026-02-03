@@ -94,40 +94,36 @@ async def get_usage_compat(current_user: dict = Depends(get_current_user)):
 # ===== LIVE GAMES STREAMING =====
 @api_router.get("/live-games")
 async def get_live_games():
-    """Get currently live games with stream links"""
+    """Get currently live games with stream links and streaming sources"""
+    from services.stream_sources_service import StreamSourcesService
+    
     # Get admin-configured streams
-    streams = await db.live_streams.find(
+    admin_streams = await db.live_streams.find(
         {"is_active": True},
         {"_id": 0}
     ).sort("created_at", -1).to_list(20)
     
-    # Also try to get live games from The Odds API
-    live_from_api = []
-    if ODDS_API_KEY:
-        try:
-            async with aiohttp.ClientSession() as session:
-                for sport in ['basketball_nba', 'americanfootball_nfl', 'icehockey_nhl']:
-                    url = f"https://api.the-odds-api.com/v4/sports/{sport}/scores"
-                    params = {'apiKey': ODDS_API_KEY, 'daysFrom': 1}
-                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                        if resp.status == 200:
-                            games = await resp.json()
-                            for game in games:
-                                if not game.get('completed') and game.get('scores'):
-                                    # Game is in progress
-                                    sport_name = {'basketball_nba': 'NBA', 'americanfootball_nfl': 'NFL', 'icehockey_nhl': 'NHL'}.get(sport, sport)
-                                    scores = game.get('scores', [])
-                                    score_str = f"{scores[0].get('score', 0)} - {scores[1].get('score', 0)}" if len(scores) >= 2 else ""
-                                    
-                                    live_from_api.append({
-                                        "id": game.get('id', str(uuid.uuid4())),
-                                        "title": f"{game.get('away_team', '')} vs {game.get('home_team', '')}",
-                                        "sport": sport_name,
-                                        "score": score_str,
-                                        "quarter": "LIVE",
-                                        "stream_url": None,
-                                        "external_url": None,
-                                        "is_live": True
+    # Get live games with streaming sources from API
+    stream_service = StreamSourcesService()
+    api_games = await stream_service.get_live_games_with_streams()
+    
+    # Merge admin streams with API games (admin streams take priority)
+    admin_game_ids = {s.get('id') for s in admin_streams}
+    
+    # Filter out API games that have admin overrides
+    filtered_api_games = [g for g in api_games if g.get('id') not in admin_game_ids]
+    
+    # Combine: admin streams first, then API games
+    all_games = admin_streams + filtered_api_games
+    
+    return {
+        "games": all_games[:15],  # Limit to 15 games
+        "total": len(all_games),
+        "sources": {
+            "admin_configured": len(admin_streams),
+            "api_detected": len(api_games)
+        }
+    }
                                     })
         except Exception as e:
             logger.warning(f"Error fetching live scores: {e}")
