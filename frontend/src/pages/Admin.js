@@ -21,8 +21,9 @@ const Admin = () => {
   const [dailyPicks, setDailyPicks] = useState([]);
   const [picksPerformance, setPicksPerformance] = useState(null);
   const [cashAppRequests, setCashAppRequests] = useState([]);
+  const [liveStreams, setLiveStreams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'topbets', 'dailypicks', or 'cashapp'
+  const [activeTab, setActiveTab] = useState('users');
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [banReason, setBanReason] = useState('');
@@ -31,11 +32,23 @@ const Admin = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBanModal, setShowBanModal] = useState(false);
   const [showPickModal, setShowPickModal] = useState(false);
+  const [showStreamModal, setShowStreamModal] = useState(false);
   const [editingPick, setEditingPick] = useState(null);
   const [expandedUser, setExpandedUser] = useState(null);
   const [expandedBet, setExpandedBet] = useState(null);
   const [generatingPicks, setGeneratingPicks] = useState(false);
   const [autoResolving, setAutoResolving] = useState(false);
+  
+  // Stream Form State
+  const [streamForm, setStreamForm] = useState({
+    title: '',
+    sport: 'NBA',
+    stream_url: '',
+    external_url: '',
+    score: '',
+    quarter: '',
+    network: ''
+  });
   
   // Daily Pick Form State
   const [pickForm, setPickForm] = useState({
