@@ -286,8 +286,16 @@ const Dashboard = ({ onLogout }) => {
           usage={usage} 
           onSubscribe={() => setShowSubscriptionModal(true)} 
         />
+
+        {/* Live Games Section */}
+        <div className="mt-6">
+          <LiveGames 
+            usage={usage} 
+            onSubscribe={() => setShowSubscriptionModal(true)} 
+          />
+        </div>
         
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
           {/* Upload Section */}
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="upload-section-title">
