@@ -1405,6 +1405,17 @@ async def request_cashapp_payment(
         raise HTTPException(status_code=500, detail=f"Error submitting request: {str(e)}")
 
 
+# ===== ADMIN ROUTES =====
+
+async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify user is admin"""
+    user = await get_current_user(credentials)
+    if not is_admin(user['email']):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
+# CashApp Admin Endpoints
 @api_router.get("/admin/cashapp-requests")
 async def admin_get_cashapp_requests(
     admin_user: dict = Depends(get_admin_user)
@@ -1424,12 +1435,10 @@ async def admin_approve_cashapp(
     admin_user: dict = Depends(get_admin_user)
 ):
     """Approve a CashApp payment and activate user subscription (admin only)"""
-    # Find the request
     cashapp_req = await db.cashapp_requests.find_one({"id": request_id})
     if not cashapp_req:
         raise HTTPException(status_code=404, detail="Request not found")
     
-    # Update request status
     await db.cashapp_requests.update_one(
         {"id": request_id},
         {"$set": {
@@ -1439,7 +1448,6 @@ async def admin_approve_cashapp(
         }}
     )
     
-    # Activate subscription
     await db.subscriptions.update_one(
         {"user_id": cashapp_req['user_id']},
         {"$set": {
@@ -1453,7 +1461,6 @@ async def admin_approve_cashapp(
         upsert=True
     )
     
-    # Record transaction
     await db.payment_transactions.insert_one({
         "type": "cashapp",
         "user_id": cashapp_req['user_id'],
@@ -1487,16 +1494,6 @@ async def admin_reject_cashapp(
         raise HTTPException(status_code=404, detail="Request not found")
     
     return {"message": "CashApp request rejected", "success": True}
-
-
-# ===== ADMIN ROUTES =====
-
-async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify user is admin"""
-    user = await get_current_user(credentials)
-    if not is_admin(user['email']):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
 
 
 @api_router.get("/admin/stats")
