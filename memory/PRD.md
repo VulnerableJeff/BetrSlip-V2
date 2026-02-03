@@ -206,6 +206,28 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Runs on server startup to catch any recent games
     - No more manual tracking needed - fully automated!
 
+12. **Daily Picks Paywall Fixed** ✅ (Feb 3, 2026)
+    - Daily Picks are now **PRO-ONLY** feature
+    - Free users see blurred picks with "Pro Feature" overlay
+    - Clean "Go Pro - $5/month" CTA with crown icon
+    - Pro users see full picks with all details
+
+13. **Smart AI Picks with Learning** ✅ (Feb 3, 2026)
+    - AI learns from historical performance data
+    - Tracks win rate by sport (NBA 60%, NHL 50%)
+    - Tracks win rate by bet type (Spreads 66.7%, Moneylines 50%)
+    - Tracks performance by confidence level (High confidence: 75% win rate!)
+    - Avoids recent losing teams/patterns
+    - Enhanced prompt engineering for smarter pick selection
+    - New `/api/admin/ai-learning-stats` endpoint to view learning data
+
+14. **Code Architecture Improvements** ✅ (Feb 3, 2026)
+    - Created `/app/backend/services/` module:
+      - `smart_picks_service.py` - AI picks with learning
+      - `auto_resolver_service.py` - Outcome auto-resolution
+    - Cleaner separation of concerns
+    - More maintainable codebase
+
 ---
 
 *Last Updated: January 31, 2026*
