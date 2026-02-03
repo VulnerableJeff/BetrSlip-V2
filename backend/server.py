@@ -2292,14 +2292,15 @@ async def admin_trigger_auto_resolve(
     admin_user: dict = Depends(get_admin_user)
 ):
     """Manually trigger auto-resolution of pick outcomes (admin only)"""
-    result = await auto_resolve_pick_outcomes()
+    resolver = AutoResolverService(db)
+    result = await resolver.resolve_picks()
     return result
 
 
 # Auto-check and generate picks when fetching daily picks
 @api_router.get("/daily-picks")
 async def get_daily_picks_with_auto_generate():
-    """Get active daily picks - auto-generates if needed"""
+    """Get active daily picks - auto-generates if needed using smart AI"""
     # Check if we need to auto-generate
     twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
     
@@ -2308,10 +2309,11 @@ async def get_daily_picks_with_auto_generate():
         "created_at": {"$gte": twenty_hours_ago}
     })
     
-    # If no recent picks, try to auto-generate
+    # If no recent picks, try to auto-generate using smart service
     if active_recent_picks == 0:
-        logging.info("No recent picks found, attempting auto-generation...")
-        await auto_generate_daily_picks()
+        logging.info("No recent picks found, attempting smart AI generation...")
+        smart_service = SmartPicksService(db)
+        await smart_service.generate_smart_picks()
     
     # Fetch active picks
     picks = await db.daily_picks.find(
