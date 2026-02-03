@@ -235,6 +235,16 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Admin CashApp management tab to approve/reject pending requests
     - Full transaction tracking for all payment methods
 
+16. **Server Refactoring** ✅ (Feb 3, 2026)
+    - Reduced server.py from 2500+ lines to ~300 lines
+    - Created modular route structure:
+      - `/app/backend/routes/deps.py` - Shared dependencies
+      - `/app/backend/routes/auth.py` - Authentication routes
+      - `/app/backend/routes/subscriptions.py` - Payment routes
+      - `/app/backend/routes/picks.py` - Daily picks routes
+    - Created services module for business logic
+    - Backwards-compatible API endpoints maintained
+
 ---
 
 *Last Updated: January 31, 2026*
