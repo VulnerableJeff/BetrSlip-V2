@@ -392,6 +392,46 @@ const Admin = () => {
     }
   };
 
+  // Live Stream Management
+  const handleAddStream = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/live-streams`,
+        streamForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Stream added!');
+      setShowStreamModal(false);
+      setStreamForm({ title: '', sport: 'NBA', stream_url: '', external_url: '', score: '', quarter: '', network: '' });
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error adding stream');
+    }
+  };
+
+  const handleDeleteStream = async (streamId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/admin/live-streams/${streamId}`, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Stream deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Error deleting stream');
+    }
+  };
+
+  const handleToggleStream = async (streamId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${BACKEND_URL}/api/admin/live-streams/${streamId}/toggle`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Stream toggled');
+      fetchData();
+    } catch (error) {
+      toast.error('Error toggling stream');
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
