@@ -41,9 +41,10 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
 
 #### 6. Subscription System
 - 5 free analyses for new users
-- $5/month Pro subscription via Stripe (TEST MODE)
+- $5/month Pro subscription via Stripe (LIVE MODE)
 - Device fingerprinting to prevent abuse
 - Usage tracking per user
+- **Daily Picks are PRO-ONLY feature** (paywalled)
 
 #### 7. Admin Dashboard
 - View all users with search/filter
