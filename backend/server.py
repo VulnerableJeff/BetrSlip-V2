@@ -1324,6 +1324,171 @@ async def stripe_webhook(request: Request):
         return {"status": "error", "message": str(e)}
 
 
+# ===== PAYPAL & CASHAPP PAYMENT ROUTES =====
+
+class PayPalConfirmRequest(BaseModel):
+    order_id: str
+    payer_email: Optional[str] = None
+    amount: Optional[str] = None
+
+@api_router.post("/subscription/paypal-confirm")
+async def confirm_paypal_payment(
+    request: PayPalConfirmRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Confirm PayPal payment and activate subscription"""
+    try:
+        # Store PayPal transaction
+        await db.payment_transactions.insert_one({
+            "type": "paypal",
+            "order_id": request.order_id,
+            "user_id": current_user['user_id'],
+            "email": current_user['email'],
+            "payer_email": request.payer_email,
+            "amount": request.amount or "5.00",
+            "currency": "usd",
+            "payment_status": "paid",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Activate subscription
+        await db.subscriptions.update_one(
+            {"user_id": current_user['user_id']},
+            {"$set": {
+                "user_id": current_user['user_id'],
+                "email": current_user['email'],
+                "subscription_status": "active",
+                "payment_method": "paypal",
+                "paypal_order_id": request.order_id,
+                "subscription_start": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        
+        return {"message": "PayPal payment confirmed, subscription activated", "success": True}
+        
+    except Exception as e:
+        logger.error(f"PayPal confirmation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error confirming payment: {str(e)}")
+
+
+@api_router.post("/subscription/cashapp-request")
+async def request_cashapp_payment(
+    current_user: dict = Depends(get_current_user)
+):
+    """Submit a CashApp payment request for admin approval"""
+    try:
+        # Check if already has pending request
+        existing = await db.cashapp_requests.find_one({
+            "user_id": current_user['user_id'],
+            "status": "pending"
+        })
+        
+        if existing:
+            return {"message": "You already have a pending CashApp request", "success": True}
+        
+        # Create CashApp request
+        await db.cashapp_requests.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user['user_id'],
+            "email": current_user['email'],
+            "amount": 5.00,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "CashApp request submitted. Send $5 to $BetrSlip and we'll activate within 24 hours.", "success": True}
+        
+    except Exception as e:
+        logger.error(f"CashApp request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error submitting request: {str(e)}")
+
+
+@api_router.get("/admin/cashapp-requests")
+async def admin_get_cashapp_requests(
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get all pending CashApp payment requests (admin only)"""
+    requests = await db.cashapp_requests.find(
+        {"status": "pending"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return {"requests": requests, "total": len(requests)}
+
+
+@api_router.post("/admin/cashapp-requests/{request_id}/approve")
+async def admin_approve_cashapp(
+    request_id: str,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Approve a CashApp payment and activate user subscription (admin only)"""
+    # Find the request
+    cashapp_req = await db.cashapp_requests.find_one({"id": request_id})
+    if not cashapp_req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Update request status
+    await db.cashapp_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "approved",
+            "approved_by": admin_user['email'],
+            "approved_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Activate subscription
+    await db.subscriptions.update_one(
+        {"user_id": cashapp_req['user_id']},
+        {"$set": {
+            "user_id": cashapp_req['user_id'],
+            "email": cashapp_req['email'],
+            "subscription_status": "active",
+            "payment_method": "cashapp",
+            "subscription_start": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    
+    # Record transaction
+    await db.payment_transactions.insert_one({
+        "type": "cashapp",
+        "user_id": cashapp_req['user_id'],
+        "email": cashapp_req['email'],
+        "amount": "5.00",
+        "currency": "usd",
+        "payment_status": "paid",
+        "approved_by": admin_user['email'],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": f"CashApp payment approved. {cashapp_req['email']} is now Pro!", "success": True}
+
+
+@api_router.post("/admin/cashapp-requests/{request_id}/reject")
+async def admin_reject_cashapp(
+    request_id: str,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Reject a CashApp payment request (admin only)"""
+    result = await db.cashapp_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "rejected",
+            "rejected_by": admin_user['email'],
+            "rejected_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    return {"message": "CashApp request rejected", "success": True}
+
+
 # ===== ADMIN ROUTES =====
 
 async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
