@@ -295,7 +295,6 @@ IMPORTANT RULES:
         try:
             chat = LlmChat(
                 api_key=EMERGENT_LLM_KEY,
-                model="gpt-4o",
                 session_id=f"smart_picks_{__import__('uuid').uuid4()}",
                 system_message="You are an elite sports betting analyst who learns from past performance and makes data-driven picks."
             )
