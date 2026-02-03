@@ -3,7 +3,7 @@ Shared dependencies for all route modules
 """
 import os
 import jwt
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
