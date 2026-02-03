@@ -143,9 +143,9 @@ const DailyPicks = ({ usage, onSubscribe }) => {
             <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-4">
               <Crown className="w-8 h-8 text-yellow-400" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Unlock Daily Picks</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Pro Feature</h3>
             <p className="text-slate-400 text-sm mb-4">
-              Get access to our AI-curated top picks every day with a Pro subscription.
+              Daily AI Picks are exclusive to Pro subscribers. Get 3 high-value picks every day with detailed analysis.
             </p>
             <div className="space-y-2">
               <Button
@@ -156,7 +156,7 @@ const DailyPicks = ({ usage, onSubscribe }) => {
                 Go Pro - $5/month
               </Button>
               <p className="text-slate-500 text-xs">
-                Includes unlimited analyses + daily picks
+                Unlimited analyses + daily AI picks + priority support
               </p>
             </div>
           </div>
