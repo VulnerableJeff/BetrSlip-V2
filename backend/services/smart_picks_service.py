@@ -186,8 +186,24 @@ class SmartPicksService:
             if not games:
                 return {"message": "No upcoming games found", "generated": False}
             
+            # Get enhanced intelligence for top games
+            intel = await self._get_intelligence()
+            enhanced_games = []
+            for game in games[:6]:  # Get intelligence for top 6 games
+                try:
+                    game_context = await intel.get_game_context({
+                        'home_team': game.get('home_team', ''),
+                        'away_team': game.get('away_team', ''),
+                        'sport': game.get('sport_name', '')
+                    })
+                    game['intelligence'] = game_context
+                    enhanced_games.append(game)
+                except Exception as e:
+                    logger.warning(f"Error getting intelligence for game: {e}")
+                    enhanced_games.append(game)
+            
             # Build enhanced prompt with learning context
-            picks = await self._analyze_with_ai(games, performance)
+            picks = await self._analyze_with_ai(enhanced_games, performance)
             
             if not picks:
                 return {"message": "AI analysis failed", "generated": False}
@@ -198,7 +214,7 @@ class SmartPicksService:
                 {"$set": {"is_active": False}}
             )
             
-            # Create new picks
+            # Create new picks with enhanced data
             created_picks = []
             for pick in picks[:3]:
                 new_pick = {
@@ -214,20 +230,24 @@ class SmartPicksService:
                     "game_time": pick.get('game_time', 'TBD'),
                     "edge_analysis": pick.get('edge_analysis', ''),
                     "historical_context": pick.get('historical_context', ''),
-                    "created_by": "Smart AI Generator v2",
+                    "matchup_data": pick.get('matchup_data', {}),
+                    "weather_impact": pick.get('weather_impact', ''),
+                    "public_betting": pick.get('public_betting', ''),
+                    "created_by": "Smart AI Generator v3 (Enhanced)",
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "is_active": True,
                     "auto_generated": True,
-                    "model_version": "v2_learning"
+                    "model_version": "v3_enhanced_intel"
                 }
                 await self.db.daily_picks.insert_one(new_pick)
                 created_picks.append(new_pick['title'])
             
             return {
-                "message": f"Generated {len(created_picks)} smart picks",
+                "message": f"Generated {len(created_picks)} smart picks with enhanced intelligence",
                 "generated": True,
                 "picks": created_picks,
-                "performance_context": performance.get('overall', {})
+                "performance_context": performance.get('overall', {}),
+                "version": "v3_enhanced"
             }
             
         except Exception as e:
@@ -235,7 +255,7 @@ class SmartPicksService:
             return {"message": f"Error: {str(e)}", "generated": False}
     
     async def _analyze_with_ai(self, games: List[Dict], performance: Dict) -> List[Dict]:
-        """Enhanced AI analysis with learning context"""
+        """Enhanced AI analysis with learning context and game intelligence"""
         if not EMERGENT_LLM_KEY:
             logger.error("No EMERGENT_LLM_KEY found")
             return []
