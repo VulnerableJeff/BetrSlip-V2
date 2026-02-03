@@ -144,6 +144,11 @@ const LiveGames = ({ usage, onSubscribe }) => {
                       <p className="text-white font-semibold">{game.title}</p>
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-slate-400">{game.sport}</span>
+                        {game.network && (
+                          <span className="text-blue-400 text-xs px-1.5 py-0.5 bg-blue-500/10 rounded">
+                            {game.network}
+                          </span>
+                        )}
                         {game.score && (
                           <span className="text-emerald-400 font-mono font-bold">
                             {game.score}
@@ -155,6 +160,16 @@ const LiveGames = ({ usage, onSubscribe }) => {
                           </span>
                         )}
                       </div>
+                      {/* Stream sources */}
+                      {game.stream_sources && game.stream_sources.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {game.stream_sources.slice(0, 3).map((source, idx) => (
+                            <span key={idx} className="text-xs text-slate-500">
+                              {source.name}{idx < Math.min(game.stream_sources.length, 3) - 1 ? ' •' : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Button
