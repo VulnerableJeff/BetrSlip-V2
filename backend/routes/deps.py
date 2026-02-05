@@ -56,15 +56,22 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         email = payload.get("email")
         
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid token: no user_id")
         
         # Check if user exists and is not banned
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail="User not found - please login again")
         
         if user.get('is_banned'):
             raise HTTPException(status_code=403, detail="Account suspended")
+        
+        return {"user_id": user_id, "email": email, "user": user}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired - please login again")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token - please login again")
         
         return {"user_id": user_id, "email": email, "user": user}
         
