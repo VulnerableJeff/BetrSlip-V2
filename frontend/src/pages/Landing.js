@@ -2,16 +2,18 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X } from 'lucide-react';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Landing = () => {
   const navigate = useNavigate();
   const [performance, setPerformance] = useState(null);
+  const [publicStats, setPublicStats] = useState(null);
 
   useEffect(() => {
     fetchPerformance();
+    fetchPublicStats();
   }, []);
 
   const fetchPerformance = async () => {
@@ -20,6 +22,15 @@ const Landing = () => {
       setPerformance(response.data);
     } catch (error) {
       console.error('Error fetching performance:', error);
+    }
+  };
+
+  const fetchPublicStats = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/public-stats`);
+      setPublicStats(response.data);
+    } catch (error) {
+      console.error('Error fetching public stats:', error);
     }
   };
 
@@ -37,6 +48,30 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-violet-950/20 to-slate-950">
+      {/* Live Activity Banner */}
+      {publicStats && (
+        <div className="bg-gradient-to-r from-emerald-950/50 to-violet-950/50 border-b border-emerald-500/20">
+          <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-400 font-semibold">{publicStats.active_now} analyzing now</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-slate-400">
+              <Users className="w-4 h-4" />
+              <span>{publicStats.total_users?.toLocaleString() || '0'} users</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-slate-400">
+              <Activity className="w-4 h-4" />
+              <span>{publicStats.total_analyses?.toLocaleString() || '0'} bets analyzed</span>
+            </div>
+            <div className="flex items-center gap-2 text-violet-400">
+              <Target className="w-4 h-4" />
+              <span>{publicStats.ai_accuracy || '67.5'}% AI accuracy</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Animated Background Elements */}
