@@ -277,17 +277,39 @@ Respond in JSON format:
         image_content = ImageContent(image_base64=base64_image)
         msg = UserMessage(text=analysis_prompt, file_contents=[image_content])
         
+        logger.info(f"Sending image to AI for analysis (size: {len(base64_image)} chars)")
         response = await chat.send_message(msg)
+        logger.info(f"AI response received (length: {len(response)} chars)")
         
         # Parse JSON from response
         json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
-            analysis_data = json.loads(json_match.group())
+            try:
+                analysis_data = json.loads(json_match.group())
+                logger.info("Successfully parsed AI response as JSON")
+            except json.JSONDecodeError as je:
+                logger.error(f"JSON parse error: {je}")
+                analysis_data = {
+                    "raw_analysis": response,
+                    "overall_probability": 50,
+                    "risk_level": "Unknown",
+                    "bets": [],
+                    "key_factors": ["Unable to parse detailed analysis"],
+                    "improvements": []
+                }
         else:
-            analysis_data = {"raw_analysis": response, "error": "Could not parse structured response"}
+            logger.warning("No JSON found in AI response, using fallback")
+            analysis_data = {
+                "raw_analysis": response,
+                "overall_probability": 50,
+                "risk_level": "Unknown", 
+                "bets": [],
+                "key_factors": ["Unable to parse detailed analysis"],
+                "improvements": []
+            }
         
     except Exception as e:
-        logger.error(f"AI analysis error: {e}")
+        logger.error(f"AI analysis error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
     
     # Extract and transform analysis data for frontend
