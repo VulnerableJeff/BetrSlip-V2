@@ -290,6 +290,28 @@ Respond in JSON format:
         logger.error(f"AI analysis error: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
     
+    # Extract and transform analysis data for frontend
+    overall_prob = analysis_data.get('overall_probability', 50)
+    kelly_fraction = analysis_data.get('kelly_fraction', 0)
+    bets = analysis_data.get('bets', [])
+    
+    # Calculate expected value from bets if available
+    ev_percent = 0
+    if bets:
+        ev_values = [b.get('ev_percent', 0) for b in bets if b.get('ev_percent') is not None]
+        if ev_values:
+            ev_percent = sum(ev_values) / len(ev_values)
+    
+    # Determine recommendation based on probability and EV
+    if overall_prob >= 65 and ev_percent >= 0:
+        recommendation = "STRONG BET"
+    elif overall_prob >= 55:
+        recommendation = "BET"
+    elif overall_prob >= 45:
+        recommendation = "SMALL/SKIP"
+    else:
+        recommendation = "PASS"
+    
     # Save analysis
     analysis_id = str(uuid.uuid4())
     analysis_record = {
@@ -310,7 +332,6 @@ Respond in JSON format:
     )
     
     # Check if high probability - add to top bets
-    overall_prob = analysis_data.get('overall_probability', 0)
     if overall_prob >= 70:
         await db.top_bets.insert_one({
             "id": str(uuid.uuid4()),
@@ -321,9 +342,19 @@ Respond in JSON format:
             "created_at": datetime.now(timezone.utc).isoformat()
         })
     
+    # Return data in format frontend expects
     return {
         "id": analysis_id,
-        "analysis": analysis_data,
+        "win_probability": overall_prob,
+        "recommendation": recommendation,
+        "expected_value": ev_percent,
+        "kelly_percentage": kelly_fraction * 100,
+        "confidence_score": min(10, max(1, int(overall_prob / 10))),
+        "risk_level": analysis_data.get('risk_level', 'Medium'),
+        "bets": bets,
+        "key_factors": analysis_data.get('key_factors', []),
+        "improvements": analysis_data.get('improvements', []),
+        "analysis": analysis_data,  # Keep full analysis for detailed view
         "usage": {
             "count": analyses_count + 1,
             "limit": FREE_ANALYSIS_LIMIT,
