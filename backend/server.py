@@ -373,19 +373,61 @@ Be realistic - most parlays have <30% win probability. Single bets rarely exceed
             "created_at": datetime.now(timezone.utc).isoformat()
         })
     
-    # Return data in format frontend expects
+    # Return data in format frontend expects with ALL rich data
     return {
         "id": analysis_id,
+        # Core metrics
         "win_probability": overall_prob,
         "recommendation": recommendation,
         "expected_value": ev_percent,
         "kelly_percentage": kelly_fraction * 100,
         "confidence_score": min(10, max(1, int(overall_prob / 10))),
         "risk_level": analysis_data.get('risk_level', 'Medium'),
+        
+        # Bet details
+        "sport": analysis_data.get('sport', 'Unknown'),
+        "bet_type": analysis_data.get('bet_type', 'straight'),
+        "total_odds": analysis_data.get('total_odds', ''),
+        "potential_payout": analysis_data.get('potential_payout', ''),
+        
+        # Individual bets with full breakdown
         "bets": bets,
+        "individual_bets": [
+            {
+                "description": b.get('description', ''),
+                "odds": b.get('odds', ''),
+                "bet_type": b.get('bet_type', 'spread'),
+                "individual_probability": b.get('win_probability', 50),
+                "ev_percent": b.get('ev_percent', 0),
+                "reasoning": b.get('reasoning', b.get('analysis', ''))
+            }
+            for b in bets
+        ],
+        
+        # Factors
+        "risk_factors": analysis_data.get('risk_factors', []),
+        "positive_factors": analysis_data.get('positive_factors', []),
         "key_factors": analysis_data.get('key_factors', []),
+        
+        # Improvement suggestions
         "improvements": analysis_data.get('improvements', []),
-        "analysis": analysis_data,  # Keep full analysis for detailed view
+        "improvement_suggestions": [
+            {
+                "type": "tip",
+                "title": imp,
+                "description": imp,
+                "impact": "Could improve win probability"
+            }
+            for imp in analysis_data.get('improvements', [])
+        ],
+        
+        # Parlay comparison
+        "parlay_vs_straight": analysis_data.get('parlay_vs_straight', None),
+        
+        # Full analysis for detailed view
+        "analysis": analysis_data,
+        
+        # Usage info
         "usage": {
             "count": analyses_count + 1,
             "limit": FREE_ANALYSIS_LIMIT,
