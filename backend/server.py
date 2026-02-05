@@ -273,10 +273,8 @@ Respond in JSON format:
             system_message="You are an expert sports betting analyst providing detailed, honest analysis."
         )
         
-        image_content = ImageContent(
-            base64_image=base64_image,
-            media_type=file.content_type or "image/jpeg"
-        )
+        # Create image content with correct parameter name
+        image_content = ImageContent(image_base64=base64_image)
         msg = UserMessage(text=analysis_prompt, images=[image_content])
         
         response = await chat.send_message(msg)
