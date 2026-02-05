@@ -244,6 +244,36 @@ async def analyze_bet_slip(
     """Analyze a bet slip image using AI with security checks"""
     user_id = current_user['user_id']
     
+    # ===== SECURITY: Rate limiting =====
+    if rate_limiter.is_analysis_limited(user_id):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many analysis requests. Please wait a few minutes before trying again."
+        )
+    
+    # ===== SECURITY: File validation =====
+    # Check file type
+    content_type = file.content_type or ''
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: JPEG, PNG, WEBP. Got: {content_type}"
+        )
+    
+    # Check file size
+    contents = await file.read()
+    if len(contents) > MAX_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: 10MB. Your file: {len(contents) / 1024 / 1024:.1f}MB"
+        )
+    
+    if len(contents) < 1000:  # Less than 1KB is suspicious
+        raise HTTPException(
+            status_code=400,
+            detail="File too small. Please upload a valid bet slip image."
+        )
+    
     # Check usage limits
     usage = await db.user_usage.find_one({"user_id": user_id})
     subscription = await db.subscriptions.find_one({"user_id": user_id})
@@ -257,8 +287,7 @@ async def analyze_bet_slip(
             detail="Free analysis limit reached. Please subscribe to continue."
         )
     
-    # Read and encode image
-    contents = await file.read()
+    # Encode image for AI
     base64_image = base64.b64encode(contents).decode('utf-8')
     
     # AI Analysis prompt - comprehensive for full data
