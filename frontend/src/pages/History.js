@@ -136,119 +136,126 @@ const History = ({ onLogout }) => {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="history-grid">
-            {history.map((item) => (
-              <Card
-                key={item.id}
-                className="glass border-slate-800 overflow-hidden hover:border-brand-win/50 transition-colors duration-300"
-                data-testid={`history-item-${item.id}`}
-              >
-                {/* Image */}
-                <div className="aspect-video bg-slate-900 overflow-hidden">
-                  <img
-                    src={`data:image/jpeg;base64,${item.image_data}`}
-                    alt="Bet slip"
-                    className="w-full h-full object-cover"
-                    data-testid="history-item-image"
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="p-6 space-y-4">
-                  {/* Win Probability */}
-                  <div className="text-center">
-                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">
-                      Win Probability
-                    </p>
-                    <p
-                      className={`text-4xl font-black ${getWinColor(item.win_probability)}`}
-                      data-testid="history-win-probability"
-                    >
-                      {item.win_probability.toFixed(1)}%
+            {history.map((item) => {
+              // Extract data from the analysis object
+              const analysis = item.analysis || {};
+              const winProbability = analysis.overall_probability || 0;
+              const bets = analysis.bets || [];
+              const recommendation = analysis.recommendation || '';
+              const riskLevel = analysis.risk_level || '';
+              const keyFactors = analysis.key_factors || [];
+              
+              return (
+                <Card
+                  key={item.id}
+                  className="glass border-slate-800 overflow-hidden hover:border-brand-win/50 transition-colors duration-300"
+                  data-testid={`history-item-${item.id}`}
+                >
+                  {/* Header with Risk Level */}
+                  <div className={`px-4 py-2 ${
+                    riskLevel === 'Low' ? 'bg-emerald-500/20' :
+                    riskLevel === 'Medium' ? 'bg-yellow-500/20' :
+                    'bg-red-500/20'
+                  }`}>
+                    <p className="text-xs font-semibold text-slate-300">
+                      Risk: {riskLevel || 'N/A'}
                     </p>
                   </div>
 
-                  {/* Date */}
-                  <p className="text-slate-500 text-xs text-center" data-testid="history-date">
-                    {formatDate(item.created_at)}
-                  </p>
-
-                  {/* Individual Bets Count */}
-                  {item.individual_bets && item.individual_bets.length > 0 && (
-                    <div className="bg-slate-900/70 rounded-sm p-2 text-center">
-                      <p className="text-slate-400 text-xs">
-                        {item.individual_bets.length} bet{item.individual_bets.length > 1 ? 's' : ''} analyzed
+                  {/* Content */}
+                  <div className="p-6 space-y-4">
+                    {/* Win Probability */}
+                    <div className="text-center">
+                      <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">
+                        Win Probability
+                      </p>
+                      <p
+                        className={`text-4xl font-black ${getWinColor(winProbability)}`}
+                        data-testid="history-win-probability"
+                      >
+                        {winProbability.toFixed(1)}%
                       </p>
                     </div>
-                  )}
 
-                  {/* Risk/Positive Indicators */}
-                  <div className="flex gap-2 justify-center">
-                    {item.risk_factors && item.risk_factors.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-red-400">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>{item.risk_factors.length} risks</span>
-                      </div>
-                    )}
-                    {item.positive_factors && item.positive_factors.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-emerald-400">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>{item.positive_factors.length} positives</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bet Details */}
-                  {item.bet_details && (
-                    <div className="bg-slate-900/50 rounded-sm p-3">
-                      <p className="text-slate-300 text-xs line-clamp-2">
-                        {item.bet_details}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Analysis Preview */}
-                  <div className="bg-slate-900/50 rounded-sm p-3">
-                    <p className="text-slate-300 text-xs line-clamp-2">
-                      {item.analysis_text}
+                    {/* Date */}
+                    <p className="text-slate-500 text-xs text-center" data-testid="history-date">
+                      {formatDate(item.created_at)}
                     </p>
-                  </div>
 
-                  {/* Outcome Buttons */}
-                  <div className="mt-2 pt-3 border-t border-slate-800">
-                    <p className="text-slate-400 text-xs mb-2 text-center">Did this bet win?</p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        disabled={marking[item.id]}
-                        onClick={() => markOutcome(item.id, 'won')}
-                        className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 text-xs"
-                      >
-                        <ThumbsUp className="w-3 h-3 mr-1" />
-                        Won
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={marking[item.id]}
-                        onClick={() => markOutcome(item.id, 'lost')}
-                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 text-xs"
-                      >
-                        <ThumbsDown className="w-3 h-3 mr-1" />
-                        Lost
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={marking[item.id]}
-                        onClick={() => markOutcome(item.id, 'push')}
-                        className="flex-1 bg-slate-700/50 hover:bg-slate-700/70 text-slate-300 border border-slate-600 text-xs"
-                      >
-                        <Minus className="w-3 h-3 mr-1" />
-                        Push
-                      </Button>
+                    {/* Individual Bets Count */}
+                    {bets.length > 0 && (
+                      <div className="bg-slate-900/70 rounded-sm p-2 text-center">
+                        <p className="text-slate-400 text-xs">
+                          {bets.length} bet{bets.length > 1 ? 's' : ''} analyzed
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Key Factors */}
+                    {keyFactors.length > 0 && (
+                      <div className="flex gap-2 justify-center flex-wrap">
+                        <div className="flex items-center gap-1 text-xs text-violet-400">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{keyFactors.length} factors</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bets Preview */}
+                    {bets.length > 0 && (
+                      <div className="bg-slate-900/50 rounded-sm p-3">
+                        <p className="text-slate-300 text-xs line-clamp-2">
+                          {bets[0].description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Recommendation */}
+                    {recommendation && (
+                      <div className="bg-slate-900/50 rounded-sm p-3">
+                        <p className="text-slate-300 text-xs line-clamp-3">
+                          {recommendation}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Outcome Buttons */}
+                    <div className="mt-2 pt-3 border-t border-slate-800">
+                      <p className="text-slate-400 text-xs mb-2 text-center">Did this bet win?</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={marking[item.id]}
+                          onClick={() => markOutcome(item.id, 'won')}
+                          className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 text-xs"
+                        >
+                          <ThumbsUp className="w-3 h-3 mr-1" />
+                          Won
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={marking[item.id]}
+                          onClick={() => markOutcome(item.id, 'lost')}
+                          className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 text-xs"
+                        >
+                          <ThumbsDown className="w-3 h-3 mr-1" />
+                          Lost
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={marking[item.id]}
+                          onClick={() => markOutcome(item.id, 'push')}
+                          className="flex-1 bg-slate-700/50 hover:bg-slate-700/70 text-slate-300 border border-slate-600 text-xs"
+                        >
+                          <Minus className="w-3 h-3 mr-1" />
+                          Push
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
