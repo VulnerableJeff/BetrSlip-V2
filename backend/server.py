@@ -387,6 +387,86 @@ async def mark_analysis_outcome(
     return {"message": f"Analysis marked as {outcome_data.outcome}", "outcome": outcome_data.outcome}
 
 
+# ===== USER STATS =====
+@api_router.get("/stats")
+async def get_user_stats(current_user: dict = Depends(get_current_user)):
+    """Get user's betting performance statistics"""
+    user_id = current_user['user_id']
+    
+    # Get all analyses with outcomes
+    analyses = await db.analyses.find(
+        {"user_id": user_id, "outcome": {"$exists": True}}
+    ).to_list(None)
+    
+    total_tracked = len(analyses)
+    
+    if total_tracked == 0:
+        return {
+            "total_tracked": 0,
+            "bets_won": 0,
+            "bets_lost": 0,
+            "bets_push": 0,
+            "win_rate": 0,
+            "accuracy_rate": 0,
+            "total_profit": 0,
+            "roi": 0,
+            "followed_recommendations": 0
+        }
+    
+    bets_won = len([a for a in analyses if a.get('outcome') == 'won'])
+    bets_lost = len([a for a in analyses if a.get('outcome') == 'lost'])
+    bets_push = len([a for a in analyses if a.get('outcome') == 'push'])
+    
+    # Win rate (excluding pushes)
+    win_loss_total = bets_won + bets_lost
+    win_rate = round((bets_won / win_loss_total * 100), 1) if win_loss_total > 0 else 0
+    
+    # Calculate AI accuracy - AI is "accurate" if high probability bets won or low probability bets lost
+    accurate_predictions = 0
+    for a in analyses:
+        prob = a.get('analysis', {}).get('overall_probability', 50)
+        outcome = a.get('outcome')
+        if outcome == 'push':
+            continue
+        if (prob >= 50 and outcome == 'won') or (prob < 50 and outcome == 'lost'):
+            accurate_predictions += 1
+    
+    accuracy_rate = round((accurate_predictions / win_loss_total * 100), 1) if win_loss_total > 0 else 0
+    
+    # Calculate profit/loss (if stake/payout data exists)
+    total_profit = 0
+    total_stake = 0
+    for a in analyses:
+        stake = a.get('stake_amount', 0) or 0
+        payout = a.get('payout_amount', 0) or 0
+        total_stake += stake
+        if a.get('outcome') == 'won':
+            total_profit += (payout - stake)
+        elif a.get('outcome') == 'lost':
+            total_profit -= stake
+    
+    roi = round((total_profit / total_stake * 100), 1) if total_stake > 0 else 0
+    
+    # Count followed recommendations (bets where AI recommended "BET" and user won)
+    followed_recommendations = 0
+    for a in analyses:
+        rec = (a.get('analysis', {}).get('recommendation', '') or '').lower()
+        if ('bet' in rec or 'place' in rec or 'recommend' in rec) and a.get('outcome') == 'won':
+            followed_recommendations += 1
+    
+    return {
+        "total_tracked": total_tracked,
+        "bets_won": bets_won,
+        "bets_lost": bets_lost,
+        "bets_push": bets_push,
+        "win_rate": win_rate,
+        "accuracy_rate": accuracy_rate,
+        "total_profit": round(total_profit, 2),
+        "roi": roi,
+        "followed_recommendations": followed_recommendations
+    }
+
+
 # ===== ADMIN ROUTES =====
 @api_router.get("/admin/stats")
 async def admin_get_stats(admin_user: dict = Depends(get_admin_user)):
