@@ -224,47 +224,56 @@ async def analyze_bet_slip(
     contents = await file.read()
     base64_image = base64.b64encode(contents).decode('utf-8')
     
-    # Get enhanced sports context
-    sports_context = ""
-    try:
-        sports_service = SportsDataService()
-        context_data = await get_enhanced_context_for_analysis()
-        if context_data:
-            sports_context = f"\n\nREAL-TIME SPORTS DATA:\n{json.dumps(context_data, indent=2)}"
-    except Exception as e:
-        logger.warning(f"Failed to get sports context: {e}")
-    
-    # AI Analysis prompt
-    analysis_prompt = f"""You are an expert sports betting analyst. Analyze this bet slip image and provide:
+    # AI Analysis prompt - comprehensive for full data
+    analysis_prompt = """You are an elite sports betting analyst with deep knowledge of statistics, team dynamics, and betting markets. Analyze this bet slip image thoroughly.
 
-1. **Bet Details**: Extract all bets from the image (teams, spreads, odds, totals, etc.)
-2. **Win Probability**: Estimate the probability of each bet winning (be realistic, most bets are 45-65%)
-3. **Overall Probability**: If parlay, calculate combined probability
-4. **Key Factors**: What factors support or work against these bets
-5. **Risk Assessment**: Rate overall risk (Low/Medium/High/Very High)
-6. **Kelly Criterion**: Suggested bet size based on edge
-7. **Expected Value**: Calculate EV for each bet
-8. **Recommendation**: Should they place this bet? Why or why not?
-{sports_context}
+EXTRACT AND ANALYZE:
+1. All bets visible (teams, spreads, totals, moneylines, odds)
+2. Calculate realistic win probabilities (most single bets: 45-55%, parlays much lower)
+3. Identify the sport(s) involved
+4. Assess risk factors and positive factors
 
-Respond in JSON format:
-{{
+RESPOND IN THIS EXACT JSON FORMAT:
+{
+    "sport": "NBA/NFL/MLB/NHL/etc",
+    "bet_type": "parlay/straight/teaser",
+    "total_odds": "+450",
+    "potential_payout": "$50 to win $225",
     "bets": [
-        {{
-            "description": "Team A -3.5 vs Team B",
+        {
+            "description": "Lakers -5.5 vs Celtics",
             "odds": "-110",
-            "win_probability": 52,
-            "ev_percent": -2.3,
-            "analysis": "Brief analysis"
-        }}
+            "bet_type": "spread",
+            "win_probability": 48,
+            "ev_percent": -4.5,
+            "reasoning": "Lakers struggling on road, Celtics 8-2 at home"
+        }
     ],
-    "overall_probability": 45,
-    "risk_level": "Medium",
-    "kelly_fraction": 0.02,
-    "recommendation": "Your recommendation",
-    "key_factors": ["Factor 1", "Factor 2"],
-    "improvements": ["Suggestion 1", "Suggestion 2"]
-}}"""
+    "overall_probability": 35,
+    "risk_level": "High",
+    "kelly_fraction": 0.01,
+    "recommendation": "PASS",
+    "risk_factors": [
+        "Parlay requires all legs to hit",
+        "Lakers on back-to-back",
+        "Historical ATS record unfavorable"
+    ],
+    "positive_factors": [
+        "Good line value on spread",
+        "Home team advantage"
+    ],
+    "improvements": [
+        "Consider betting Lakers ML instead of spread",
+        "Remove the riskiest leg to improve odds"
+    ],
+    "parlay_vs_straight": {
+        "parlay_ev": -15.2,
+        "straight_ev": -3.4,
+        "recommendation": "Bet legs separately for better EV"
+    }
+}
+
+Be realistic - most parlays have <30% win probability. Single bets rarely exceed 60%. Always identify specific risk factors."""
 
     try:
         chat = LlmChat(
