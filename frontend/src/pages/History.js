@@ -22,8 +22,8 @@ const History = ({ onLogout }) => {
 
   const loadHistory = async () => {
     try {
-      const response = await axios.get(`${API}/history`);
-      setHistory(response.data);
+      const response = await axios.get(`${API}/analyses`);
+      setHistory(response.data.analyses || []);
     } catch (error) {
       toast.error('Failed to load history');
     } finally {
