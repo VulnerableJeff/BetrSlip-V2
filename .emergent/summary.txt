@@ -1,68 +1,69 @@
-<analysis>**original_problem_statement**: The user wants to build a website named BetrSlip where users can upload a screenshot of their betting slips from apps like Hard Rock and DraftKings. The application should analyze the screenshot using AI and provide an estimated win probability, along with detailed reasoning and additional analytics to help the user make informed decisions.
+<analysis>**original_problem_statement**: The user wants to build a website named BetrSlip where users can upload a screenshot of their betting slips. The application should use AI to analyze the screenshot and provide an estimated win probability, detailed reasoning, and advanced analytics (like Kelly Criterion and EV) to help users make informed betting decisions.
 
 **PRODUCT REQUIREMENTS**:
-1.  **Bet Slip Analysis**: Upload a screenshot of a bet slip for AI-powered analysis.
-2.  **Win Probability**: Display an estimated percentage of the bet's likelihood to win.
-3.  **Detailed Breakdown**: Provide comprehensive reasoning for the prediction, including risk factors, odds analysis, and individual bet breakdowns for parlays.
-4.  **Advanced Analytics**: Incorporate calculations like Kelly Criterion and Expected Value (EV).
-5.  **Real-Time Data**: Integrate live sports data, including odds, weather, and injury reports, to enhance prediction accuracy.
-6.  **User Authentication**: Secure user registration and login.
-7.  **Bet History**: Allow users to view a history of their analyzed bets.
-8.  **Performance Tracking**: Enable users to mark bets as 'Won', 'Lost', or 'Push' and view their historical performance and the AI's accuracy.
-9.  **Social Sharing**: Provide a feature to share the analysis results on social media.
-10. **Professional UI/UX**: A clean, modern, and mobile-responsive interface with a specific purple/blue theme requested by the user.
-11. **Admin Dashboard**: An admin-only section to view all users, manage their status (ban/unban), and see site-wide statistics.
-12. **Paid Subscriptions**: Implement a payment system where users get 5 free analyses and then must pay a /month subscription.
-13. **Abuse Prevention**: Use device fingerprinting to prevent users from creating multiple accounts to bypass the paywall.
-14. **High-Value Bet Storage**: Automatically save and display bet slips with a high win probability (>70%) in the admin dashboard.
+1.  **Bet Slip Analysis**: Upload a bet slip screenshot for AI analysis.
+2.  **Win Probability**: Display the bet's estimated win chance.
+3.  **Detailed Breakdown**: Provide reasoning for the AI's prediction.
+4.  **Advanced Analytics**: Calculate and show Kelly Criterion and Expected Value (EV).
+5.  **Real-Time Data**: Integrate live sports data for better predictions.
+6.  **User Authentication**: Secure registration and login.
+7.  **Bet History**: Allow users to view their past analyses.
+8.  **Performance Tracking**: Users can mark bets as 'Won', 'Lost', or 'Push' and track their performance and the AI's accuracy.
+9.  **Paid Subscriptions**: Implement a payment system (/month) after 5 free analyses.
+10. **Admin Dashboard**: An admin section to manage users and view site-wide statistics.
+11. **Daily AI Picks**: Provide 1-3 AI-generated top picks each day as a premium feature.
+12. **Picks Performance Tracking**: Admins can track the win/loss record of daily picks.
+13. **Live Streaming**: Embed live game streams for users, with an ad-free experience for subscribers.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application (FastAPI, React) that allows users to register, log in, and upload bet slip screenshots for analysis. The analysis is powered by GPT-4o and enriched with real-time sports data (odds, weather, injuries, team stats, form, head-to-head) from various APIs. The UI includes a Dashboard for analysis, a History page, and a landing page.
+A full-stack FastAPI and React application, BetrSlip, is in place. The backend has been refactored into a modular structure with separate services for enhanced AI picks and stream source management. Key features implemented include:
+*   User authentication (signup/login) and a subscription model using Stripe, PayPal, and a manual CashApp option.
+*   An admin dashboard for user management, site stats, manual daily pick entry, and managing CashApp requests and live stream links.
+*   An AI-powered daily picks feature that learns from historical performance data.
+*   An automated background job that resolves the outcomes (Win/Loss) of daily picks by fetching live game scores.
+*   A Proven Results section on the landing page to display the historical accuracy of the AI picks.
+*   A live game streaming feature on the user dashboard.
 
-A subscription model has been implemented using Stripe (in test mode), granting users 5 free analyses before requiring a /month payment. An admin dashboard exists for user management (viewing, banning), and a system to prevent abuse via device fingerprinting is in place. Recent work includes UI/UX improvements for displaying real-time data, providing suggestions for low-probability bets, and a feature to warn users if a bet is for a completed game.
+However, the core feature of analyzing user-uploaded bet slip screenshots is currently broken due to an API integration error with the AI service.
 
 **Last working item**:
-*   **Last item agent was working**: The agent was implementing two user requests:
-    1.  Adding a feature to the admin dashboard to store and view high-percentage (>70%) bet slips.
-    2.  Updating the UI to make it clearer that the app supports sportsbooks like FanDuel and DraftKings.
-*   **Status**: IN PROGRESS
+*   **Last item agent was working**: Fixing a critical bug preventing the AI analysis of uploaded bet slip screenshots. The user reported an error from the live site: . This indicates that the payload being sent to the  library for the GPT-4o Vision model is incorrectly formatted.
+*   **Status**: BLOCKED
 *   **Agent Testing Done**: N
-*   **Which testing method agent to use?**: both
+*   **Which testing method agent to use?**: backend testing agent
 *   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1**: Incomplete Top Bets Admin Feature (P0)
+*   **Issue 1**: AI Bet Slip Analysis is Broken (P0)
 
-Issues Detail:
+**Issues Detail**:
 *   **Issue 1**:
-    *   **Attempted fixes**: The agent successfully implemented the backend logic to save high-probability bets and created API endpoints to manage them. On the frontend (), the agent added the state management, data fetching logic, and a tab for Top Bets but did not complete the UI for rendering the list of bets. The work was interrupted.
+    *   **Attempted fixes**: The agent made several attempts to fix the payload structure for the AI vision call.
+        1.  Corrected  parameter from  to .
+        2.  Replaced  with  using a  object.
+        These fixes resolved Python  exceptions but resulted in a new API-level validation error: . The current implementation in  is generating a payload that the AI service is rejecting.
     *   **Next debug checklist**:
-        1.  Resume editing .
-        2.  Implement the JSX to render the list of Top Bets within the newly created tab panel.
-        3.  Ensure the  function is correctly wired to a delete button for each bet.
-        4.  Test the full flow: analyze a bet that results in >70% probability, log in as admin, verify it appears in the Top Bets tab, and confirm deletion works.
-    *   **Why fix this issue and what will be achieved with the fix?**: This will complete a user-requested feature, allowing the admin to review and curate the most promising bet analyses performed on the platform.
+        1.  View the  endpoint in .
+        2.  Inspect the  documentation or use  to find the correct payload structure for a GPT-4o vision call. The API likely expects a raw list of dictionaries, e.g., .
+        3.  Modify the code to construct this exact payload instead of using the  class if it's not working as intended.
+        4.  Thoroughly test the image upload and analysis functionality after the fix.
+    *   **Why fix this issue and what will be achieved with the fix?**: This is the application's core feature. Fixing it will restore the primary functionality for users and unblock the main value proposition of the app.
     *   **Status**: IN PROGRESS
-    *   **Is recurring issue?**: N
+    *   **Is recurring issue?**: Y
     *   **Should Test frontend/backend/both after fix?**: both
     *   **Blocked on other issue**: None
 
 **In progress Task List**:
-*   **Task 1**: Update Landing Page for Sportsbook Clarity (P1)
-    *   **Where to resume**: Modify the content of .
-    *   **What will be achieved with this?**: It will explicitly mention that the app supports analysis from major sportsbooks like FanDuel and DraftKings, which addresses a user request to make the app's capabilities clearer to new visitors.
-    *   **Status**: NOT STARTED
-    *   **Should Test frontend/backend/both after fix?**: frontend
-    *   **Blocked on something**: None
+*   **Task 1**: Refactor server code (P1)
+    *   **Where to resume**: The  endpoint logic is still in the main  file. It should be moved to the  module to complete the refactoring. The old, massive  should be deleted, and  should be renamed to .
+    *   **What will be achieved with this?**: A cleaner, more maintainable codebase that follows the new modular architecture.
+    *   **Status**: IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?**: backend
+    *   **Blocked on something**: Issue 1 (AI Bet Slip Analysis is Broken) should be fixed first, as it's part of the code that needs to be moved.
 
 **Upcoming and Future Tasks**
-*   **Upcoming Tasks**:
-    *   **Task 1 (P1)**: **Integrate PayPal**: Implement PayPal as a second payment option alongside Stripe. The integration playbook has already been fetched.
-    *   **Task 2 (P2)**: **Activate Live Payments**: Replace the test Stripe API key with the user's live key () in  once they provide it.
-    *   **Task 3 (P2)**: **Add Manual CashApp Option**: Add a UI element allowing users to request payment via CashApp, which the admin can then manually approve from their dashboard.
-
 *   **Future Tasks**:
     *   Bankroll Management Dashboard
     *   Line Movement Tracking & Alerts
@@ -72,109 +73,108 @@ Issues Detail:
     *   Native Mobile App
 
 **Completed work in this session**
-*   **Data Integration & AI Context**:
-    *   Fixed the ESPN Injury API integration by correctly parsing the response.
-    *   Enhanced the AI analysis prompt by adding team stats, recent form, and head-to-head history via .
-    *   Improved the GPT-4o prompt for more structured data extraction from bet slips.
-*   **Core Features & UI/UX**:
-    *   Implemented a check to warn users if a bet slip is for a game that has already completed.
-    *   Added Improvement Suggestions for low-probability parlays, suggesting which legs to remove.
-    *   Redesigned the Real-Time Intelligence section on the dashboard with better formatting and emojis.
-    *   Added a timed notification on the dashboard to inform users about analysis duration.
-*   **Admin & Subscription System**:
-    *   Built a comprehensive admin dashboard with user management (view, ban/unban), global stats, and enhanced controls.
-    *   Implemented a subscription model with usage tracking (5 free tries) and a paywall using Stripe (in test mode).
-    *   Integrated device fingerprinting to prevent users from creating multiple accounts to abuse the free trial.
-    *   Backend logic for storing and managing high-percentage bets for admin review.
+- **Proven Results Section**: Verified and finalized the UI on the landing page to show historical pick performance.
+- **Automated Outcome Resolution**: Implemented a background job to automatically fetch game scores and mark daily picks as Won or Lost.
+- **Paywall Fix**: Correctly restricted the Daily Picks feature to be exclusive for subscribed (Pro) users.
+- **Enhanced AI Picks**: Created a  that uses historical performance data (win/loss records by sport, bet type, etc.) to generate more intelligent daily picks.
+- **Server Refactoring**: Broke down the monolithic  into a modular structure with  and  directories for better organization and maintainability.
+- **Multi-Method Payments**:
+    - Integrated **PayPal** as a payment option.
+    - Added a **manual CashApp** payment flow where users can submit a request and admins can approve it from their dashboard.
+- **Live Game Streaming**: Added a feature to display live game streams on the user dashboard, with an admin panel to manage stream links.
+- **Enhanced Data Sources**: Integrated services for more stream sources and enhanced sports data to improve AI pick quality.
+- **Facebook Promotion**: Generated a promotional image and post copy for the user to share on social media.
+- **Critical Bug Fixes**: Addressed several bugs related to token authentication and API payload formats for the AI service, though one critical bug remains.
 
 **Earlier issues found/mentioned but not fixed**
-None
+None.
 
 **Known issue recurrence from previous fork**
-*   **Issue recurrence in previous fork**: None
-*   **Recurrence count**: 0
-*   **Status**: NOT STARTED
+*   **Issue recurrence in previous fork**: None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 *   **Frontend**: React, Tailwind CSS, Shadcn/UI, , 
-*   **Backend**: FastAPI, MongoDB (via ), 
-*   **AI**: OpenAI GPT-4o (Vision)
-*   **Third-Party APIs**: The Odds API, WeatherAPI.com, ESPN API
-*   **Authentication**: JWT
-*   **Payments**: Stripe Subscriptions
+*   **Backend**: FastAPI, MongoDB (via ), Pydantic
+*   **AI**: OpenAI GPT-4o (Vision) via  library.
+*   **Architecture**: Modular backend with dependency injection ( and ). Background tasks with .
+*   **Payments**: Stripe, PayPal, Manual CashApp approval flow.
+*   **Authentication**: JWT.
 
 **key DB schema**
 *   **users**: 
 *   **analyses**: 
 *   **user_usage**: 
-*   **top_bets**: 
+*   **daily_picks**: 
+*   **cash_app_requests**:  (New)
+*   **live_streams**:  (New)
 
 **changes in tech stack**
-*   **Backend**: , 
-*   **Frontend**: , , 
+*   The backend was heavily refactored from a single  file into a modular structure using FastAPI's  and distinct service classes.
 
 **All files of reference**
-*   : Core application logic, including analysis, auth, and new admin/subscription routes.
-*   : Helper functions for admin and subscription management.
-*   : UI for the admin dashboard.
-*   : Main analysis page UI, integrated with usage checks and notifications.
-*   : Contains all the new routes for Admin and Subscription pages.
-*   : UI for the paywall.
-*   : Contains all API keys, including the test Stripe key.
+*   : The new main entry point for the FastAPI app, which now primarily includes routers from the  directory. **The  endpoint with the bug is currently here.**
+*   : Contains shared dependencies like database connections and user authentication functions ().
+*   : The UI for handling all three payment methods (Card, PayPal, CashApp).
+*   : The admin panel UI, updated with tabs for managing CashApp requests and live streams.
 
 **Areas that need refactoring**:
-*    is now over 1300 lines long and handles auth, analysis, admin, and subscription logic. It should be broken down into smaller FastAPI routers for better maintainability.
+*   The  endpoint logic is still in the main  file and should be moved to its own route module (e.g., ).
+*   The file  should be renamed to , and the old monolithic  should be deleted to finalize the refactor.
 
 **key api endpoints**
-*   **Admin**: , , , , 
-*   **Subscription**: , 
-*   **Usage**: 
+*   **Analysis**:  (BROKEN)
+*   **Auth**: , , 
+*   **Payments**:  (Stripe), , 
+*   **Admin**: , 
+*   **Picks**: , 
+*   **Streams**: , 
 
 **Critical Info for New Agent**
-*   The admin user's email is hardcoded as . You must register with this email to access the admin dashboard.
-*   The Stripe integration is currently in **test mode**. The user needs to provide a **live secret key** (starting with ) to process real payments. Do not encourage deployment for paid use until this is resolved.
-*   The threshold for saving a top bet for admin review is a win probability of **70% or higher**.
+*   **The Core Bug**: The main user-facing feature, Bet Slip Analysis, is non-functional. The payload format for the GPT-4o Vision API via  is incorrect. The last error was . The fix is not trivial and requires constructing the precise payload structure the underlying API expects. This is the highest priority.
+*   **Modular Backend**: Be aware that the backend logic is now split across  and . Shared functions, especially for authentication and database access, are in .
 
 **documents and test reports created in this job**
-None
+*    (heavily updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (Msg 394)**: You can go ahead and continue. - Status: Completed. Agent continued working.
-2.  **User (Msg 369)**: Lets add fanduel and draft kings as well... Yes add the high percentage bet slips storage feature..." - Status: In Progress. Agent started the storage feature.
-3.  **User (Msg 367)**: Provided Stripe **test** keys. - Status: Completed. Agent informed the user they are test keys.
-4.  **User (Msg 365)**: Asked to store high-percentage bet slips for admin and inquired about adding PayPal/CashApp. - Status: In Progress.
-5.  **User (Msg 324)**: Requested admin dashboard enhancements and a notification for analysis time. - Status: Completed.
-6.  **User (Msg 323)**: "Lets make the admin dashboard a little more useful... give them a small but clean notification... - Status: Completed.
-7.  **User (Msg 321)**: Asked where payment money goes. - Status: Completed. Agent explained the Stripe payout process.
-8.  **User (Msg 317)**: Asked if updates can be made after deployment. - Status: Completed. Agent explained the deployment/update process.
-9.  **User (Msg 250)**: Confirmed admin email (), payment choices (Stripe/PayPal), and requested device tracking. - Status: Completed.
-10. **User (Msg 247)**: Requested an admin dashboard to ban users and a subscription model (5 free tries, then /month). - Status: Completed.
+1.  **User (Msg 486)**: Provides a screenshot of the latest error: . Status: **Pending Fix**.
+2.  **User (Msg 474)**: Provides a screenshot of a  related to . Status: Fixed, but led to another error.
+3.  **User (Msg 456)**: Reports an invalid token error after a previous fix. Status: Resolved.
+4.  **User (Msg 444)**: Provides a screenshot of the initial  when uploading an image. Status: Fixed, but led to other errors.
+5.  **User (Msg 440)**: Asks for a Facebook post and image to promote the website. Status: Completed.
+6.  **User (Msg 391)**: Requests adding more stream sources and enhancing the AI. Status: Completed.
+7.  **User (Msg 340)**: Requests a live streaming feature. Status: Completed.
+8.  **User (Msg 278)**: Asks about billing and how to reduce costs. Status: Completed, agent explained credit system.
+9.  **User (Msg 267, 193)**: keep working / continue with the updates - General approval to continue development. Status: Completed.
+10. **User (Msg 98)**: Approves the agent's plan and expresses excitement to build the most powerful AI Sports Betting bot. Status: Completed.
 
 **Project Health Check:**
-*   **Broken**: None.
-*   **Mocked**: Stripe payments are in **test mode** and do not process real money.
+*   **Broken**: The core Bet Slip Analysis feature is completely broken.
+*   **Mocked**: None.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o** — uses Emergent LLM Key
-*   **The Odds API** — requires User API Key
-*   **WeatherAPI.com** — requires User API Key
-*   **ESPN API (undocumented)** — no key required
-*   **Stripe (Subscriptions)** — requires User API Key (currently using a test key)
-*   **FingerprintJS (Device ID)** — no key required
+*   **OpenAI GPT-4o (Vision)** — uses Emergent LLM Key via  library. **(Currently Broken Integration)**
+*   **Stripe (Subscriptions)** — requires User API Key.
+*   **PayPal** — requires User API Key ().
+*   **The Odds API** — requires User API Key.
+*   **WeatherAPI.com** — requires User API Key.
+*   **ESPN API (undocumented)** — no key required.
+*   **FingerprintJS (Device ID)** — no key required.
 
 **Testing status**
-*   **Testing agent used after significant changes**: YES
+*   **Testing agent used after significant changes**: NO
 *   **Troubleshoot agent used after agent stuck in loop**: NO
 *   **Test files created**: None
-*   **Known regressions**: None
+*   **Known regressions**: The primary bet slip analysis feature, which was previously working, has regressed and is now broken.
 
 **Credentials to test flow:**
-*   **Admin User**: Register with email  to gain admin privileges.
-*   **Stripe Test Key (Secret)**:  (already in )
+*   **Admin User**:
+    *   Email: 
+    *   Password: 
 
 **What agent forgot to execute**
-*   The agent was in the middle of completing the UI rendering for the Top Bets section in .
-*   The agent acknowledged the user's request to update the landing page to feature FanDuel/DraftKings more prominently but has not yet started the implementation.</analysis>
+*   The agent did not fully complete the server refactoring. The  endpoint remains in  and the old monolithic file structure (, ) has not been cleaned up.
+*   The agent repeatedly failed to find the correct payload format for the AI vision call, suggesting a need for more systematic debugging (e.g., checking library documentation) rather than iterative trial-and-error.</analysis>
