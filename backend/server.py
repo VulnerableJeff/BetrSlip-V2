@@ -349,6 +349,44 @@ async def get_user_analyses(
     return {"analyses": analyses, "total": total}
 
 
+class OutcomeRequest(BaseModel):
+    outcome: str  # 'won', 'lost', 'push'
+    stake_amount: Optional[float] = None
+    payout_amount: Optional[float] = None
+
+@api_router.post("/analysis/{analysis_id}/outcome")
+async def mark_analysis_outcome(
+    analysis_id: str,
+    outcome_data: OutcomeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Mark an analysis as won, lost, or push"""
+    user_id = current_user['user_id']
+    
+    # Verify analysis exists and belongs to user
+    analysis = await db.analyses.find_one({"id": analysis_id, "user_id": user_id})
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    
+    # Update analysis with outcome
+    update_data = {
+        "outcome": outcome_data.outcome,
+        "outcome_marked_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if outcome_data.stake_amount:
+        update_data["stake_amount"] = outcome_data.stake_amount
+    if outcome_data.payout_amount:
+        update_data["payout_amount"] = outcome_data.payout_amount
+    
+    await db.analyses.update_one(
+        {"id": analysis_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": f"Analysis marked as {outcome_data.outcome}", "outcome": outcome_data.outcome}
+
+
 # ===== ADMIN ROUTES =====
 @api_router.get("/admin/stats")
 async def admin_get_stats(admin_user: dict = Depends(get_admin_user)):
