@@ -217,11 +217,11 @@ async def admin_toggle_stream(stream_id: str, admin_user: dict = Depends(get_adm
 # ===== HEALTH ENDPOINTS =====
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "betrslip-api"}
+    return {"status": "healthy", "service": "betrslip-api", "version": "2.1.0"}
 
 @api_router.get("/health")
 async def api_health_check():
-    return {"status": "healthy", "service": "betrslip-api"}
+    return {"status": "healthy", "service": "betrslip-api", "version": "2.1.0"}
 
 
 # ===== BET SLIP ANALYSIS =====
@@ -231,13 +231,17 @@ class AnalysisResult(BaseModel):
     analysis: dict
     created_at: str
 
+# Allowed image types for security
+ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/jpg'}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB max
+
 @api_router.post("/analyze")
 async def analyze_bet_slip(
     request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Analyze a bet slip image using AI"""
+    """Analyze a bet slip image using AI with security checks"""
     user_id = current_user['user_id']
     
     # Check usage limits
