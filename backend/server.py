@@ -1,6 +1,6 @@
 """
 BetrSlip API - Main Application Entry Point
-Refactored modular architecture
+Refactored modular architecture with security enhancements
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -11,7 +11,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
 import base64
@@ -19,6 +19,8 @@ import aiohttp
 import json
 import re
 import asyncio
+from collections import defaultdict
+import time
 
 # Load environment
 ROOT_DIR = Path(__file__).parent
@@ -48,13 +50,44 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 # App setup
-app = FastAPI(title="BetrSlip API", version="2.0.0")
+app = FastAPI(title="BetrSlip API", version="2.1.0")
 api_router = APIRouter(prefix="/api")
 
 # Environment variables
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+
+# ===== SECURITY: Rate Limiting =====
+class RateLimiter:
+    def __init__(self):
+        self.requests: Dict[str, list] = defaultdict(list)
+        self.analysis_requests: Dict[str, list] = defaultdict(list)
+    
+    def is_rate_limited(self, user_id: str, limit: int = 60, window: int = 60) -> bool:
+        """Check if user exceeded rate limit (default: 60 requests per minute)"""
+        now = time.time()
+        # Clean old requests
+        self.requests[user_id] = [t for t in self.requests[user_id] if now - t < window]
+        
+        if len(self.requests[user_id]) >= limit:
+            return True
+        
+        self.requests[user_id].append(now)
+        return False
+    
+    def is_analysis_limited(self, user_id: str, limit: int = 5, window: int = 300) -> bool:
+        """Check analysis rate limit (5 analyses per 5 minutes to prevent abuse)"""
+        now = time.time()
+        self.analysis_requests[user_id] = [t for t in self.analysis_requests[user_id] if now - t < window]
+        
+        if len(self.analysis_requests[user_id]) >= limit:
+            return True
+        
+        self.analysis_requests[user_id].append(now)
+        return False
+
+rate_limiter = RateLimiter()
 
 # Logging
 logging.basicConfig(
