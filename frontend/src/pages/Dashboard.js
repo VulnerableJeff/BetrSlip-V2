@@ -287,12 +287,9 @@ const Dashboard = ({ onLogout }) => {
           onSubscribe={() => setShowSubscriptionModal(true)} 
         />
 
-        {/* Live Games Section */}
+        {/* Live Streams Section */}
         <div className="mt-6">
-          <LiveGames 
-            usage={usage} 
-            onSubscribe={() => setShowSubscriptionModal(true)} 
-          />
+          <LiveStreamsHub />
         </div>
         
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
