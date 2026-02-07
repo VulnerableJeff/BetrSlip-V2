@@ -334,6 +334,27 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Live activity banner showing: active users, total users, bets analyzed, AI accuracy
     - Real-time engagement indicators to build trust
 
+28. **Live Sports Streaming Integration** ✅ (Feb 7, 2026)
+    - Integrated SportSRC API for live match data and streams
+    - New `LiveStreamsHub` component replacing old `LiveGames`
+    - Features:
+      - Real-time live match listings with team badges, scores, leagues
+      - Multiple HD stream sources per match (up to 4)
+      - Full-screen video player with stream switching
+      - Auto-refresh every 60 seconds
+    - New API endpoints: `/api/streams/live`, `/api/streams/match/{id}`, `/api/streams/upcoming`
+    - Supports Football/Soccer (API provides football streams on free tier)
+
+29. **Daily Picks Auto-Refresh Fixed** ✅ (Feb 7, 2026)
+    - More aggressive pick replacement (16-18 hour window)
+    - Background task generates new picks automatically every 6 hours
+    - Fallback game data when Odds API unavailable
+    - New admin endpoints: `/api/admin/refresh-picks`, `/api/admin/clear-old-picks`
+
+30. **Landing Page Updates** ✅ (Feb 7, 2026)
+    - Updated version badge to v2.1
+    - Changed "LIVE PROTOTYPE RUNNING NOW" to "LIVE RUNNING NOW"
+
 ---
 
-*Last Updated: February 5, 2026*
+*Last Updated: February 7, 2026*
