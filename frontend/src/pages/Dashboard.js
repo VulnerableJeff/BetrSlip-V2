@@ -287,9 +287,9 @@ const Dashboard = ({ onLogout }) => {
           onSubscribe={() => setShowSubscriptionModal(true)} 
         />
 
-        {/* Live Streams Section */}
+        {/* USA Sports Hub - Live Scores & Where to Watch */}
         <div className="mt-6">
-          <LiveStreamsHub />
+          <USASportsHub />
         </div>
         
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
