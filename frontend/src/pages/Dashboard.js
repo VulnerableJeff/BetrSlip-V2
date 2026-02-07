@@ -292,6 +292,11 @@ const Dashboard = ({ onLogout }) => {
         <div className="mt-6">
           <USASportsHub />
         </div>
+
+        {/* Bankroll Tracker - Premium Feature */}
+        <div className="mt-6">
+          <BankrollTracker />
+        </div>
         
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
           {/* Upload Section */}
