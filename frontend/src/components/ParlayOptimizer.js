@@ -90,6 +90,18 @@ const ParlayOptimizer = () => {
           <Layers className="w-5 h-5 text-violet-400" />
           <CardTitle className="text-lg text-white">AI Parlay Optimizer</CardTitle>
           <Sparkles className="w-4 h-4 text-yellow-400" />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-4 h-4 text-slate-500 hover:text-slate-300 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-slate-800 border-slate-700 text-white p-3">
+                <p className="font-semibold mb-1">How to Build a Parlay</p>
+                <p className="text-sm text-slate-300 mb-2">Click the <span className="text-violet-400 font-bold">+</span> button to add bets to your parlay. The more legs you add, the higher the payout but lower the win probability.</p>
+                <p className="text-xs text-slate-400">💡 Tip: AI suggests bets with positive Expected Value (EV) for better long-term profits.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <p className="text-xs text-slate-400">AI-suggested combinations with best value</p>
       </CardHeader>
