@@ -285,23 +285,9 @@ const Dashboard = ({ onLogout }) => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Daily Picks Section - Above the main grid */}
-        <DailyPicks 
-          usage={usage} 
-          onSubscribe={() => setShowSubscriptionModal(true)} 
-        />
-
-        {/* USA Sports Hub - Live Scores & Where to Watch */}
-        <div className="mt-6">
-          <USASportsHub />
-        </div>
-
-        {/* Bankroll Tracker - Premium Feature */}
-        <div className="mt-6">
-          <BankrollTracker />
-        </div>
         
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
+        {/* UPLOAD SECTION - TOP OF PAGE */}
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
           {/* Upload Section */}
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="upload-section-title">
