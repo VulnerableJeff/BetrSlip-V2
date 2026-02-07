@@ -143,10 +143,138 @@ async def get_leaderboard():
 
 @router.get("/ev-scanner")
 async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
-    """Scan for +EV betting opportunities based on current odds data"""
-    import random
+    """Scan for +EV betting opportunities using real odds data"""
+    import aiohttp
+    import os
 
-    # Get active daily picks as base for EV analysis
+    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+    opportunities = []
+
+    # Try real odds first
+    if ODDS_API_KEY:
+        sport_keys = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb']
+        async with aiohttp.ClientSession() as session:
+            for sport_key in sport_keys:
+                try:
+                    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
+                    params = {
+                        'apiKey': ODDS_API_KEY,
+                        'regions': 'us',
+                        'markets': 'h2h,spreads',
+                        'oddsFormat': 'american'
+                    }
+                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            games = await resp.json()
+                            for game in games[:6]:
+                                opp = _analyze_game_ev(game)
+                                if opp:
+                                    opportunities.extend(opp)
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"EV scan error for {sport_key}: {e}")
+
+    # Fallback to picks-based simulation if no real data
+    if not opportunities:
+        opportunities = await _fallback_ev_scan()
+
+    opportunities.sort(key=lambda x: x['best_edge'], reverse=True)
+
+    return {
+        "count": len(opportunities),
+        "opportunities": opportunities[:10],
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "source": "live" if ODDS_API_KEY and opportunities else "simulated"
+    }
+
+
+def _analyze_game_ev(game):
+    """Analyze a game's odds for +EV opportunities"""
+    results = []
+    home = game.get('home_team', '')
+    away = game.get('away_team', '')
+    sport = game.get('sport_title', game.get('sport_key', 'Unknown'))
+    bookmakers = game.get('bookmakers', [])
+
+    if len(bookmakers) < 2:
+        return results
+
+    for market_type in ['h2h', 'spreads']:
+        # Collect all odds for each outcome
+        outcome_odds = {}
+
+        for bm in bookmakers:
+            book = bm.get('title', '')
+            for market in bm.get('markets', []):
+                if market.get('key') != market_type:
+                    continue
+                for outcome in market.get('outcomes', []):
+                    name = outcome.get('name', '')
+                    price = outcome.get('price', 0)
+                    point = outcome.get('point', '')
+                    key = f"{name} {point}".strip() if point else name
+
+                    if key not in outcome_odds:
+                        outcome_odds[key] = []
+                    outcome_odds[key].append({'book': book, 'odds': price, 'point': point})
+
+        # Find best odds and calculate true probability (no-vig)
+        for outcome_key, odds_list in outcome_odds.items():
+            if len(odds_list) < 2:
+                continue
+
+            best = max(odds_list, key=lambda x: x['odds'])
+            worst = min(odds_list, key=lambda x: x['odds'])
+
+            # Calculate average implied probability as "true" probability estimate
+            implied_probs = []
+            for o in odds_list:
+                dec = (o['odds'] / 100 + 1) if o['odds'] > 0 else (100 / abs(o['odds']) + 1)
+                implied_probs.append(1 / dec)
+
+            avg_implied = sum(implied_probs) / len(implied_probs)
+            true_prob = round(avg_implied * 100, 1)
+
+            # Best odds implied
+            best_dec = (best['odds'] / 100 + 1) if best['odds'] > 0 else (100 / abs(best['odds']) + 1)
+            best_implied = 1 / best_dec
+            edge = round((avg_implied - best_implied) * 100, 1)
+
+            if edge > 0:
+                book_odds = {}
+                for o in odds_list:
+                    dec = (o['odds'] / 100 + 1) if o['odds'] > 0 else (100 / abs(o['odds']) + 1)
+                    imp = round((1 / dec) * 100, 1)
+                    o_edge = round((avg_implied - 1/dec) * 100, 1)
+                    odds_str = f"+{o['odds']}" if o['odds'] > 0 else str(o['odds'])
+                    book_odds[o['book']] = {
+                        "decimal": round(dec, 2),
+                        "american": odds_str,
+                        "implied_prob": imp,
+                        "edge": o_edge
+                    }
+
+                best_american = f"+{best['odds']}" if best['odds'] > 0 else str(best['odds'])
+                true_american = int(round(-100 * avg_implied / (1 - avg_implied))) if avg_implied > 0.5 else int(round(100 * (1 - avg_implied) / avg_implied))
+                true_odds_str = f"+{true_american}" if true_american > 0 else str(true_american)
+
+                results.append({
+                    "game": f"{home} vs {away}" if not best.get('point') else f"{outcome_key} ({home} vs {away})",
+                    "sport": sport,
+                    "true_probability": true_prob,
+                    "true_odds": true_odds_str,
+                    "best_book": best['book'],
+                    "best_edge": edge,
+                    "best_odds": best_american,
+                    "book_odds": book_odds,
+                    "kelly_bet": round(max(0, (avg_implied * best_dec - 1) / (best_dec - 1)) * 100, 1)
+                })
+
+    return results
+
+
+async def _fallback_ev_scan():
+    """Fallback EV scan using daily picks"""
+    import random
     picks = await db.daily_picks.find(
         {"is_active": True}, {"_id": 0}
     ).sort("win_probability", -1).limit(10).to_list(10)
@@ -158,22 +286,17 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
         prob = pick.get('win_probability', 50) / 100
         title = pick.get('title', 'Unknown')
         sport = pick.get('sport', 'Unknown')
-
-        # Calculate true odds (no-vig)
         true_decimal = round(1 / prob, 2) if prob > 0 else 2.0
         true_american = int(round((true_decimal - 1) * 100)) if true_decimal >= 2 else int(round(-100 / (true_decimal - 1)))
 
-        # Simulate bookmaker odds (slightly worse than true)
         book_odds = {}
         best_book = ''
         best_value = -100
 
         for book in sportsbooks:
-            # Each book has slightly different odds
             variance = random.uniform(-0.08, 0.05)
             book_decimal = round(true_decimal + variance, 2)
             book_american = int(round((book_decimal - 1) * 100)) if book_decimal >= 2 else int(round(-100 / (book_decimal - 1)))
-
             implied_prob = 1 / book_decimal
             edge = round((prob - implied_prob) * 100, 1)
 
@@ -183,12 +306,11 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
                 "implied_prob": round(implied_prob * 100, 1),
                 "edge": edge
             }
-
             if edge > best_value:
                 best_value = edge
                 best_book = book
 
-        if best_value > 0:  # Only show +EV opportunities
+        if best_value > 0:
             opportunities.append({
                 "game": title,
                 "sport": sport,
@@ -198,13 +320,7 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
                 "best_edge": best_value,
                 "best_odds": book_odds[best_book]['american'],
                 "book_odds": book_odds,
-                "kelly_bet": round(max(0, (prob * (true_decimal) - 1) / (true_decimal - 1)) * 100, 1)
+                "kelly_bet": round(max(0, (prob * true_decimal - 1) / (true_decimal - 1)) * 100, 1)
             })
 
-    opportunities.sort(key=lambda x: x['best_edge'], reverse=True)
-
-    return {
-        "count": len(opportunities),
-        "opportunities": opportunities,
-        "last_updated": datetime.now(timezone.utc).isoformat()
-    }
+    return opportunities
