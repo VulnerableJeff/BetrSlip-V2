@@ -689,6 +689,13 @@ const Admin = () => {
         </div>
       </div>
 
+      {/* Analytics Dashboard Tab */}
+      {activeTab === 'analytics' && (
+        <div className="max-w-7xl mx-auto">
+          <AdminAnalytics />
+        </div>
+      )}
+
       {/* Top Bets Stats */}
       {activeTab === 'topbets' && topBetsStats && (
         <div className="max-w-7xl mx-auto mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
