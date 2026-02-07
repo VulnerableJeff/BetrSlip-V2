@@ -31,6 +31,7 @@ from routes.deps import db, client, get_current_user, get_admin_user, security
 from routes import auth, subscriptions, picks, streams, usa_sports, bankroll, analytics
 from routes import referrals, notifications, admin_analytics
 from routes import chat, performance, parlay_builder
+from routes import pro_tools
 
 # Import services
 from services.smart_picks_service import SmartPicksService
