@@ -742,12 +742,15 @@ const Dashboard = ({ onLogout }) => {
                                 suggestion.type === 'remove_leg' ? 'bg-red-500/20' :
                                 suggestion.type === 'bet_individually' ? 'bg-blue-500/20' :
                                 suggestion.type === 'alternative' ? 'bg-emerald-500/20' :
+                                suggestion.type === 'tip' ? 'bg-violet-500/20' :
                                 'bg-yellow-500/20'
                               }`}>
-                                {suggestion.type === 'remove_leg' && <Target className="w-4 h-4 text-red-400" />}
-                                {suggestion.type === 'bet_individually' && <BarChart3 className="w-4 h-4 text-blue-400" />}
-                                {suggestion.type === 'alternative' && <Lightbulb className="w-4 h-4 text-emerald-400" />}
-                                {(suggestion.type === 'stake_warning' || suggestion.type === 'stake_advice') && <AlertTriangle className="w-4 h-4 text-yellow-400" />}
+                                {suggestion.type === 'remove_leg' ? <Target className="w-4 h-4 text-red-400" /> :
+                                 suggestion.type === 'bet_individually' ? <BarChart3 className="w-4 h-4 text-blue-400" /> :
+                                 suggestion.type === 'alternative' ? <Lightbulb className="w-4 h-4 text-emerald-400" /> :
+                                 suggestion.type === 'tip' ? <Sparkles className="w-4 h-4 text-violet-400" /> :
+                                 (suggestion.type === 'stake_warning' || suggestion.type === 'stake_advice') ? <AlertTriangle className="w-4 h-4 text-yellow-400" /> :
+                                 <Lightbulb className="w-4 h-4 text-yellow-400" />}
                               </div>
                               <div className="flex-1">
                                 <h4 className="font-bold text-white text-sm mb-1">{suggestion.title}</h4>
