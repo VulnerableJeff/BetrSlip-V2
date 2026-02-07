@@ -355,6 +355,39 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
     - Updated version badge to v2.1
     - Changed "LIVE PROTOTYPE RUNNING NOW" to "LIVE RUNNING NOW"
 
+31. **USA Sports Hub** ✅ (Feb 7, 2026)
+    - Replaced soccer streams with USA sports focus
+    - Live scores for NBA, NFL, NHL, MLB, NCAAF, NCAAB
+    - Team logos, records, game times, broadcast info
+    - Legal streaming links (ESPN, TNT, NBA League Pass, NFL+, etc.)
+    - Uses free ESPN API - no additional cost!
+
+32. **Bankroll Tracker** ✅ (Feb 7, 2026)
+    - Track deposits, withdrawals, wins, losses
+    - Real-time balance, ROI, win rate calculations
+    - Recent transaction history
+    - Kelly Criterion suggested bet sizing
+    - API endpoints: `/api/bankroll`, `/api/bankroll/transaction`
+
+---
+
+## Pending/Future Features
+
+### High Priority (P1)
+- **Line Movement Alerts** - Notify users when odds shift
+- **Parlay Optimizer** - AI suggests optimal parlay combinations
+- **Odds Comparison** - Show best odds across books
+
+### Medium Priority (P2)
+- **Performance Analytics Dashboard** - Detailed stats by sport/bet type
+- **Smart Alerts** - "Sharp money detected on Lakers"
+- **Social Features** - Public leaderboard, bet sharing
+
+### Future (P3)
+- Native mobile app
+- Push notifications
+- Referral program
+
 ---
 
 *Last Updated: February 7, 2026*
