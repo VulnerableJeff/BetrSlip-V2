@@ -7,8 +7,9 @@ import { toast } from 'sonner';
 import { 
   Users, Ban, CheckCircle, BarChart3, DollarSign, Shield, ArrowLeft, RefreshCw,
   Search, Eye, Gift, Trash2, Download, Crown, Clock, Activity,
-  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2, MessageSquare
+  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2, MessageSquare, PieChart
 } from 'lucide-react';
+import AdminAnalytics from '@/components/AdminAnalytics';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
