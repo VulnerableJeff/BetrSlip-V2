@@ -39,6 +39,17 @@ class ChatRequest(BaseModel):
     message: str
     session_id: str = None
 
+    class Config:
+        json_schema_extra = {"example": {"message": "What is Kelly Criterion?"}}
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        return v
+
 
 class ChatResponse(BaseModel):
     response: str
