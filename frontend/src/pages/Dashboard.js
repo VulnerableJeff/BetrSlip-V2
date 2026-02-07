@@ -285,8 +285,14 @@ const Dashboard = ({ onLogout }) => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
-        {/* UPLOAD SECTION - TOP OF PAGE */}
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+        {/* TOP PICKS - AT THE VERY TOP */}
+        <DailyPicks 
+          usage={usage} 
+          onSubscribe={() => setShowSubscriptionModal(true)} 
+        />
+
+        {/* UPLOAD SECTION - BELOW TOP PICKS */}
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-8 mb-8">
           {/* Upload Section */}
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="upload-section-title">
