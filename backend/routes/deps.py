@@ -18,11 +18,20 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production'
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 72  # Extended to 72 hours
 
-# MongoDB connection - single shared connection
+# MongoDB connection - single shared connection with production settings
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'betrslip')
 
-client = AsyncIOMotorClient(MONGO_URL)
+# Configure MongoDB client with connection pooling for production
+client = AsyncIOMotorClient(
+    MONGO_URL,
+    maxPoolSize=10,
+    minPoolSize=1,
+    maxIdleTimeMS=30000,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=10000,
+    retryWrites=True
+)
 db: AsyncIOMotorDatabase = client[DB_NAME]
 
 # Admin email
