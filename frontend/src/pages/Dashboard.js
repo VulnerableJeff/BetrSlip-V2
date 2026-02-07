@@ -861,20 +861,9 @@ const Dashboard = ({ onLogout }) => {
           <OddsComparison />
         </div>
 
-        {/* Daily Picks Section */}
-        <DailyPicks 
-          usage={usage} 
-          onSubscribe={() => setShowSubscriptionModal(true)} 
-        />
-
         {/* USA Sports Hub - Live Scores & Where to Watch */}
         <div className="mt-6">
           <USASportsHub />
-        </div>
-
-        {/* Bankroll Tracker - Premium Feature */}
-        <div className="mt-6">
-          <BankrollTracker />
         </div>
 
       </main>
