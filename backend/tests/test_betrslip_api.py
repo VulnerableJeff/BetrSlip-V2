@@ -281,5 +281,174 @@ class TestLiveGames:
         print(f"✓ Live games retrieved: {len(data.get('games', []))} games")
 
 
+class TestPublicStats:
+    """Public stats endpoint tests (no auth required)"""
+    
+    def test_get_public_stats(self):
+        """Test GET /api/public-stats endpoint"""
+        response = requests.get(f"{BASE_URL}/api/public-stats")
+        
+        assert response.status_code == 200, f"Get public stats failed: {response.text}"
+        data = response.json()
+        
+        # Verify expected fields
+        assert "total_users" in data, "total_users not in response"
+        assert "total_analyses" in data, "total_analyses not in response"
+        assert "pro_users" in data, "pro_users not in response"
+        assert "ai_accuracy" in data, "ai_accuracy not in response"
+        
+        print(f"✓ Public stats retrieved:")
+        print(f"  Total users: {data['total_users']}")
+        print(f"  Total analyses: {data['total_analyses']}")
+        print(f"  Pro users: {data['pro_users']}")
+        print(f"  AI accuracy: {data['ai_accuracy']}%")
+
+
+class TestDailyPicks:
+    """Daily picks endpoint tests"""
+    
+    def test_get_daily_picks(self):
+        """Test GET /api/daily-picks endpoint"""
+        response = requests.get(f"{BASE_URL}/api/daily-picks")
+        
+        assert response.status_code == 200, f"Get daily picks failed: {response.text}"
+        data = response.json()
+        
+        assert "picks" in data, "picks not in response"
+        assert "count" in data, "count not in response"
+        
+        picks = data["picks"]
+        print(f"✓ Daily picks retrieved: {len(picks)} picks")
+        
+        # Verify pick structure if any exist
+        if picks:
+            pick = picks[0]
+            assert "id" in pick, "Pick ID missing"
+            assert "title" in pick, "Pick title missing"
+            assert "win_probability" in pick, "Win probability missing"
+            assert "sport" in pick, "Sport missing"
+            print(f"  Top pick: {pick['title']} ({pick['win_probability']}% win prob)")
+
+
+class TestLineMovements:
+    """Line movement alerts endpoint tests"""
+    
+    def test_get_line_movements(self):
+        """Test GET /api/line-movements endpoint"""
+        response = requests.get(f"{BASE_URL}/api/line-movements")
+        
+        assert response.status_code == 200, f"Get line movements failed: {response.text}"
+        data = response.json()
+        
+        assert "success" in data, "success not in response"
+        assert "movements" in data, "movements not in response"
+        
+        movements = data["movements"]
+        print(f"✓ Line movements retrieved: {len(movements)} movements")
+        
+        # Verify movement structure if any exist
+        if movements:
+            movement = movements[0]
+            assert "game" in movement, "Game missing"
+            assert "old_line" in movement, "Old line missing"
+            assert "new_line" in movement, "New line missing"
+            print(f"  Sample: {movement['game']} - {movement['old_line']} → {movement['new_line']}")
+
+
+class TestOddsComparison:
+    """Odds comparison endpoint tests"""
+    
+    def test_get_odds_comparison_nba(self):
+        """Test GET /api/odds-comparison for NBA"""
+        response = requests.get(f"{BASE_URL}/api/odds-comparison?sport=NBA")
+        
+        assert response.status_code == 200, f"Get odds comparison failed: {response.text}"
+        data = response.json()
+        
+        assert "success" in data, "success not in response"
+        assert "comparisons" in data, "comparisons not in response"
+        assert "sport" in data, "sport not in response"
+        assert data["sport"] == "NBA", f"Expected NBA, got {data['sport']}"
+        
+        comparisons = data["comparisons"]
+        print(f"✓ Odds comparison retrieved for NBA: {len(comparisons)} games")
+        
+        # Verify comparison structure if any exist
+        if comparisons:
+            comp = comparisons[0]
+            assert "game" in comp, "Game missing"
+            assert "odds" in comp, "Odds missing"
+            # Check for sportsbook odds
+            odds = comp["odds"]
+            print(f"  Sample: {comp['game']}")
+            print(f"  Sportsbooks: {list(odds.keys())}")
+
+
+class TestUSASportsHub:
+    """USA Sports Hub endpoint tests"""
+    
+    def test_get_usa_sports_games(self):
+        """Test GET /api/usa-sports/games endpoint"""
+        response = requests.get(f"{BASE_URL}/api/usa-sports/games")
+        
+        assert response.status_code == 200, f"Get USA sports games failed: {response.text}"
+        data = response.json()
+        
+        assert "success" in data, "success not in response"
+        assert "games" in data, "games not in response"
+        
+        games = data["games"]
+        print(f"✓ USA Sports games retrieved:")
+        
+        # Check for different sports
+        for sport in ["NBA", "NFL", "NHL", "MLB", "NCAAF", "NCAAB"]:
+            sport_games = games.get(sport, [])
+            print(f"  {sport}: {len(sport_games)} games")
+        
+        # Verify game structure if any exist
+        if games.get("NBA"):
+            game = games["NBA"][0]
+            assert "homeTeam" in game, "Home team missing"
+            assert "awayTeam" in game, "Away team missing"
+            print(f"  Sample NBA game: {game['awayTeam']} at {game['homeTeam']}")
+
+
+class TestParlayOptimizer:
+    """Parlay optimizer endpoint tests"""
+    
+    @pytest.fixture
+    def auth_token(self):
+        """Get authentication token"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        return response.json()["token"]
+    
+    def test_get_parlay_suggestions(self, auth_token):
+        """Test GET /api/parlay-optimizer endpoint"""
+        response = requests.get(
+            f"{BASE_URL}/api/parlay-optimizer",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        
+        assert response.status_code == 200, f"Get parlay suggestions failed: {response.text}"
+        data = response.json()
+        
+        assert "success" in data, "success not in response"
+        assert "suggestions" in data, "suggestions not in response"
+        
+        suggestions = data["suggestions"]
+        print(f"✓ Parlay suggestions retrieved: {len(suggestions)} suggestions")
+        
+        # Verify suggestion structure if any exist
+        if suggestions:
+            suggestion = suggestions[0]
+            assert "id" in suggestion, "Suggestion ID missing"
+            assert "description" in suggestion, "Description missing"
+            assert "probability" in suggestion, "Probability missing"
+            print(f"  Sample: {suggestion['description']} ({suggestion['probability']}% win)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
