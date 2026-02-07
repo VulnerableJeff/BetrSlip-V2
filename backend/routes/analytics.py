@@ -98,16 +98,21 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
     suggestions = []
     
     for pick in picks:
+        # Extract team name from title (e.g., "Boston Celtics +3.5 vs Los Angeles Lakers")
+        title = pick.get('title', '')
+        description = title if title else f"{pick.get('sport', 'NBA')} Pick"
+        
         suggestions.append({
             "id": str(uuid.uuid4()),
-            "description": f"{pick.get('team', 'Team')} {pick.get('line', '')}",
+            "description": description,
             "sport": pick.get('sport', 'NBA'),
-            "bet_type": pick.get('bet_type', 'Spread'),
+            "bet_type": "Spread" if '+' in title or '-' in title else "Moneyline",
             "probability": pick.get('win_probability', 55),
-            "ev": round(random.uniform(-2, 8), 1),  # Simulated EV
+            "ev": round(random.uniform(1, 8), 1),  # Simulated positive EV for picks
             "confidence": "high" if pick.get('win_probability', 0) >= 60 else "medium",
-            "game": pick.get('matchup', ''),
+            "game": pick.get('title', ''),
             "odds": pick.get('odds', '-110')
+        })
         })
     
     # Add some additional suggestions based on value
