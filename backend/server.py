@@ -917,6 +917,13 @@ async def shutdown_event():
 
 
 # ===== MOUNT ROUTER & MIDDLEWARE =====
+# Include modular route files
+app.include_router(auth.router, prefix="/api")
+app.include_router(subscriptions.router, prefix="/api")
+app.include_router(picks.router, prefix="/api")
+app.include_router(streams.router, prefix="/api")
+
+# Include main API router
 app.include_router(api_router)
 
 app.add_middleware(
