@@ -300,14 +300,74 @@ frontend:
         agent: "main"
         comment: "Backend POST /best-value-finder returns simulated best odds across sportsbooks. Frontend BestValueFinder.js shows findings after analysis with sportsbook links. Needs E2E testing."
 
+  - task: "AI Chat Assistant"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/chat.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend POST /api/chat/message works with GPT-4o via Emergent LLM Key. Fixed 422 error by adding Optional type to session_id. Frontend AIChatAssistant.js floating chat widget with quick prompts, multi-turn conversation."
+
+  - task: "P/L Performance Tracker"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/performance.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend GET /api/performance/my-stats returns P/L chart data, win rate, ROI, AI accuracy. Frontend PLTracker.js shows stat cards and SVG P/L chart. Integrated into Dashboard and History pages."
+
+  - task: "EV Scanner"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/performance.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend GET /api/ev-scanner returns +EV opportunities from daily picks with sportsbook odds comparison. Frontend EVScanner.js shows expandable cards with all bookmaker odds and edge percentages."
+
+  - task: "Parlay Builder"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/parlay_builder.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend POST /api/parlay-builder/calculate returns combined odds, payout, EV, Kelly, correlation warnings. Frontend ParlayBuilder.js has leg management, calculate, save, and full results display."
+
+  - task: "Social Leaderboard"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/performance.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend GET /api/leaderboard returns top performers by win rate (min 3 bets). Frontend Leaderboard.js shows ranked players with anonymized emails, PRO badges, win rates."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: true
 
 test_plan:
-  current_focus: ["Admin Analytics Dashboard", "Referral Program", "Push Notifications", "Best Value Finder"]
+  current_focus: ["AI Chat Assistant", "P/L Performance Tracker", "EV Scanner", "Parlay Builder", "Social Leaderboard"]
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
