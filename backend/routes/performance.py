@@ -223,7 +223,6 @@ def _analyze_game_ev(game):
                 continue
 
             best = max(odds_list, key=lambda x: x['odds'])
-            worst = min(odds_list, key=lambda x: x['odds'])
 
             # Calculate average implied probability as "true" probability estimate
             implied_probs = []
