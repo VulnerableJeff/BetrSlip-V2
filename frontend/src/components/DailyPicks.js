@@ -177,6 +177,18 @@ const DailyPicks = ({ usage, onSubscribe }) => {
           <div className="min-w-0">
             <div className="flex items-center flex-wrap gap-2">
               <h3 className="text-white font-bold text-base">Today's Top Picks</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-4 h-4 text-slate-500 hover:text-slate-300 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs bg-slate-800 border-slate-700 text-white p-3">
+                    <p className="font-semibold mb-1">AI Daily Picks</p>
+                    <p className="text-sm text-slate-300 mb-2">Our AI analyzes thousands of data points to find the highest-value bets each day. Picks are refreshed daily with win probability and detailed reasoning.</p>
+                    <p className="text-xs text-slate-400">💡 Pro members get full access to all picks and detailed analysis.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold inline-flex items-center">
                 {picks.length} {picks.length === 1 ? 'Pick' : 'Picks'}
               </span>
