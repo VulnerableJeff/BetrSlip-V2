@@ -98,10 +98,21 @@ const USASportsHub = () => {
           <div className="p-2 bg-violet-500/20 rounded-lg">
             <Trophy className="w-5 h-5 text-violet-400" />
           </div>
-          <div>
+          <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">USA Sports</h2>
-            <p className="text-sm text-slate-400">Live scores & where to watch</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-4 h-4 text-slate-500 hover:text-slate-300 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-slate-800 border-slate-700 text-white p-3">
+                  <p className="font-semibold mb-1">Live Scores & Streaming</p>
+                  <p className="text-sm text-slate-300">Track live scores for NBA, NFL, NHL, MLB and college sports. Click the streaming service buttons to watch games legally on official platforms.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          <p className="text-sm text-slate-400 hidden sm:block">Live scores & where to watch</p>
         </div>
         <Button 
           variant="outline" 
