@@ -875,6 +875,18 @@ const Dashboard = ({ onLogout }) => {
           <OddsComparison />
         </div>
 
+        {/* EV SCANNER & PARLAY BUILDER */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <EVScanner />
+          <ParlayBuilder />
+        </div>
+
+        {/* P/L TRACKER & LEADERBOARD */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <PLTracker />
+          <Leaderboard />
+        </div>
+
         {/* USA Sports Hub - Live Scores & Where to Watch */}
         <div className="mt-6">
           <USASportsHub />
@@ -885,6 +897,9 @@ const Dashboard = ({ onLogout }) => {
           <ReferralProgram />
           <NotificationSettings />
         </div>
+
+        {/* AI Chat Assistant - Floating */}
+        <AIChatAssistant />
 
       </main>
     </div>
