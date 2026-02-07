@@ -21,6 +21,9 @@ import PLTracker from '@/components/PLTracker';
 import EVScanner from '@/components/EVScanner';
 import ParlayBuilder from '@/components/ParlayBuilder';
 import Leaderboard from '@/components/Leaderboard';
+import ArbitrageScanner from '@/components/ArbitrageScanner';
+import PlayerProps from '@/components/PlayerProps';
+import GamePlan from '@/components/GamePlan';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
