@@ -129,7 +129,8 @@ class SportSRCService:
                         for s in details['data']['sources'][:4]  # Limit to 4 streams
                     ]
                 
-                venue = details.get('data', {}).get('info', {}).get('venue', {}) if details.get('success') else {}
+                venue_data = details.get('data', {}).get('info', {}) if details.get('success') else {}
+                venue = venue_data.get('venue', {}) if venue_data else {}
                 
                 matches_with_streams.append({
                     "id": match_id,
@@ -144,7 +145,7 @@ class SportSRCService:
                     "score": match.get('score', {}).get('display', '0 - 0'),
                     "status": match.get('status_detail', 'Live'),
                     "timestamp": match.get('timestamp'),
-                    "venue": venue.get('stadium', ''),
+                    "venue": venue.get('stadium', '') if venue else '',
                     "streams": streams,
                     "has_streams": len(streams) > 0
                 })
