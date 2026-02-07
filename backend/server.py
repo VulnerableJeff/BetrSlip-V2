@@ -829,7 +829,7 @@ async def periodic_auto_resolve():
     """Auto-resolve picks every 2 hours"""
     while True:
         try:
-            await asyncio.sleep(7200)
+            await asyncio.sleep(7200)  # Every 2 hours
             logger.info("Running scheduled auto-resolution...")
             resolver = AutoResolverService(db)
             result = await resolver.resolve_picks()
@@ -840,10 +840,48 @@ async def periodic_auto_resolve():
             logger.error(f"Auto-resolve error: {e}")
             await asyncio.sleep(300)
 
+
+async def periodic_auto_generate_picks():
+    """Background task to auto-generate new picks daily"""
+    while True:
+        try:
+            # Wait 6 hours between generation attempts
+            await asyncio.sleep(21600)
+            
+            logger.info("Checking if new picks need to be generated...")
+            
+            # Check if we have recent active picks (within 20 hours)
+            twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+            recent_active = await db.daily_picks.count_documents({
+                "is_active": True,
+                "created_at": {"$gte": twenty_hours_ago}
+            })
+            
+            if recent_active < 2:
+                logger.info(f"Only {recent_active} recent picks found. Generating new picks...")
+                smart_service = SmartPicksService(db)
+                result = await smart_service.generate_smart_picks(force=True)
+                logger.info(f"Auto-generation result: {result}")
+            else:
+                logger.info(f"Found {recent_active} recent active picks. Skipping generation.")
+                
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Auto-generate picks error: {e}")
+            await asyncio.sleep(600)
+
+
 @app.on_event("startup")
 async def startup_event():
-    task = asyncio.create_task(periodic_auto_resolve())
-    _background_tasks.append(task)
+    # Start auto-resolve task
+    task1 = asyncio.create_task(periodic_auto_resolve())
+    _background_tasks.append(task1)
+    
+    # Start auto-generate picks task
+    task2 = asyncio.create_task(periodic_auto_generate_picks())
+    _background_tasks.append(task2)
+    
     logger.info("Started background tasks")
     
     # Initial auto-resolve
@@ -852,6 +890,20 @@ async def startup_event():
         await resolver.resolve_picks()
     except Exception as e:
         logger.warning(f"Initial auto-resolve failed: {e}")
+    
+    # Generate picks on startup if needed
+    try:
+        twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+        recent_count = await db.daily_picks.count_documents({
+            "is_active": True,
+            "created_at": {"$gte": twenty_hours_ago}
+        })
+        if recent_count < 2:
+            logger.info("No recent picks found. Generating on startup...")
+            smart_service = SmartPicksService(db)
+            await smart_service.generate_smart_picks(force=True)
+    except Exception as e:
+        logger.warning(f"Initial picks generation failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
