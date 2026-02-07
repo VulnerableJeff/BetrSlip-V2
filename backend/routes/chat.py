@@ -5,6 +5,7 @@ AI Chat Assistant Routes
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, timezone
 import uuid
 import os
