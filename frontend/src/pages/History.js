@@ -120,6 +120,11 @@ const History = ({ onLogout }) => {
         {/* Stats Dashboard */}
         <StatsDashboard />
 
+        {/* P/L Performance Tracker */}
+        <div className="mb-8">
+          <PLTracker />
+        </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-slate-400">Loading history...</p>
