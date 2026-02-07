@@ -11,6 +11,9 @@ import SubscriptionModal from '@/components/SubscriptionModal';
 import DailyPicks from '@/components/DailyPicks';
 import USASportsHub from '@/components/USASportsHub';
 import BankrollTracker from '@/components/BankrollTracker';
+import LineMovementAlerts from '@/components/LineMovementAlerts';
+import ParlayOptimizer from '@/components/ParlayOptimizer';
+import OddsComparison from '@/components/OddsComparison';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
