@@ -924,6 +924,7 @@ app.include_router(picks.router, prefix="/api")
 app.include_router(streams.router, prefix="/api")
 app.include_router(usa_sports.router, prefix="/api")
 app.include_router(bankroll.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 # Include main API router
 app.include_router(api_router)
