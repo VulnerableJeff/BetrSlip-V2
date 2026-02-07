@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { ArrowLeft, TrendingUp, LogOut, BarChart3, AlertCircle, CheckCircle2, ThumbsUp, ThumbsDown, Minus } from 'lucide-react';
 import StatsDashboard from '@/components/StatsDashboard';
+import PLTracker from '@/components/PLTracker';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
