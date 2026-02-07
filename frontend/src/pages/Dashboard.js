@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown } from 'lucide-react';
+import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown, Gift, Bell, Settings } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 import SubscriptionModal from '@/components/SubscriptionModal';
@@ -13,6 +13,9 @@ import USASportsHub from '@/components/USASportsHub';
 import LineMovementAlerts from '@/components/LineMovementAlerts';
 import ParlayOptimizer from '@/components/ParlayOptimizer';
 import OddsComparison from '@/components/OddsComparison';
+import BestValueFinder from '@/components/BestValueFinder';
+import ReferralProgram from '@/components/ReferralProgram';
+import NotificationSettings from '@/components/NotificationSettings';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
