@@ -944,6 +944,7 @@ app.include_router(admin_analytics.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(performance.router, prefix="/api")
 app.include_router(parlay_builder.router, prefix="/api")
+app.include_router(pro_tools.router, prefix="/api")
 
 # Include main API router
 app.include_router(api_router)
