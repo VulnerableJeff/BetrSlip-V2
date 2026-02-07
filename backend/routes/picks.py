@@ -251,6 +251,38 @@ async def admin_generate_picks(admin_user: dict = Depends(get_admin_user)):
     return result
 
 
+@router.post("/admin/refresh-picks")
+async def admin_refresh_picks(admin_user: dict = Depends(get_admin_user)):
+    """Force clear all old picks and generate fresh ones"""
+    # Deactivate ALL existing picks
+    deactivate_result = await db.daily_picks.update_many(
+        {"is_active": True},
+        {"$set": {"is_active": False, "deactivated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Generate fresh picks
+    smart_service = SmartPicksService(db)
+    result = await smart_service.generate_smart_picks(force=True)
+    
+    return {
+        "deactivated": deactivate_result.modified_count,
+        "generation_result": result
+    }
+
+
+@router.post("/admin/clear-old-picks")
+async def admin_clear_old_picks(admin_user: dict = Depends(get_admin_user)):
+    """Clear picks older than 24 hours"""
+    one_day_ago = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    
+    result = await db.daily_picks.update_many(
+        {"is_active": True, "created_at": {"$lt": one_day_ago}},
+        {"$set": {"is_active": False}}
+    )
+    
+    return {"deactivated_count": result.modified_count}
+
+
 @router.post("/admin/auto-resolve-picks")
 async def admin_auto_resolve(admin_user: dict = Depends(get_admin_user)):
     """Trigger auto-resolution of pick outcomes"""
