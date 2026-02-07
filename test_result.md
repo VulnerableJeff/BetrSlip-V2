@@ -252,14 +252,62 @@ frontend:
         agent: "testing"
         comment: "✅ AUTH PAGE TESTING COMPLETED: Authentication flow working perfectly. 1) Auth form displays correctly with email/password inputs and submit button. 2) Toggle between login/signup modes works properly. 3) Account creation successful with unique email addresses. 4) Successful redirect to dashboard after signup. 5) Form validation and error handling in place. 6) UI elements properly styled and responsive. Auth system fully functional."
 
+  - task: "Admin Analytics Dashboard"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/admin_analytics.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend has 8 endpoints (overview, user-growth, analyses-trend, revenue-trend, top-users, sport-breakdown, picks-performance, activity-heatmap, funnel). Frontend AdminAnalytics.js has tabbed dashboard with stat cards, charts, funnel. Needs full E2E testing."
+
+  - task: "Referral Program"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/referrals.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend has endpoints: GET /referrals/my-code, POST /referrals/apply, GET /referrals/leaderboard, GET /referrals/admin/stats. process_referral_reward integrated into subscriptions.py. Frontend ReferralProgram.js has code display, share, apply code UI. Needs E2E testing."
+
+  - task: "Push Notifications"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/notifications.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend has subscribe/unsubscribe/preferences/status endpoints. Frontend NotificationSettings.js has service worker registration, preference toggles. sw.js in public/. Needs E2E testing."
+
+  - task: "Best Value Finder"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/analytics.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend POST /best-value-finder returns simulated best odds across sportsbooks. Frontend BestValueFinder.js shows findings after analysis with sportsbook links. Needs E2E testing."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
-  run_ui: false
+  test_sequence: 3
+  run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus: ["Admin Analytics Dashboard", "Referral Program", "Push Notifications", "Best Value Finder"]
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
