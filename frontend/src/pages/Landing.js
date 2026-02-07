@@ -633,7 +633,6 @@ const Landing = () => {
           </div>
           
           <div className="grid md:grid-cols-4 gap-6">
-            {/* Feature 1 */}
             <div className="text-center" data-testid="feature-upload">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-4 mx-auto">
                 <Upload className="w-7 h-7 text-violet-400" />
@@ -644,7 +643,6 @@ const Landing = () => {
               </p>
             </div>
 
-            {/* Feature 2 */}
             <div className="text-center" data-testid="feature-analyze">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
                 <Sparkles className="w-7 h-7 text-emerald-400" />
@@ -655,7 +653,6 @@ const Landing = () => {
               </p>
             </div>
 
-            {/* Feature 3 */}
             <div className="text-center" data-testid="feature-track">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center mb-4 mx-auto">
                 <BarChart3 className="w-7 h-7 text-yellow-400" />
@@ -666,7 +663,6 @@ const Landing = () => {
               </p>
             </div>
 
-            {/* Feature 4 - NEW: Accuracy Tracking */}
             <div className="text-center" data-testid="feature-accuracy">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
                 <Target className="w-7 h-7 text-emerald-400" />
@@ -675,6 +671,66 @@ const Landing = () => {
               <p className="text-slate-400 text-sm">
                 Mark bets as Won/Lost and see our real prediction accuracy
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pro Tools Section - NEW */}
+      <section className="py-20 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 px-4 py-2 rounded-full mb-4">
+              <Crown className="w-4 h-4 text-violet-400" />
+              <span className="text-violet-400 text-sm font-semibold">Pro Tools</span>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-4">Edge-Finding Arsenal</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Professional-grade tools to find value, build parlays, and outsmart the books
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { icon: '💬', title: 'AI Chat', desc: 'Ask anything about games, odds, and strategy' },
+              { icon: '⚡', title: 'EV Scanner', desc: 'Find +EV opportunities across sportsbooks' },
+              { icon: '🛡️', title: 'Arb Scanner', desc: 'Detect risk-free bets across books' },
+              { icon: '🎯', title: 'Parlay Builder', desc: 'Build & analyze multi-leg parlays with EV' },
+              { icon: '🏆', title: 'Player Props', desc: 'Line analysis for player performance bets' },
+              { icon: '📋', title: 'Game Plan', desc: 'AI-personalized daily betting strategy' },
+            ].map((tool, i) => (
+              <div key={i} className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 hover:border-violet-500/30 transition-all group cursor-pointer" onClick={() => navigate('/auth')}>
+                <div className="text-2xl mb-2">{tool.icon}</div>
+                <h3 className="text-sm font-bold text-white mb-1 group-hover:text-violet-400 transition-colors">{tool.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{tool.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">P/L Tracker</h3>
+                  <p className="text-xs text-slate-400">Visual performance over time</p>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm">Track cumulative profit/loss, win rate, ROI, and AI accuracy. See how your bets perform with interactive charts.</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">Leaderboard</h3>
+                  <p className="text-xs text-slate-400">Compete with top bettors</p>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm">See how you stack up against other users. Top performers ranked by win rate with anonymized profiles.</p>
             </div>
           </div>
         </div>
