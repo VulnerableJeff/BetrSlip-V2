@@ -884,10 +884,20 @@ async def startup_event():
     
     logger.info("Started background tasks")
     
+    # Schedule initial tasks to run AFTER server is ready (non-blocking)
+    asyncio.create_task(delayed_startup_tasks())
+
+
+async def delayed_startup_tasks():
+    """Run startup tasks after a delay to ensure server is ready first"""
+    # Wait for server to be fully ready before running heavy tasks
+    await asyncio.sleep(10)
+    
     # Initial auto-resolve
     try:
         resolver = AutoResolverService(db)
         await resolver.resolve_picks()
+        logger.info("Initial auto-resolve completed")
     except Exception as e:
         logger.warning(f"Initial auto-resolve failed: {e}")
     
