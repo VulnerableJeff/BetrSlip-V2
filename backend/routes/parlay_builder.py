@@ -38,7 +38,7 @@ def american_to_decimal(odds_str: str) -> float:
             return 1 + (odds / 100)
         else:
             return 1 + (100 / abs(odds))
-    except:
+    except (ValueError, ZeroDivisionError):
         return 1.91  # default -110
 
 
