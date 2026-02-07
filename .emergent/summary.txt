@@ -14,80 +14,96 @@
 11. **Daily AI Picks**: Provide 1-3 AI-generated top picks each day as a premium feature.
 12. **Picks Performance Tracking**: Admins can track the win/loss record of daily picks.
 13. **Live Streaming**: Embed live game streams for users, with an ad-free experience for subscribers.
+14. **Bankroll Management**: A dashboard for users to track their betting bankroll. (Added then removed by user request).
+15. **Premium Analytics**: Features like Line Movement Alerts, Parlay Optimizer, and Odds Comparison.
+16. **Best Odds Highlight**: A feature to highlight the sportsbook with the best odds for a given bet.
+17. **Push Notifications**: For line movements, game starts, etc.
+18. **Referral Program**: Reward users with free premium access for referring new subscribers.
+19. **Admin Analytics Dashboard**: An advanced analytics section within the admin panel.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI and React application, BetrSlip, is in place. The backend has been refactored into a modular structure with separate services for enhanced AI picks and stream source management. Key features implemented include:
-*   User authentication (signup/login) and a subscription model using Stripe, PayPal, and a manual CashApp option.
-*   An admin dashboard for user management, site stats, manual daily pick entry, and managing CashApp requests and live stream links.
-*   An AI-powered daily picks feature that learns from historical performance data.
-*   An automated background job that resolves the outcomes (Win/Loss) of daily picks by fetching live game scores.
-*   A Proven Results section on the landing page to display the historical accuracy of the AI picks.
-*   A live game streaming feature on the user dashboard.
+A full-stack FastAPI and React application, BetrSlip, with user authentication, subscriptions, AI bet slip analysis, and an admin dashboard. The previous agent successfully validated a critical fix for a production deployment issue, ensuring the backend starts correctly. It then began implementing four new features requested by the user:
+1.  **Admin Analytics Dashboard**
+2.  **Referral Program**
+3.  **Push Notifications**
+4.  **Best Value Finder** (highlighting best odds)
 
-However, the core feature of analyzing user-uploaded bet slip screenshots is currently broken due to an API integration error with the AI service.
+The agent created the initial scaffolding for these features, including placeholder backend routes and basic frontend components. A minor UI bug with missing icons was also fixed. The application is stable in its state before these new features were added.
 
 **Last working item**:
-*   **Last item agent was working**: Fixing a critical bug preventing the AI analysis of uploaded bet slip screenshots. The user reported an error from the live site: . This indicates that the payload being sent to the  library for the GPT-4o Vision model is incorrectly formatted.
-*   **Status**: BLOCKED
+*   **Last item agent was working**: Implementing four new features: Admin Analytics, Referral Program, Push Notifications, and a Best Value Finder for odds. The agent created the necessary backend route files, frontend components, and updated the main server and dashboard pages to include them. The last step was preparing to test these new additions after confirming the backend was healthy.
+*   **Status**: IN PROGRESS
 *   **Agent Testing Done**: N
-*   **Which testing method agent to use?**: backend testing agent
+*   **Which testing method agent to use?**: both. The changes are full-stack and involve multiple new features. A comprehensive check using  is required to validate the UI, API endpoints, and E2E flows for all four new features.
 *   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1**: AI Bet Slip Analysis is Broken (P0)
+*   **Issue 1**: Complete and Test Four New Features (P0)
 
 **Issues Detail**:
 *   **Issue 1**:
-    *   **Attempted fixes**: The agent made several attempts to fix the payload structure for the AI vision call.
-        1.  Corrected  parameter from  to .
-        2.  Replaced  with  using a  object.
-        These fixes resolved Python  exceptions but resulted in a new API-level validation error: . The current implementation in  is generating a payload that the AI service is rejecting.
+    *   **Attempted fixes**: The agent has created placeholder backend routes and UI components for all four features. The backend logic is not yet implemented (e.g., no database interactions for referrals or saving notification preferences). The frontend components are integrated into the UI but are not yet functional.
     *   **Next debug checklist**:
-        1.  View the  endpoint in .
-        2.  Inspect the  documentation or use  to find the correct payload structure for a GPT-4o vision call. The API likely expects a raw list of dictionaries, e.g., .
-        3.  Modify the code to construct this exact payload instead of using the  class if it's not working as intended.
-        4.  Thoroughly test the image upload and analysis functionality after the fix.
-    *   **Why fix this issue and what will be achieved with the fix?**: This is the application's core feature. Fixing it will restore the primary functionality for users and unblock the main value proposition of the app.
+        1.  Flesh out the backend logic for each new route:
+            *   : Implement database logic to create referral codes and award subscriptions.
+            *   : Implement logic to save user notification preferences to the database.
+            *   : Implement data aggregation logic for the admin dashboard.
+            *    (): Implement logic to find the best odds.
+        2.  Implement the service worker logic in  for push notifications.
+        3.  Thoroughly test the functionality of each new frontend component and its connection to the backend.
+        4.  Verify the fix for the missing Smart Suggestion icons is working visually after an analysis is performed.
+    *   **Why fix this issue and what will be achieved with the fix?**: This will deliver the next set of features requested by the user, significantly enhancing the application's value for both regular users and admins.
     *   **Status**: IN PROGRESS
-    *   **Is recurring issue?**: Y
+    *   **Is recurring issue?**: N
     *   **Should Test frontend/backend/both after fix?**: both
     *   **Blocked on other issue**: None
 
 **In progress Task List**:
-*   **Task 1**: Refactor server code (P1)
-    *   **Where to resume**: The  endpoint logic is still in the main  file. It should be moved to the  module to complete the refactoring. The old, massive  should be deleted, and  should be renamed to .
-    *   **What will be achieved with this?**: A cleaner, more maintainable codebase that follows the new modular architecture.
+*   **Task 1**: Implement and Test Admin Analytics Dashboard (P0)
+    *   **Where to resume**: Backend logic in  needs to be implemented. The frontend component  needs to be connected to the API and tested.
+    *   **What will be achieved with this?**: Provides admins with key metrics on user activity, revenue, and AI performance.
     *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: backend
-    *   **Blocked on something**: Issue 1 (AI Bet Slip Analysis is Broken) should be fixed first, as it's part of the code that needs to be moved.
+    *   **Should Test frontend/backend/both after fix?**: both
+    *   **Blocked on something**: None
+*   **Task 2**: Implement and Test Referral Program (P0)
+    *   **Where to resume**: Backend logic in  and subscription update logic in  needs to be fully implemented. The frontend component  needs to be tested.
+    *   **What will be achieved with this?**: A user growth mechanism.
+    *   **Status**: IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?**: both
+    *   **Blocked on something**: None
+*   **Task 3**: Implement and Test Push Notifications (P0)
+    *   **Where to resume**: Backend logic in  and service worker logic in  needs to be implemented. The UI in  needs to be fully wired up.
+    *   **What will be achieved with this?**: Increased user engagement via browser notifications.
+    *   **Status**: IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?**: both
+    *   **Blocked on something**: None
+*   **Task 4**: Implement and Test Best Value Finder (P0)
+    *   **Where to resume**: Backend logic in  for the  endpoint needs implementation. The frontend component  needs to be tested after an analysis.
+    *   **What will be achieved with this?**: Highlights the best odds for a user's bet, a key value-add.
+    *   **Status**: IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?**: both
+    *   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
+*   **Upcoming Tasks**:
+    *   **Parlay Builder Functionality (P1)**: The UI for the Parlay Optimizer has a  button, but the logic to add selections to a custom parlay section is not yet implemented.
 *   **Future Tasks**:
-    *   Bankroll Management Dashboard
-    *   Line Movement Tracking & Alerts
-    *   Parlay Correlation Detection
-    *   Value Bet Scanner (to find +EV bets)
-    *   Social/Community Features (e.g., public bet trends)
-    *   Native Mobile App
+    *   Social leaderboard
+    *   Refactor  endpoint from  to .
 
 **Completed work in this session**
-- **Proven Results Section**: Verified and finalized the UI on the landing page to show historical pick performance.
-- **Automated Outcome Resolution**: Implemented a background job to automatically fetch game scores and mark daily picks as Won or Lost.
-- **Paywall Fix**: Correctly restricted the Daily Picks feature to be exclusive for subscribed (Pro) users.
-- **Enhanced AI Picks**: Created a  that uses historical performance data (win/loss records by sport, bet type, etc.) to generate more intelligent daily picks.
-- **Server Refactoring**: Broke down the monolithic  into a modular structure with  and  directories for better organization and maintainability.
-- **Multi-Method Payments**:
-    - Integrated **PayPal** as a payment option.
-    - Added a **manual CashApp** payment flow where users can submit a request and admins can approve it from their dashboard.
-- **Live Game Streaming**: Added a feature to display live game streams on the user dashboard, with an admin panel to manage stream links.
-- **Enhanced Data Sources**: Integrated services for more stream sources and enhanced sports data to improve AI pick quality.
-- **Facebook Promotion**: Generated a promotional image and post copy for the user to share on social media.
-- **Critical Bug Fixes**: Addressed several bugs related to token authentication and API payload formats for the AI service, though one critical bug remains.
+- **Deployment Issue Verified**: Confirmed that the fix for the production deployment failure (using  for startup jobs) was successful. Key APIs and the app are stable.
+- **App Stability Test**: Performed extensive manual and automated testing () to confirm the stability of all existing features before starting new work.
+- **UI Bug Fix**: Fixed an issue where icons were not appearing in the Smart Suggestions section of the analysis results by adding a default icon in .
+- **New Feature Scaffolding**:
+    - Created placeholder backend routes for Admin Analytics, Referrals, and Notifications.
+    - Created an endpoint for the Best Value Finder in the analytics route.
+    - Created basic frontend components for all four new features and integrated them into the Admin and Dashboard pages.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+*   The  endpoint logic is still in the main  file and should be moved to  to complete the modular refactoring.
 
 **Known issue recurrence from previous fork**
 *   **Issue recurrence in previous fork**: None.
@@ -96,79 +112,80 @@ None.
 
 
 **Key Technical Concepts**
-*   **Frontend**: React, Tailwind CSS, Shadcn/UI, , 
+*   **Frontend**: React, Tailwind CSS, Shadcn/UI
 *   **Backend**: FastAPI, MongoDB (via ), Pydantic
 *   **AI**: OpenAI GPT-4o (Vision) via  library.
-*   **Architecture**: Modular backend with dependency injection ( and ). Background tasks with .
-*   **Payments**: Stripe, PayPal, Manual CashApp approval flow.
-*   **Authentication**: JWT.
+*   **Architecture**: Modular backend with routers and services. Non-blocking background tasks with .
 
 **key DB schema**
-*   **users**: 
-*   **analyses**: 
-*   **user_usage**: 
-*   **daily_picks**: 
-*   **cash_app_requests**:  (New)
-*   **live_streams**:  (New)
+*   **users**: User account and subscription information.
+*   **analyses**: Stores results from user-uploaded bet slip analyses.
+*   **user_usage**: Tracks free analysis counts.
+*   **daily_picks**: Stores AI-generated daily picks.
+*   *New collections may be needed for referrals and notification settings.*
 
 **changes in tech stack**
-*   The backend was heavily refactored from a single  file into a modular structure using FastAPI's  and distinct service classes.
+None.
 
 **All files of reference**
-*   : The new main entry point for the FastAPI app, which now primarily includes routers from the  directory. **The  endpoint with the bug is currently here.**
-*   : Contains shared dependencies like database connections and user authentication functions ().
-*   : The UI for handling all three payment methods (Card, PayPal, CashApp).
-*   : The admin panel UI, updated with tabs for managing CashApp requests and live streams.
+*    (New)
+*    (New)
+*    (New)
+*    (New)
+*    (New)
+*    (New)
+*    (New)
+*    (New)
+*    (Modified)
+*    (Modified)
+*    (Modified)
+*    (Modified)
+*    (Modified)
 
 **Areas that need refactoring**:
-*   The  endpoint logic is still in the main  file and should be moved to its own route module (e.g., ).
-*   The file  should be renamed to , and the old monolithic  should be deleted to finalize the refactor.
+*   The  endpoint in  should be moved to .
+*   The newly created backend route files contain placeholder logic and need full implementation.
 
 **key api endpoints**
-*   **Analysis**:  (BROKEN)
-*   **Auth**: , , 
-*   **Payments**:  (Stripe), , 
-*   **Admin**: , 
-*   **Picks**: , 
-*   **Streams**: , 
+*   **Analysis**: 
+*   **Premium Analytics**: , , 
+*   **Best Value Finder**:  (New)
+*   **Referrals**:  (New)
+*   **Notifications**:  (New)
+*   **Admin Analytics**:  (New)
 
 **Critical Info for New Agent**
-*   **The Core Bug**: The main user-facing feature, Bet Slip Analysis, is non-functional. The payload format for the GPT-4o Vision API via  is incorrect. The last error was . The fix is not trivial and requires constructing the precise payload structure the underlying API expects. This is the highest priority.
-*   **Modular Backend**: Be aware that the backend logic is now split across  and . Shared functions, especially for authentication and database access, are in .
+*   The main priority is to complete the implementation of the four new features: Admin Analytics, Referrals, Push Notifications, and the Best Value Finder. The current code is just scaffolding.
+*   The backend logic for these features (database interactions, etc.) needs to be written from scratch in the placeholder files.
+*   The frontend components need to be fully wired up to their respective APIs and tested.
+*   The user specified browser-only push notifications and that only the referrer should be rewarded in the referral program.
 
 **documents and test reports created in this job**
-*    (heavily updated)
+*   
+*    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (Msg 486)**: Provides a screenshot of the latest error: . Status: **Pending Fix**.
-2.  **User (Msg 474)**: Provides a screenshot of a  related to . Status: Fixed, but led to another error.
-3.  **User (Msg 456)**: Reports an invalid token error after a previous fix. Status: Resolved.
-4.  **User (Msg 444)**: Provides a screenshot of the initial  when uploading an image. Status: Fixed, but led to other errors.
-5.  **User (Msg 440)**: Asks for a Facebook post and image to promote the website. Status: Completed.
-6.  **User (Msg 391)**: Requests adding more stream sources and enhancing the AI. Status: Completed.
-7.  **User (Msg 340)**: Requests a live streaming feature. Status: Completed.
-8.  **User (Msg 278)**: Asks about billing and how to reduce costs. Status: Completed, agent explained credit system.
-9.  **User (Msg 267, 193)**: keep working / continue with the updates - General approval to continue development. Status: Completed.
-10. **User (Msg 98)**: Approves the agent's plan and expresses excitement to build the most powerful AI Sports Betting bot. Status: Completed.
+1.  **User**: Confirmed push notifications should be browser-only, only the referrer gets a reward, and gave creative freedom on the admin dashboard. Status: **In Progress**.
+2.  **User**: Approved the plan to build the four new features. Status: **In Progress**.
+3.  **User**: Requested four new features: Best Odds highlight, push notifications, referral program, and an Admin Analytics Dashboard. Also reported a UI bug with missing icons. Status: **In Progress**.
+4.  **Agent**: Finished the previous task (verifying deployment fix) and proposed an enhancement. Status: Addressed.
 
 **Project Health Check:**
-*   **Broken**: The core Bet Slip Analysis feature is completely broken.
-*   **Mocked**: None.
+*   **Broken**: The four new features (Admin Analytics, Referrals, Push Notifications, Best Value Finder) are non-functional and in a partially implemented state.
+*   **Mocked**: Some analytics data (e.g., Line Movement alerts, Odds Comparison) is still static placeholder data.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o (Vision)** — uses Emergent LLM Key via  library. **(Currently Broken Integration)**
+*   **OpenAI GPT-4o (Vision)** — uses Emergent LLM Key.
 *   **Stripe (Subscriptions)** — requires User API Key.
-*   **PayPal** — requires User API Key ().
+*   **PayPal** — requires User API Key.
 *   **The Odds API** — requires User API Key.
-*   **WeatherAPI.com** — requires User API Key.
 *   **ESPN API (undocumented)** — no key required.
-*   **FingerprintJS (Device ID)** — no key required.
 
 **Testing status**
-*   **Testing agent used after significant changes**: NO
+*   **Testing agent used after significant changes**: YES (to verify app stability before new feature development)
 *   **Troubleshoot agent used after agent stuck in loop**: NO
-*   **Test files created**: None
-*   **Known regressions**: The primary bet slip analysis feature, which was previously working, has regressed and is now broken.
+*   **Test files created**: None.
+*   **Known regressions**: None.
 
 **Credentials to test flow:**
 *   **Admin User**:
@@ -176,5 +193,5 @@ None.
     *   Password: 
 
 **What agent forgot to execute**
-*   The agent did not fully complete the server refactoring. The  endpoint remains in  and the old monolithic file structure (, ) has not been cleaned up.
-*   The agent repeatedly failed to find the correct payload format for the AI vision call, suggesting a need for more systematic debugging (e.g., checking library documentation) rather than iterative trial-and-error.</analysis>
+*   The backend logic for all four new features is incomplete; only placeholder routes were created.
+*   The long-pending refactor of moving the  endpoint from  to a dedicated route file has not been done.</analysis>
