@@ -51,7 +51,7 @@ async def get_bankroll(current_user: dict = Depends(get_current_user)):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.bankrolls.insert_one(bankroll)
-        del bankroll['_id'] if '_id' in bankroll else None
+        bankroll.pop('_id', None)
     
     # Calculate derived stats
     total_bets = bankroll.get('bets_won', 0) + bankroll.get('bets_lost', 0)
