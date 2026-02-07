@@ -35,18 +35,21 @@ class PickOutcomeUpdate(BaseModel):
 @router.get("/daily-picks")
 async def get_daily_picks():
     """Get active daily picks - auto-generates if needed"""
-    twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+    # Check for picks from last 16 hours (more aggressive refresh)
+    sixteen_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=16)).isoformat()
     
     active_recent = await db.daily_picks.count_documents({
         "is_active": True,
-        "created_at": {"$gte": twenty_hours_ago}
+        "created_at": {"$gte": sixteen_hours_ago}
     })
     
-    if active_recent == 0:
-        logger.info("No recent picks, attempting smart AI generation...")
+    # Auto-generate if we have fewer than 2 recent picks
+    if active_recent < 2:
+        logger.info(f"Only {active_recent} recent picks, attempting smart AI generation...")
         smart_service = SmartPicksService(db)
-        await smart_service.generate_smart_picks()
+        await smart_service.generate_smart_picks(force=True)
     
+    # Get active picks, sorted by probability
     picks = await db.daily_picks.find(
         {"is_active": True},
         {"_id": 0}
