@@ -884,10 +884,21 @@ const Dashboard = ({ onLogout }) => {
           <ParlayBuilder />
         </div>
 
-        {/* P/L TRACKER & LEADERBOARD */}
+        {/* ARBITRAGE & PLAYER PROPS */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <PLTracker />
+          <ArbitrageScanner />
+          <PlayerProps />
+        </div>
+
+        {/* GAME PLAN & LEADERBOARD */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <GamePlan />
           <Leaderboard />
+        </div>
+
+        {/* P/L TRACKER */}
+        <div className="mb-8">
+          <PLTracker />
         </div>
 
         {/* USA Sports Hub - Live Scores & Where to Watch */}
