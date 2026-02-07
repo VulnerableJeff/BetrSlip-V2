@@ -167,12 +167,13 @@ class SmartPicksService:
     async def generate_smart_picks(self, force: bool = False) -> Dict:
         """Generate AI picks with enhanced intelligence"""
         try:
-            # Check if we already have recent picks
+            # Check if we need to generate new picks
             if not force:
-                twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+                # Only skip if we have 3+ picks from last 18 hours (not 20)
+                eighteen_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
                 recent_count = await self.db.daily_picks.count_documents({
                     "is_active": True,
-                    "created_at": {"$gte": twenty_hours_ago},
+                    "created_at": {"$gte": eighteen_hours_ago},
                     "auto_generated": True
                 })
                 if recent_count >= 3:
@@ -208,9 +209,17 @@ class SmartPicksService:
             if not picks:
                 return {"message": "AI analysis failed", "generated": False}
             
-            # Deactivate old auto-generated picks
+            # AGGRESSIVE CLEANUP: Deactivate ALL old auto-generated picks
+            deactivate_result = await self.db.daily_picks.update_many(
+                {"auto_generated": True, "is_active": True},
+                {"$set": {"is_active": False, "deactivated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            logger.info(f"Deactivated {deactivate_result.modified_count} old auto-generated picks")
+            
+            # Also mark any manual picks older than 24 hours as inactive
+            one_day_ago = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
             await self.db.daily_picks.update_many(
-                {"auto_generated": True},
+                {"is_active": True, "created_at": {"$lt": one_day_ago}},
                 {"$set": {"is_active": False}}
             )
             
