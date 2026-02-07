@@ -28,7 +28,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Import route modules
 from routes.deps import db, client, get_current_user, get_admin_user, security
-from routes import auth, subscriptions, picks
+from routes import auth, subscriptions, picks, streams
 
 # Import services
 from services.smart_picks_service import SmartPicksService
