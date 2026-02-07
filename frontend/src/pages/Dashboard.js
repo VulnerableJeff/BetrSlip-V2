@@ -802,6 +802,9 @@ const Dashboard = ({ onLogout }) => {
                   )}
                   {/* === END IMPROVEMENT SUGGESTIONS SECTION === */}
 
+                  {/* Best Value Finder - Shows better odds at other sportsbooks */}
+                  <BestValueFinder analysisResult={result} />
+
                   {/* Bet Details */}
                   {result.bet_details && (
                     <div className="bg-slate-900/50 rounded-sm p-4 sm:p-6">
