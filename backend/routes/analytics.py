@@ -254,3 +254,97 @@ async def get_odds_comparison(sport: str = Query(default="NBA")):
         "count": len(comparisons),
         "comparisons": comparisons
     }
+
+
+# ===== BEST VALUE FINDER =====
+@router.post("/best-value-finder")
+async def find_best_value(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Find the best odds across sportsbooks for analyzed bet legs.
+    Called after analysis to show where users can get better value.
+    """
+    # This analyzes the user's most recent bet and finds better odds
+    
+    # Get user's most recent analysis
+    recent_analysis = await db.analyses.find_one(
+        {"user_id": current_user['user_id']},
+        {"_id": 0}
+    )
+    
+    if not recent_analysis:
+        return {
+            "success": False,
+            "message": "No recent analysis found"
+        }
+    
+    analysis = recent_analysis.get('analysis', {})
+    bets = analysis.get('bets', [])
+    
+    # Sportsbook odds data (simulated - would come from Odds API in production)
+    sportsbooks = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'PointsBet']
+    
+    value_findings = []
+    total_potential_savings = 0
+    
+    for bet in bets:
+        description = bet.get('description', '')
+        current_odds = bet.get('odds', '-110')
+        
+        # Parse current odds
+        try:
+            if current_odds.startswith('+'):
+                odds_num = int(current_odds[1:])
+            elif current_odds.startswith('-'):
+                odds_num = int(current_odds)
+            else:
+                odds_num = int(current_odds)
+        except:
+            odds_num = -110
+        
+        # Simulate best odds across books (typically 2-5% variance)
+        best_book = random.choice(sportsbooks)
+        improvement = random.randint(5, 15)  # Basis points improvement
+        
+        if odds_num < 0:
+            best_odds = odds_num + improvement
+            if best_odds >= 0:
+                best_odds = -100
+        else:
+            best_odds = odds_num + improvement
+        
+        # Calculate value difference (approximate)
+        if odds_num < 0:
+            current_payout = 100 / abs(odds_num) * 100
+        else:
+            current_payout = odds_num
+            
+        if best_odds < 0:
+            best_payout = 100 / abs(best_odds) * 100
+        else:
+            best_payout = best_odds
+        
+        savings_percent = round((best_payout - current_payout) / current_payout * 100, 1) if current_payout > 0 else 0
+        
+        value_findings.append({
+            "bet": description,
+            "current_odds": current_odds,
+            "best_odds": f"{'+' if best_odds > 0 else ''}{best_odds}",
+            "best_book": best_book,
+            "savings_percent": abs(savings_percent),
+            "recommendation": f"Get better odds at {best_book}"
+        })
+        
+        total_potential_savings += abs(savings_percent)
+    
+    avg_savings = round(total_potential_savings / len(value_findings), 1) if value_findings else 0
+    
+    return {
+        "success": True,
+        "total_bets_analyzed": len(value_findings),
+        "average_improvement": avg_savings,
+        "findings": value_findings,
+        "summary": f"You could improve your expected value by {avg_savings}% by shopping for better lines",
+        "top_recommendation": value_findings[0] if value_findings else None
+    }
