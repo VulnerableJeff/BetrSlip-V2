@@ -113,7 +113,6 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
             "game": pick.get('title', ''),
             "odds": pick.get('odds', '-110')
         })
-        })
     
     # Add some additional suggestions based on value
     additional = [
