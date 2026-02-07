@@ -14,6 +14,7 @@ from emergentintegrations.payments.stripe.checkout import (
 )
 
 from .deps import db, get_current_user, get_admin_user
+from .referrals import process_referral_reward
 
 router = APIRouter(prefix="/subscription", tags=["Subscriptions"])
 logger = logging.getLogger(__name__)
