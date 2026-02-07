@@ -373,15 +373,33 @@ Build a website named "BetrSlip" where users can upload a screenshot of their be
 
 ## Pending/Future Features
 
-### High Priority (P1)
-- **Line Movement Alerts** - Notify users when odds shift
-- **Parlay Optimizer** - AI suggests optimal parlay combinations
-- **Odds Comparison** - Show best odds across books
+### Completed (Feb 7, 2026)
+33. **Dashboard Reorganization** ✅
+    - Moved "Upload Betting Slip" to TOP of dashboard
+    - Upload and Analysis Results side-by-side for better UX
 
-### Medium Priority (P2)
-- **Performance Analytics Dashboard** - Detailed stats by sport/bet type
-- **Smart Alerts** - "Sharp money detected on Lakers"
-- **Social Features** - Public leaderboard, bet sharing
+34. **Line Movement Alerts** ✅
+    - Real-time tracking of significant odds changes
+    - Shows old line → new line with point change
+    - Insights like "Sharp money detected" and "Reverse line movement"
+    - Color-coded by significance (high/medium)
+
+35. **AI Parlay Optimizer** ✅
+    - AI-suggested combinations with best value
+    - Shows win probability, EV%, confidence level
+    - Users can add legs to build custom parlays (max 6)
+    - Real-time parlay probability calculator
+
+36. **Odds Comparison** ✅
+    - Compare odds across DraftKings, FanDuel, BetMGM, Caesars
+    - Shows best value sportsbook for each game
+    - Edge percentage displayed (e.g., "+2.3% edge at FanDuel")
+    - Quick links to sportsbook websites
+
+### Future (P2)
+- Performance Analytics Dashboard - Detailed stats by sport/bet type
+- Smart Alerts - "Sharp money detected on Lakers"
+- Social Features - Public leaderboard, bet sharing
 
 ### Future (P3)
 - Native mobile app
