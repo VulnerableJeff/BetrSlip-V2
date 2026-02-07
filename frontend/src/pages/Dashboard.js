@@ -16,6 +16,11 @@ import OddsComparison from '@/components/OddsComparison';
 import BestValueFinder from '@/components/BestValueFinder';
 import ReferralProgram from '@/components/ReferralProgram';
 import NotificationSettings from '@/components/NotificationSettings';
+import AIChatAssistant from '@/components/AIChatAssistant';
+import PLTracker from '@/components/PLTracker';
+import EVScanner from '@/components/EVScanner';
+import ParlayBuilder from '@/components/ParlayBuilder';
+import Leaderboard from '@/components/Leaderboard';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
