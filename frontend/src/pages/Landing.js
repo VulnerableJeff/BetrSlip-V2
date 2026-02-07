@@ -92,13 +92,13 @@ const Landing = () => {
                 </div>
               </div>
               <span className="text-slate-400 text-sm font-semibold bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">
-                v1.0
+                v2.1
               </span>
             </div>
             <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-8">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
               <span className="text-emerald-400 text-sm font-semibold uppercase tracking-wider">
-                Live Prototype Running Now
+                Live Running Now
               </span>
             </div>
           </div>
