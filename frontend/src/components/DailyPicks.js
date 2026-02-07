@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trophy, TrendingUp, Flame, Target, Clock, ChevronDown, ChevronUp, Zap, Lock, Crown } from 'lucide-react';
+import { Trophy, TrendingUp, Flame, Target, Clock, ChevronDown, ChevronUp, Zap, Lock, Crown, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
