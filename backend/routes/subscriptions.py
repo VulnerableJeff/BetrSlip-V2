@@ -118,6 +118,12 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
                     }},
                     upsert=True
                 )
+                
+                # Process referral reward if applicable
+                try:
+                    await process_referral_reward(current_user['user_id'])
+                except Exception as ref_err:
+                    logger.warning(f"Referral reward processing error: {ref_err}")
         
         return {
             "session_id": session_id,
