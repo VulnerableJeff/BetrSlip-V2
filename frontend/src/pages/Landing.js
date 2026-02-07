@@ -690,7 +690,7 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { icon: '💬', title: 'AI Chat', desc: 'Ask anything about games, odds, and strategy' },
               { icon: '⚡', title: 'EV Scanner', desc: 'Find +EV opportunities across sportsbooks' },
