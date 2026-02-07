@@ -73,6 +73,18 @@ const OddsComparison = () => {
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-blue-400" />
             <CardTitle className="text-lg text-white">Odds Comparison</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-4 h-4 text-slate-500 hover:text-slate-300 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-slate-800 border-slate-700 text-white p-3">
+                  <p className="font-semibold mb-1">Why Compare Odds?</p>
+                  <p className="text-sm text-slate-300 mb-2">Different sportsbooks offer different odds. Getting the best line can mean 2-5% more profit over time. Green highlighted numbers show the best available odds.</p>
+                  <p className="text-xs text-slate-400">💡 Always shop for the best line before placing your bet!</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <Button
             variant="ghost"
