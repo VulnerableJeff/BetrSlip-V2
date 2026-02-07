@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Tv, RefreshCw, ExternalLink, Clock, Trophy, Calendar } from 'lucide-react';
+import { Tv, RefreshCw, ExternalLink, Clock, Trophy, Calendar, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
