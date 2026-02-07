@@ -9,7 +9,7 @@ import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 import SubscriptionModal from '@/components/SubscriptionModal';
 import DailyPicks from '@/components/DailyPicks';
-import LiveGames from '@/components/LiveGames';
+import LiveStreamsHub from '@/components/LiveStreamsHub';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
