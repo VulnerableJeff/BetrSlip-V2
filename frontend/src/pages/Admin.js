@@ -617,6 +617,17 @@ const Admin = () => {
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex gap-2 flex-wrap">
           <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'analytics'
+                ? 'bg-blue-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <PieChart className="w-4 h-4" />
+            Analytics
+          </button>
+          <button
             onClick={() => setActiveTab('users')}
             className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'users'
