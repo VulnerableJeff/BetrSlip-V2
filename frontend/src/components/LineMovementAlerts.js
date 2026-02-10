@@ -95,7 +95,7 @@ const LineMovementAlerts = () => {
                   {getMovementIcon(alert.direction)}
                   <div>
                     <p className="text-sm font-medium text-white">{alert.game}</p>
-                    <p className="text-xs text-slate-400">{alert.bet_type}</p>
+                    <p className="text-xs text-slate-400">{alert.bet_type} {alert.game_time ? `• ${alert.game_time}` : ''}</p>
                   </div>
                 </div>
                 <div className="text-right">
