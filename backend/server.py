@@ -893,10 +893,32 @@ async def startup_event():
 
 async def delayed_startup_tasks():
     """Run startup tasks after a delay to ensure server is ready first"""
-    # Wait for server to be fully ready before running heavy tasks
     await asyncio.sleep(10)
     
-    # Initial auto-resolve
+    # STEP 1: Warm up odds cache (prevents empty dashboard on fresh deploy)
+    try:
+        from routes.odds_client import fetch_odds, fetch_events
+        logger.info("Starting odds cache warmup...")
+        
+        # Sequentially fetch the most important sports data
+        for sport_key in ['basketball_nba', 'icehockey_nhl', 'basketball_ncaab']:
+            data = await fetch_odds(sport_key, 'h2h,spreads,totals', db=db)
+            if data:
+                logger.info(f"Warmed cache for {sport_key}: {len(data)} games")
+            await asyncio.sleep(2)  # Respect rate limits
+        
+        # Fetch events for player props
+        for sport_key in ['basketball_nba']:
+            events = await fetch_events(sport_key, db=db)
+            if events:
+                logger.info(f"Warmed events cache for {sport_key}: {len(events)} events")
+            await asyncio.sleep(2)
+        
+        logger.info("Odds cache warmup completed")
+    except Exception as e:
+        logger.warning(f"Cache warmup failed (non-critical): {e}")
+    
+    # STEP 2: Auto-resolve old picks
     try:
         resolver = AutoResolverService(db)
         await resolver.resolve_picks()
@@ -904,7 +926,7 @@ async def delayed_startup_tasks():
     except Exception as e:
         logger.warning(f"Initial auto-resolve failed: {e}")
     
-    # Generate picks on startup if needed
+    # STEP 3: Generate picks on startup if needed
     try:
         twenty_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
         recent_count = await db.daily_picks.count_documents({
