@@ -54,7 +54,8 @@ const ArbitrageScanner = () => {
         ) : opps.length === 0 ? (
           <div className="text-center py-6">
             <Shield className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-sm text-slate-400">No arbitrage opportunities right now</p>
+            <p className="text-sm text-slate-400">Scanning for arbitrage opportunities...</p>
+            <p className="text-xs text-slate-500 mt-1">Data refreshes automatically. Try refreshing in a moment.</p>
             <p className="text-xs text-slate-500 mt-1">True arbs are rare — we scan continuously</p>
           </div>
         ) : (
