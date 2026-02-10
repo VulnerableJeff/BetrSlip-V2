@@ -73,7 +73,7 @@ async def scan_arbitrage(current_user: dict = Depends(get_current_user)):
     """Scan for arbitrage opportunities across sportsbooks"""
     arb_opportunities = []
 
-    for sport_name, sport_key in list(SPORT_KEYS.items())[:3]:  # NFL, NBA, MLB
+    for sport_name, sport_key in list(SPORT_KEYS.items())[:4]:  # NBA, NHL, NCAAB, NCAAF
         games = await fetch_odds_from_api(sport_key, 'h2h')
         if not games:
             continue
