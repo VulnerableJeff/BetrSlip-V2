@@ -69,9 +69,9 @@ def _set_mem_cache(key: str, data, ttl: int = CACHE_TTL):
 async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=None) -> list:
     """
     Fetch odds with 3-layer caching: memory -> MongoDB -> API.
-    Rate-limited to prevent 429 errors.
+    Rate-limited with circuit breaker to prevent 429/401 floods.
     """
-    global _last_api_call
+    global _last_api_call, _consecutive_failures, _circuit_open_until
     cache_key = _get_cache_key(sport_key, markets)
 
     # Layer 1: In-memory cache (instant, no DB hit)
@@ -100,9 +100,15 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
         except Exception as e:
             logger.error(f"DB cache read error: {e}")
 
-    # Layer 3: API call (rate-limited, serialized)
-    if not ODDS_API_KEY:
-        return []
+    # Layer 3: API call (rate-limited, serialized, circuit-broken)
+    api_key = _get_api_key()
+    if not api_key:
+        logger.debug("No ODDS_API_KEY configured, serving from cache only")
+        return await _fallback_to_stale_cache(cache_key, db)
+
+    if _is_circuit_open():
+        logger.debug(f"Circuit breaker open, skipping API call for {sport_key}")
+        return await _fallback_to_stale_cache(cache_key, db)
 
     async with _api_semaphore:
         # Check mem cache again (another request may have populated it while we waited)
@@ -119,7 +125,7 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
         try:
             async with aiohttp.ClientSession() as session:
                 params = {
-                    'apiKey': ODDS_API_KEY,
+                    'apiKey': api_key,
                     'regions': 'us',
                     'markets': markets,
                     'oddsFormat': 'american',
@@ -134,9 +140,9 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
 
                     if resp.status == 200:
                         data = await resp.json()
+                        _consecutive_failures = 0  # Reset circuit breaker
                         if data:
                             _set_mem_cache(cache_key, data)
-                            # Persist to MongoDB
                             if db is not None:
                                 try:
                                     await db.api_cache.update_one(
@@ -152,10 +158,20 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
                                     pass
                         return data or []
 
-                    elif resp.status == 429:
-                        logger.warning(f"Odds API rate limited for {sport_key}, using cache")
                     elif resp.status == 401:
-                        logger.warning(f"Odds API auth failed for {sport_key}")
+                        _consecutive_failures += 1
+                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                            logger.warning(f"Odds API auth failed {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                        else:
+                            logger.warning(f"Odds API auth failed for {sport_key}")
+                    elif resp.status == 429:
+                        _consecutive_failures += 1
+                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                            logger.warning(f"Odds API rate limited {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                        else:
+                            logger.warning(f"Odds API rate limited for {sport_key}")
                     else:
                         logger.warning(f"Odds API {resp.status} for {sport_key}")
 
@@ -164,16 +180,19 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
         except Exception as e:
             logger.error(f"Odds API error for {sport_key}: {e}")
 
-    # Final fallback: stale DB cache (any age)
+    return await _fallback_to_stale_cache(cache_key, db)
+
+
+async def _fallback_to_stale_cache(cache_key: str, db) -> list:
+    """Serve stale DB cache as last resort"""
     if db is not None:
         try:
             cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
             if cached and cached.get('data'):
-                _set_mem_cache(cache_key, cached['data'], ttl=120)  # cache stale data for 2 min
+                _set_mem_cache(cache_key, cached['data'], ttl=120)
                 return cached['data']
         except Exception:
             pass
-
     return []
 
 
