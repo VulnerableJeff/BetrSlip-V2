@@ -438,46 +438,19 @@ class SportsDataService:
     
     @staticmethod
     async def get_live_odds(sport: str = 'americanfootball_nfl') -> Optional[Dict]:
-        """
-        Fetch live odds from The Odds API
-        Supports: americanfootball_nfl, basketball_nba, baseball_mlb, etc.
-        """
-        cache_key = f'odds_{sport}'
+        """Get live odds via centralized client with rate limiting"""
+        from routes.odds_client import fetch_odds
         
-        # Check cache first
+        cache_key = f'odds_{sport}'
         if cache_key in _cache:
             cached_data, cached_time = _cache[cache_key]
             if datetime.now(timezone.utc) - cached_time < CACHE_DURATION:
-                logger.info(f"Using cached odds for {sport}")
                 return cached_data
         
-        if not ODDS_API_KEY:
-            logger.warning("ODDS_API_KEY not set, skipping live odds fetch")
-            return None
-        
-        try:
-            url = f'{ODDS_API_BASE}/sports/{sport}/odds/'
-            params = {
-                'apiKey': ODDS_API_KEY,
-                'regions': 'us',
-                'markets': 'h2h,spreads,totals',
-                'oddsFormat': 'american'
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        # Cache the result
-                        _cache[cache_key] = (data, datetime.now(timezone.utc))
-                        logger.info(f"Fetched {len(data)} live odds for {sport}")
-                        return data
-                    else:
-                        logger.error(f"Odds API error: {response.status}")
-                        return None
-        except Exception as e:
-            logger.error(f"Error fetching odds: {str(e)}")
-            return None
+        data = await fetch_odds(sport, 'h2h,spreads,totals')
+        if data:
+            _cache[cache_key] = (data, datetime.now(timezone.utc))
+        return data
     
     @staticmethod
     async def find_matching_games(team_names: List[str], sport: str = 'americanfootball_nfl') -> List[Dict]:
