@@ -897,9 +897,10 @@ const Dashboard = ({ onLogout }) => {
           <Leaderboard />
         </div>
 
-        {/* P/L TRACKER */}
-        <div className="mb-8">
+        {/* P/L TRACKER & DAILY BET CARD */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <PLTracker />
+          <DailyBetCard isSubscribed={usage?.is_subscribed} />
         </div>
 
         {/* USA Sports Hub - Live Scores & Where to Watch */}
