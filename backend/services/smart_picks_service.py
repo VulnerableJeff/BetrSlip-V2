@@ -126,42 +126,19 @@ class SmartPicksService:
         }
     
     async def fetch_live_odds(self) -> List[Dict]:
-        """Fetch live odds from The Odds API with enhanced data"""
-        if not ODDS_API_KEY:
-            logger.warning("No ODDS_API_KEY found")
-            return []
+        """Fetch live odds via centralized client with rate limiting"""
+        from routes.odds_client import fetch_odds
         
-        sports = list(SPORT_KEYS.values())[:4]  # NFL, NBA, MLB, NHL
+        sports = list(SPORT_KEYS.values())[:4]
         all_games = []
         
-        async with aiohttp.ClientSession() as session:
-            for sport in sports:
-                try:
-                    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
-                    params = {
-                        'apiKey': ODDS_API_KEY,
-                        'regions': 'us',
-                        'markets': 'spreads,h2h,totals',
-                        'oddsFormat': 'american'
-                    }
-                    
-                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as response:
-                        if response.status == 200:
-                            games = await response.json()
-                            for game in games[:8]:  # More games per sport
-                                game['sport_key'] = sport
-                                game['sport_name'] = SPORT_NAMES.get(sport, sport)
-                                all_games.append(game)
-                        elif response.status == 401 or response.status == 403:
-                            logger.warning(f"Odds API auth failed for {sport}")
-                        else:
-                            error_text = await response.text()
-                            if "OUT_OF_USAGE_CREDITS" in error_text or "quota" in error_text.lower():
-                                logger.warning("Odds API out of credits")
-                                return []
-                except Exception as e:
-                    logger.error(f"Error fetching {sport} odds: {e}")
-                    continue
+        for sport in sports:
+            games = await fetch_odds(sport, 'spreads,h2h,totals', db=self.db)
+            if games:
+                for game in games[:8]:
+                    game['sport_key'] = sport
+                    game['sport_name'] = SPORT_NAMES.get(sport, sport)
+                    all_games.append(game)
         
         if not all_games:
             logger.warning("No games returned from Odds API for any sport")
