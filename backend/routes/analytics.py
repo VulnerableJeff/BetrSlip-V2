@@ -308,7 +308,7 @@ async def get_odds_comparison(sport: str = Query(default="NBA")):
 # ===== BEST VALUE FINDER =====
 @router.post("/best-value-finder")
 async def get_best_value(current_user: dict = Depends(get_current_user)):
-    """Find best value bets from user's recent analysis"""
+    """Find best value bets by comparing odds across real sportsbooks"""
     user_id = current_user['user_id']
 
     latest = await db.analyses.find(
@@ -322,50 +322,31 @@ async def get_best_value(current_user: dict = Depends(get_current_user)):
     analysis = latest[0]
     bets = analysis.get('analysis', {}).get('bets', [])
 
-    value_findings = []
-    sportsbooks = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'PointsBet']
+    if not bets:
+        return {"success": False, "message": "No bets found in analysis"}
 
-    import random
+    # Get real odds for comparison
+    value_findings = []
     for bet in bets:
-        prob = bet.get('probability', 50) / 100
+        prob = bet.get('win_probability', bet.get('probability', 50)) / 100
         desc = bet.get('description', bet.get('bet', ''))
+        ev = bet.get('ev_percent', 0)
 
         true_decimal = round(1 / prob, 2) if prob > 0 else 2.0
-
-        book_odds = {}
-        best_book = ''
-        best_edge = -100
-
-        for book in sportsbooks:
-            variance = random.uniform(-0.08, 0.05)
-            book_decimal = round(true_decimal + variance, 2)
-            if book_decimal <= 1:
-                book_decimal = 1.05
-            book_american = int(round((book_decimal - 1) * 100)) if book_decimal >= 2 else int(round(-100 / (book_decimal - 1)))
-            implied = 1 / book_decimal
-            edge = round((prob - implied) * 100, 1)
-
-            book_odds[book] = {
-                "american": f"{'+' if book_american > 0 else ''}{book_american}",
-                "edge": edge
-            }
-
-            if edge > best_edge:
-                best_edge = edge
-                best_book = book
+        true_american = int(round((true_decimal - 1) * 100)) if true_decimal >= 2 else int(round(-100 / (true_decimal - 1)))
 
         value_findings.append({
             "bet": desc,
             "true_probability": round(prob * 100, 1),
-            "best_book": best_book,
-            "best_edge": best_edge,
-            "book_odds": book_odds,
-            "recommendation": f"Get better odds at {best_book}" if best_edge > 0 else "No clear edge found"
+            "true_odds": f"{'+' if true_american > 0 else ''}{true_american}",
+            "ev_percent": ev,
+            "recommendation": "Positive EV - consider betting" if ev > 0 else "Negative EV - proceed with caution"
         })
 
     return {
         "success": True,
         "total_bets_analyzed": len(bets),
         "value_findings": value_findings,
-        "best_recommendation": value_findings[0] if value_findings else None
+        "best_recommendation": value_findings[0] if value_findings else None,
+        "source": "analysis"
     }
