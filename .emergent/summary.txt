@@ -1,197 +1,181 @@
-<analysis>**original_problem_statement**: The user wants to build a website named BetrSlip where users can upload a screenshot of their betting slips. The application should use AI to analyze the screenshot and provide an estimated win probability, detailed reasoning, and advanced analytics (like Kelly Criterion and EV) to help users make informed betting decisions.
+<analysis>**original_problem_statement:**
+The user's primary goal is to build a powerful and credible sports betting analysis platform.
 
-**PRODUCT REQUIREMENTS**:
-1.  **Bet Slip Analysis**: Upload a bet slip screenshot for AI analysis.
-2.  **Win Probability**: Display the bet's estimated win chance.
-3.  **Detailed Breakdown**: Provide reasoning for the AI's prediction.
-4.  **Advanced Analytics**: Calculate and show Kelly Criterion and Expected Value (EV).
-5.  **Real-Time Data**: Integrate live sports data for better predictions.
-6.  **User Authentication**: Secure registration and login.
-7.  **Bet History**: Allow users to view their past analyses.
-8.  **Performance Tracking**: Users can mark bets as 'Won', 'Lost', or 'Push' and track their performance and the AI's accuracy.
-9.  **Paid Subscriptions**: Implement a payment system (/month) after 5 free analyses.
-10. **Admin Dashboard**: An admin section to manage users and view site-wide statistics.
-11. **Daily AI Picks**: Provide 1-3 AI-generated top picks each day as a premium feature.
-12. **Picks Performance Tracking**: Admins can track the win/loss record of daily picks.
-13. **Live Streaming**: Embed live game streams for users, with an ad-free experience for subscribers.
-14. **Bankroll Management**: A dashboard for users to track their betting bankroll. (Added then removed by user request).
-15. **Premium Analytics**: Features like Line Movement Alerts, Parlay Optimizer, and Odds Comparison.
-16. **Best Odds Highlight**: A feature to highlight the sportsbook with the best odds for a given bet.
-17. **Push Notifications**: For line movements, game starts, etc.
-18. **Referral Program**: Reward users with free premium access for referring new subscribers.
-19. **Admin Analytics Dashboard**: An advanced analytics section within the admin panel.
+Initial feature ideas were inspired by competitor websites ( and ). The development process has been iterative, with the user providing feedback, reporting bugs, and requesting new features in stages.
+
+Key feature requests implemented include an AI Chat Assistant, P/L Tracker, EV Scanner, Parlay Builder, Social Leaderboard, Arbitrage Scanner, Player Props Tool, and a Game Plan Generator.
+
+A critical turning point was the user's request for a data integrity audit. This revealed that many features were using mock or static data. The user has since emphasized that **all data must be real, live, and for upcoming games** to ensure the platform's credibility.
+
+Most recently, the user provided a list of desired features inspired by DeepChampAI and, crucially, new API keys to fix the data feed, which is currently broken.
+
+PRODUCT REQUIREMENTS:
+1.  **Data Integrity (Highest Priority):** All betting data (odds, games, stats) must be from a live, real-time API. No mock or placeholder data is acceptable in the final product. Games displayed must be upcoming events.
+2.  **AI-Powered Tools:**
+    *   AI Chat Assistant (for betting advice)
+    *   AI-Powered Picks & Analysis
+    *   Game Plan Generator (based on risk/bankroll)
+3.  **Edge-Finding Tools:**
+    *   +EV (Positive Expected Value) Finder
+    *   Arbitrage Opportunity Scanner
+    *   Line Movement Alerts & Odds Comparison
+4.  **Betting & Research Tools:**
+    *   Prop Bet Research Tool
+    *   Parlay Builder & Optimizer
+5.  **Performance & Social:**
+    *   Detailed Bet Tracking & Analytics (P/L, ROI, CLV)
+    *   Social Leaderboard & Community Features
+6.  **User Experience:**
+    *   Modern, responsive UI/UX.
+    *   Clear indication of data source or status (e.g., Data Unavailable).
+    *   Redesigned landing page to showcase all features.
+7.  **Rejected:** The user's request for an off-platform communication backdoor was correctly identified as not feasible and has been rejected.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI and React application, BetrSlip, with user authentication, subscriptions, AI bet slip analysis, and an admin dashboard. The previous agent successfully validated a critical fix for a production deployment issue, ensuring the backend starts correctly. It then began implementing four new features requested by the user:
-1.  **Admin Analytics Dashboard**
-2.  **Referral Program**
-3.  **Push Notifications**
-4.  **Best Value Finder** (highlighting best odds)
+The application is a sports betting analytics platform with a React frontend and a Flask (Python) backend. It features user authentication, a dashboard, and admin analytics.
 
-The agent created the initial scaffolding for these features, including placeholder backend routes and basic frontend components. A minor UI bug with missing icons was also fixed. The application is stable in its state before these new features were added.
+The agent has successfully implemented the frontend and backend for a suite of advanced features, including an AI Chat Assistant, P/L Tracker, EV Scanner, Parlay Builder, Leaderboard, Arbitrage Scanner, Player Props tool, and a Game Plan generator.
+
+Following a data integrity audit, the agent refactored the backend to use real API data, implementing caching () and updating frontend components to show unavailable states when the API call fails, which is currently the case due to exhausted API keys.
 
 **Last working item**:
-*   **Last item agent was working**: Implementing four new features: Admin Analytics, Referral Program, Push Notifications, and a Best Value Finder for odds. The agent created the necessary backend route files, frontend components, and updated the main server and dashboard pages to include them. The last step was preparing to test these new additions after confirming the backend was healthy.
-*   **Status**: IN PROGRESS
-*   **Agent Testing Done**: N
-*   **Which testing method agent to use?**: both. The changes are full-stack and involve multiple new features. A comprehensive check using  is required to validate the UI, API endpoints, and E2E flows for all four new features.
-*   **User Testing Done**: N
+- Last item agent was working: The application's core data-dependent features are non-functional due to exhausted Odds API keys. The user has provided two new API keys. The agent was about to update the environment variables with the new keys and test them to restore the live data feed.
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? backend testing agent to test the API endpoints that rely on the odds API using .
+- User Testing Done: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1**: Complete and Test Four New Features (P0)
+- Issue 1: Exhausted/Invalid Odds API Keys (P0)
 
-**Issues Detail**:
-*   **Issue 1**:
-    *   **Attempted fixes**: The agent has created placeholder backend routes and UI components for all four features. The backend logic is not yet implemented (e.g., no database interactions for referrals or saving notification preferences). The frontend components are integrated into the UI but are not yet functional.
-    *   **Next debug checklist**:
-        1.  Flesh out the backend logic for each new route:
-            *   : Implement database logic to create referral codes and award subscriptions.
-            *   : Implement logic to save user notification preferences to the database.
-            *   : Implement data aggregation logic for the admin dashboard.
-            *    (): Implement logic to find the best odds.
-        2.  Implement the service worker logic in  for push notifications.
-        3.  Thoroughly test the functionality of each new frontend component and its connection to the backend.
-        4.  Verify the fix for the missing Smart Suggestion icons is working visually after an analysis is performed.
-    *   **Why fix this issue and what will be achieved with the fix?**: This will deliver the next set of features requested by the user, significantly enhancing the application's value for both regular users and admins.
-    *   **Status**: IN PROGRESS
-    *   **Is recurring issue?**: N
-    *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on other issue**: None
+Issues Detail:
+- Issue 1:
+    - **Description**: Key features like the EV Scanner, Arbitrage Scanner, and Player Props are not receiving live data because the Odds API keys (, ) are exhausted, returning 401/429 errors. The platform currently falls back to showing unavailable messages.
+    - **Attempted fixes**: Caching and fallback UI states were implemented as a mitigation to prevent showing fake data.
+    - **Next debug checklist**:
+        1.  In the  file, set  to the new key:  (from ).
+        2.  Restart the backend server.
+        3.  Test data-dependent endpoints via , e.g., .
+        4.  If the key fails, investigate using the second key provided (), noting it's from a different provider () and may require code changes.
+    - **Why fix this issue?**: The application's core value and credibility depend entirely on providing real-time, accurate betting data. This is the highest priority blocker.
+    - **Status**: IN PROGRESS
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Both.
+    - **Blocked on other issue**: None.
 
 **In progress Task List**:
-*   **Task 1**: Implement and Test Admin Analytics Dashboard (P0)
-    *   **Where to resume**: Backend logic in  needs to be implemented. The frontend component  needs to be connected to the API and tested.
-    *   **What will be achieved with this?**: Provides admins with key metrics on user activity, revenue, and AI performance.
-    *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on something**: None
-*   **Task 2**: Implement and Test Referral Program (P0)
-    *   **Where to resume**: Backend logic in  and subscription update logic in  needs to be fully implemented. The frontend component  needs to be tested.
-    *   **What will be achieved with this?**: A user growth mechanism.
-    *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on something**: None
-*   **Task 3**: Implement and Test Push Notifications (P0)
-    *   **Where to resume**: Backend logic in  and service worker logic in  needs to be implemented. The UI in  needs to be fully wired up.
-    *   **What will be achieved with this?**: Increased user engagement via browser notifications.
-    *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on something**: None
-*   **Task 4**: Implement and Test Best Value Finder (P0)
-    *   **Where to resume**: Backend logic in  for the  endpoint needs implementation. The frontend component  needs to be tested after an analysis.
-    *   **What will be achieved with this?**: Highlights the best odds for a user's bet, a key value-add.
-    *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on something**: None
+- Task 1: Integrate and Validate New Odds API Key (P0)
+    - **Where to resume**: The agent needs to edit the  file and begin testing the new API keys.
+    - **What will be achieved with this?**: This will re-enable all live data features and unblock further development and testing, directly addressing the user's main concern.
+    - **Status**: NOT STARTED
+    - **Should Test frontend/backend/both after fix?**: Both.
+    - **Blocked on something**: None.
 
 **Upcoming and Future Tasks**
-*   **Upcoming Tasks**:
-    *   **Parlay Builder Functionality (P1)**: The UI for the Parlay Optimizer has a  button, but the logic to add selections to a custom parlay section is not yet implemented.
-*   **Future Tasks**:
-    *   Social leaderboard
-    *   Refactor  endpoint from  to .
+- **Upcoming Tasks:**
+    - **(P0) Full Data Integrity and Real-time Implementation:** Once the new API key is working, verify that *all* components previously using mock data are now hooked to the live API and filter for upcoming games only. This includes , , , , , and .
+    - **(P1) Implement DeepChampAI Feature Set:** Align the current application with the user's latest feature request list from the competitor screenshot.
+        - **Bet Tracking & Analytics (CLV):** Add Customer Lifetime Value (CLV) calculation to .
+        - **Parlay Optimizer:** Enhance the existing Parlay Builder to suggest optimized legs based on metrics like EV.
+        - **Prop Bet Research Tool:** Expand the basic Player Props tool with more in-depth research capabilities (e.g., historical stats).
+- **Future Tasks:**
+    - **(P2) Backend Code Refactoring:** Continue modularizing the backend by moving any remaining business logic from  into the appropriate files in the  directory.
 
 **Completed work in this session**
-- **Deployment Issue Verified**: Confirmed that the fix for the production deployment failure (using  for startup jobs) was successful. Key APIs and the app are stable.
-- **App Stability Test**: Performed extensive manual and automated testing () to confirm the stability of all existing features before starting new work.
-- **UI Bug Fix**: Fixed an issue where icons were not appearing in the Smart Suggestions section of the analysis results by adding a default icon in .
-- **New Feature Scaffolding**:
-    - Created placeholder backend routes for Admin Analytics, Referrals, and Notifications.
-    - Created an endpoint for the Best Value Finder in the analytics route.
-    - Created basic frontend components for all four new features and integrated them into the Admin and Dashboard pages.
+- **Bug Fixes:**
+    - **Notifications Error:** Fixed a bug on enabling notifications by adding a graceful fallback, ensuring preferences are saved even without a push subscription. (File: )
+    - **Share/Download Analysis:** Replaced a broken  implementation with a reliable native Canvas API approach. (File: )
+- **Feature Implementations:**
+    - **AI Chat Assistant:** (Files: , )
+    - **Performance (P/L) Tracker:** (Files: , )
+    - **EV Scanner, Parlay Builder, Social Leaderboard:** (Files in , )
+    - **Pro Tools (Arbitrage, Player Props, Game Plan):** (Files in , )
+    - **Landing Page Redesign:** Updated to showcase new features. (File: )
+    - **Mobile Responsiveness:** Improved layout for new components on mobile.
+- **Data Integrity Overhaul:**
+    - Audited the codebase and replaced mock data patterns with API calls.
+    - Implemented  to manage API rate limits.
+    - Updated UI to show unavailable states when live data can't be fetched.
 
 **Earlier issues found/mentioned but not fixed**
-*   The  endpoint logic is still in the main  file and should be moved to  to complete the modular refactoring.
+- No issues were missed; the primary issue of data integrity was identified and is the current focus.
 
 **Known issue recurrence from previous fork**
-*   **Issue recurrence in previous fork**: None.
+- No previous fork history was provided.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-*   **Frontend**: React, Tailwind CSS, Shadcn/UI
-*   **Backend**: FastAPI, MongoDB (via ), Pydantic
-*   **AI**: OpenAI GPT-4o (Vision) via  library.
-*   **Architecture**: Modular backend with routers and services. Non-blocking background tasks with .
+- **Frontend:** React, Vite, Tailwind CSS, Recharts
+- **Backend:** Python, Flask, Flask-CORS, Flask-Caching, Pydantic
+- **AI/LLM:** OpenAI GPT-4o for the AI Chat feature.
+- **Architecture:** Service-oriented REST API backend with a component-based React frontend.
 
 **key DB schema**
-*   **users**: User account and subscription information.
-*   **analyses**: Stores results from user-uploaded bet slip analyses.
-*   **user_usage**: Tracks free analysis counts.
-*   **daily_picks**: Stores AI-generated daily picks.
-*   *New collections may be needed for referrals and notification settings.*
+- Schemas are not explicitly defined but can be inferred for , , and .
 
 **changes in tech stack**
-None.
+- **Flask-Caching:** Introduced to manage external API calls, improve performance, and handle rate-limiting gracefully.
 
 **All files of reference**
-*    (New)
-*    (New)
-*    (New)
-*    (New)
-*    (New)
-*    (New)
-*    (New)
-*    (New)
-*    (Modified)
-*    (Modified)
-*    (Modified)
-*    (Modified)
-*    (Modified)
+- : The main Flask application entry point.
+- : Directory containing modularized business logic for all key features.
+- : The central UI hub where most new components are rendered.
+- : Contains environment variables, including the critical .
 
 **Areas that need refactoring**:
-*   The  endpoint in  should be moved to .
-*   The newly created backend route files contain placeholder logic and need full implementation.
+- **:** Should be further thinned out by moving any remaining routing and business logic into the  or  directories to improve modularity.
+- **Data Fallback Logic:** Review all services (e.g., ) and remove any functions that return  or  data as a fallback. The user wants a pure unavailable state if live data fails.
 
 **key api endpoints**
-*   **Analysis**: 
-*   **Premium Analytics**: , , 
-*   **Best Value Finder**:  (New)
-*   **Referrals**:  (New)
-*   **Notifications**:  (New)
-*   **Admin Analytics**:  (New)
+-  (POST)
+-  (GET)
+-  (POST)
+-  (GET/POST)
+-  (GET)
 
 **Critical Info for New Agent**
-*   The main priority is to complete the implementation of the four new features: Admin Analytics, Referrals, Push Notifications, and the Best Value Finder. The current code is just scaffolding.
-*   The backend logic for these features (database interactions, etc.) needs to be written from scratch in the placeholder files.
-*   The frontend components need to be fully wired up to their respective APIs and tested.
-*   The user specified browser-only push notifications and that only the referrer should be rewarded in the referral program.
+- **DATA CREDIBILITY IS THE #1 PRIORITY.** Your first task is to fix the live data feed using the new API key. Do not proceed with new features until the existing ones are powered by real, verified data.
+- **API Key Strategy:** Use the key for  first. It's the intended provider. Only investigate the  key if the first one is invalid.
+- **No Mock Data:** The user has been very clear. It is better for a feature to show Data Unavailable than to show fake or stale data. Ensure all fallbacks follow this rule.
 
 **documents and test reports created in this job**
-*   
-*    (updated)
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Confirmed push notifications should be browser-only, only the referrer gets a reward, and gave creative freedom on the admin dashboard. Status: **In Progress**.
-2.  **User**: Approved the plan to build the four new features. Status: **In Progress**.
-3.  **User**: Requested four new features: Best Odds highlight, push notifications, referral program, and an Admin Analytics Dashboard. Also reported a UI bug with missing icons. Status: **In Progress**.
-4.  **Agent**: Finished the previous task (verifying deployment fix) and proposed an enhancement. Status: Addressed.
+1.  **User provided two new Odds API keys.** (Status: PENDING - this is the immediate task for the next agent).
+2.  **User requested features from a DeepChampAI screenshot.** (Status: PENDING).
+3.  **User expressed critical concern about data integrity, demanding real, live, upcoming data.** (Status: IN PROGRESS).
+4.  User requested to continue with the current task. (Status: COMPLETED).
+5.  User provided a prioritized list of new features to implement. (Status: COMPLETED).
+6.  User reported bugs with notifications and sharing results. (Status: COMPLETED/FIXED).
+7.  User requested a visual redesign of the shared analysis card. (Status: COMPLETED).
+8.  User provided competitor websites for feature ideas. (Status: COMPLETED).
+9.  User requested multiple features and an off-platform communication method. (Status: Features IN PROGRESS, communication request REJECTED).
+10. Initial instruction to start work. (Status: COMPLETED).
 
 **Project Health Check:**
-*   **Broken**: The four new features (Admin Analytics, Referrals, Push Notifications, Best Value Finder) are non-functional and in a partially implemented state.
-*   **Mocked**: Some analytics data (e.g., Line Movement alerts, Odds Comparison) is still static placeholder data.
+- **Broken:** All features that rely on the Odds API are currently broken and displaying unavailable states. This is the main point of failure for the entire application.
+- **Mocked:** The agent has removed most mock data, but a final pass is needed to eliminate any remaining  fallbacks in favor of a pure unavailable state, per the user's strict requirement.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o (Vision)** — uses Emergent LLM Key.
-*   **Stripe (Subscriptions)** — requires User API Key.
-*   **PayPal** — requires User API Key.
-*   **The Odds API** — requires User API Key.
-*   **ESPN API (undocumented)** — no key required.
+- **OpenAI GPT-4o:** Powers the AI Chat Assistant. Uses Emergent LLM Key.
+- **The Odds API ():** For all sports betting odds and game data. Requires User API Key.
 
 **Testing status**
-*   **Testing agent used after significant changes**: YES (to verify app stability before new feature development)
-*   **Troubleshoot agent used after agent stuck in loop**: NO
-*   **Test files created**: None.
-*   **Known regressions**: None.
+- **Testing agent used after significant changes:** YES
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:** 
+- **Known regressions:** All features dependent on the odds API have regressed to a non-functional state due to the invalid API key.
 
 **Credentials to test flow:**
-*   **Admin User**:
-    *   Email: 
-    *   Password: 
+- **Odds API Key:** 
+- **User Credentials:** Can be created via the application's sign-up page.
 
 **What agent forgot to execute**
-*   The backend logic for all four new features is incomplete; only placeholder routes were created.
-*   The long-pending refactor of moving the  endpoint from  to a dedicated route file has not been done.</analysis>
+- The agent did not complete the full removal of all  fallbacks from the backend services. To meet the user's strict credibility requirements, these should be completely removed in favor of error/empty states.
+- The refactoring of  is incomplete. There is still an opportunity to move more logic into service modules.</analysis>
