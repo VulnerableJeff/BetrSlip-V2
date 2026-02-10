@@ -81,7 +81,8 @@ const LineMovementAlerts = () => {
         {alerts.length === 0 ? (
           <div className="text-center py-4">
             <AlertTriangle className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-sm text-slate-400">No significant line movements detected</p>
+            <p className="text-sm text-slate-400">Loading line movements...</p>
+            <p className="text-xs text-slate-500 mt-1">Data refreshes automatically</p>
             <p className="text-xs text-slate-500">Alerts appear when odds shift significantly</p>
           </div>
         ) : (
