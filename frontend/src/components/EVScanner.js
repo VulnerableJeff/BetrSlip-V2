@@ -15,7 +15,14 @@ const EVScanner = () => {
   const token = localStorage.getItem('betrslip_token');
   const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => { fetchEV(); }, []);
+  useEffect(() => {
+    fetchEV();
+    // Auto-retry after 15s if data is empty (cache warming up)
+    const timer = setTimeout(() => {
+      if (!data?.opportunities?.length) fetchEV();
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetchEV = async () => {
     setLoading(true);
