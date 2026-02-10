@@ -150,8 +150,8 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
     ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
     opportunities = []
 
-    # Try real odds first, with caching
-    sport_keys = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb']
+    # Try real odds first, with caching - focus on in-season sports
+    sport_keys = ['basketball_nba', 'icehockey_nhl', 'basketball_ncaab']
     for sport_key in sport_keys:
         cache_key = f"odds_cache_{sport_key}_h2h_spreads"
         games = None
