@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
 BASE_URL = 'https://api.the-odds-api.com/v4'
 
 # In-memory cache: {cache_key: {"data": ..., "expires_at": timestamp}}
@@ -22,9 +21,30 @@ CACHE_TTL = 600  # 10 minutes — prevents hammering API on page loads
 # Global semaphore: max 1 concurrent API call to avoid bursts
 _api_semaphore = asyncio.Semaphore(1)
 
-# Rate limiter: track last call time, enforce 1 second between calls
+# Rate limiter: track last call time, enforce 1.2 second between calls
 _last_api_call = 0
 RATE_LIMIT_DELAY = 1.2  # seconds between API calls
+
+# Circuit breaker: stop calling API after consecutive failures
+_consecutive_failures = 0
+_circuit_open_until = 0  # timestamp when circuit breaker resets
+CIRCUIT_BREAKER_THRESHOLD = 3  # open circuit after N consecutive failures
+CIRCUIT_BREAKER_RESET = 120  # seconds to wait before retrying
+
+
+def _get_api_key() -> str:
+    """Read API key at call time (not import time) to ensure .env is loaded"""
+    return os.environ.get('ODDS_API_KEY', '')
+
+
+def _is_circuit_open() -> bool:
+    """Check if circuit breaker is open (too many failures)"""
+    if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+        if time.time() < _circuit_open_until:
+            return True
+        # Reset after cooldown period
+        return False
+    return False
 
 
 def _get_cache_key(sport_key: str, markets: str) -> str:
