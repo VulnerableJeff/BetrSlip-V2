@@ -49,6 +49,13 @@ Build a powerful and credible sports betting analysis platform. All betting data
 - Player Props, Game Plan Generator
 - Landing Page, Flask-Caching, Auth
 
+### Deployment Fix - Rate Limiting (DONE - Feb 10, 2026)
+- Created centralized `odds_client.py` with 3-layer cache (memory → MongoDB → API)
+- Global asyncio semaphore limits to 1 concurrent API call
+- 1.2s rate limiter between API calls prevents 429 bursts
+- All routes (analytics, pro_tools, performance, smart_picks, sports_data_service) now use single client
+- In-memory cache with 5min TTL eliminates duplicate API calls on page loads
+
 ## Remaining Backlog
 - **P2**: Prop Bet Research with historical stats
 - **P3**: Backend refactoring (modularize server.py)
