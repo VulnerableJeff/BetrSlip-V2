@@ -91,7 +91,7 @@ async def get_line_movements():
     """Get line movements from real upcoming games"""
     movements = []
 
-    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NFL', 'americanfootball_nfl'), ('NHL', 'icehockey_nhl')]:
+    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NHL', 'icehockey_nhl'), ('NCAAB', 'basketball_ncaab')]:
         games = await _fetch_odds(sport_key, 'spreads,h2h')
         if not games:
             continue
@@ -168,7 +168,7 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
     """Get real upcoming game parlay suggestions"""
     suggestions = []
 
-    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NFL', 'americanfootball_nfl'), ('NHL', 'icehockey_nhl')]:
+    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NHL', 'icehockey_nhl'), ('NCAAB', 'basketball_ncaab')]:
         games = await _fetch_odds(sport_key, 'spreads,h2h,totals')
         if not games:
             continue
