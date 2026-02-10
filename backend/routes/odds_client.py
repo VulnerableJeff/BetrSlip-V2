@@ -39,10 +39,12 @@ def _get_api_key() -> str:
 
 def _is_circuit_open() -> bool:
     """Check if circuit breaker is open (too many failures)"""
+    global _consecutive_failures
     if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
         if time.time() < _circuit_open_until:
             return True
-        # Reset after cooldown period
+        # Cooldown expired — reset counter and allow retry
+        _consecutive_failures = 0
         return False
     return False
 
