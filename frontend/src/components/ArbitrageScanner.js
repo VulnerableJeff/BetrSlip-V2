@@ -14,7 +14,11 @@ const ArbitrageScanner = () => {
   const token = localStorage.getItem('betrslip_token');
   const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => {
+    fetch();
+    const timer = setTimeout(() => { if (!data?.opportunities?.length) fetch(); }, 15000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetch = async () => {
     setLoading(true);
