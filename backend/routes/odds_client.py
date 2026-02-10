@@ -198,15 +198,13 @@ async def _fallback_to_stale_cache(cache_key: str, db) -> list:
 
 async def fetch_events(sport_key: str, db=None) -> list:
     """Fetch events for a sport (used by player props). Memory + DB cached."""
-    global _last_api_call
+    global _last_api_call, _consecutive_failures, _circuit_open_until
     cache_key = f"events_cache_{sport_key}"
 
-    # Layer 1: Memory
     mem_data = _get_from_mem_cache(cache_key)
     if mem_data is not None:
         return mem_data
 
-    # Layer 2: MongoDB
     if db is not None:
         try:
             cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
@@ -225,8 +223,9 @@ async def fetch_events(sport_key: str, db=None) -> list:
         except Exception:
             pass
 
-    if not ODDS_API_KEY:
-        return []
+    api_key = _get_api_key()
+    if not api_key or _is_circuit_open():
+        return await _fallback_to_stale_cache(cache_key, db)
 
     async with _api_semaphore:
         mem_data = _get_from_mem_cache(cache_key)
@@ -241,11 +240,12 @@ async def fetch_events(sport_key: str, db=None) -> list:
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"{BASE_URL}/sports/{sport_key}/events"
-                params = {'apiKey': ODDS_API_KEY}
+                params = {'apiKey': api_key}
                 async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=12)) as resp:
                     _last_api_call = time.time()
                     if resp.status == 200:
                         data = await resp.json()
+                        _consecutive_failures = 0
                         if data:
                             _set_mem_cache(cache_key, data)
                             if db is not None:
@@ -258,20 +258,17 @@ async def fetch_events(sport_key: str, db=None) -> list:
                                 except Exception:
                                     pass
                         return data or []
-                    logger.warning(f"Events API {resp.status} for {sport_key}")
+                    elif resp.status in (401, 429):
+                        _consecutive_failures += 1
+                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                            logger.warning(f"Events API {resp.status} — circuit breaker OPEN")
+                    else:
+                        logger.warning(f"Events API {resp.status} for {sport_key}")
         except Exception as e:
             logger.error(f"Events fetch error: {e}")
 
-    if db is not None:
-        try:
-            cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
-            if cached and cached.get('data'):
-                _set_mem_cache(cache_key, cached['data'], ttl=120)
-                return cached['data']
-        except Exception:
-            pass
-
-    return []
+    return await _fallback_to_stale_cache(cache_key, db)
 
 
 async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None) -> dict | None:
