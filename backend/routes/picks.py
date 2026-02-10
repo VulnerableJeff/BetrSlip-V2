@@ -323,46 +323,17 @@ class InitPicksRequest(BaseModel):
     secret_key: str
 
 @router.post("/admin/initialize-picks")
-async def initialize_sample_picks(request: InitPicksRequest):
-    """Initialize sample picks for new deployment"""
+async def initialize_picks(request: InitPicksRequest):
+    """Generate fresh picks using real live odds (admin only)"""
     if request.secret_key != "BetrSlip2026SecureReset":
         raise HTTPException(status_code=403, detail="Invalid secret key")
     
-    # Deactivate existing
+    # Deactivate all existing picks
     await db.daily_picks.update_many({}, {"$set": {"is_active": False}})
     
-    sample_picks = [
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Lakers -4.5 vs Rockets",
-            "description": "Lakers strong at home against struggling Rockets",
-            "win_probability": 68,
-            "odds": "-110",
-            "sport": "NBA",
-            "confidence": 8,
-            "reasoning": ["Lakers 8-2 ATS at home", "Rockets worst road record"],
-            "risk_factors": ["Back-to-back for Lakers"],
-            "game_time": "Tonight 10:30 PM ET",
-            "created_by": "System",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_active": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Chiefs ML vs Raiders",
-            "description": "Kansas City dominates at home",
-            "win_probability": 72,
-            "odds": "-180",
-            "sport": "NFL",
-            "confidence": 9,
-            "reasoning": ["Chiefs 10-1 vs Raiders at home", "Mahomes elite form"],
-            "risk_factors": ["Divisional rivalry"],
-            "game_time": "Sunday 4:25 PM ET",
-            "created_by": "System",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_active": True
-        }
-    ]
+    # Generate real picks from live data
+    from services.smart_picks_service import SmartPicksService
+    smart_service = SmartPicksService(db)
+    result = await smart_service.generate_smart_picks(force=True)
     
-    await db.daily_picks.insert_many(sample_picks)
-    return {"message": f"Created {len(sample_picks)} sample picks", "success": True}
+    return {"message": result.get("message", "Picks regenerated"), "success": result.get("generated", False)}
