@@ -29,7 +29,8 @@ SPORT_KEYS = {
 
 async def _fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals'):
     """Fetch live upcoming odds — caches results in MongoDB for when API is down"""
-    cache_key = f"odds_cache_{sport_key}_{markets.replace(',','_')}"
+    sorted_markets = '_'.join(sorted(markets.split(',')))
+    cache_key = f"odds_cache_{sport_key}_{sorted_markets}"
 
     if ODDS_API_KEY:
         try:
