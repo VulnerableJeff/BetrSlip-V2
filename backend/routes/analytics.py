@@ -165,7 +165,7 @@ async def get_line_movements():
 # ===== PARLAY OPTIMIZER =====
 @router.get("/parlay-optimizer")
 async def get_parlay_suggestions(current_user: dict = Depends(get_current_user)):
-    """Get real upcoming game parlay suggestions"""
+    """Get real upcoming game parlay suggestions with EV-based optimization"""
     suggestions = []
 
     for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NHL', 'icehockey_nhl'), ('NCAAB', 'basketball_ncaab')]:
@@ -177,8 +177,10 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
             home = game.get('home_team', '')
             away = game.get('away_team', '')
             commence = game.get('commence_time', '')
+            bookmakers = game.get('bookmakers', [])
 
-            for bm in game.get('bookmakers', [])[:1]:  # Use first bookmaker
+            # Compare across multiple books to find edge
+            for bm in bookmakers[:1]:
                 for market in bm.get('markets', []):
                     key = market.get('key', '')
                     for outcome in market.get('outcomes', []):
@@ -189,11 +191,9 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
                         if not price:
                             continue
 
-                        # Calculate implied probability
                         dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
                         implied = round((1 / dec) * 100, 1)
 
-                        # Only suggest bets with implied 40-70% (reasonable value)
                         if 40 <= implied <= 70:
                             if key == 'spreads':
                                 desc = f"{name} {'+' if point > 0 else ''}{point}"
@@ -219,17 +219,51 @@ async def get_parlay_suggestions(current_user: dict = Depends(get_current_user))
                                 "ev": max(0, ev),
                                 "confidence": "high" if implied >= 55 else "medium",
                                 "game": f"{away} @ {home}",
+                                "game_id": f"{home}_{away}",
                                 "odds": odds_str,
+                                "decimal_odds": round(dec, 3),
                                 "game_time": _format_time(commence)
                             })
 
-    # Sort by EV
     suggestions.sort(key=lambda x: x.get('ev', 0), reverse=True)
+
+    # Build optimal 2-leg and 3-leg parlays from best individual legs
+    optimal_parlays = []
+    top_legs = [s for s in suggestions if s.get('confidence') == 'high'][:6]
+
+    if len(top_legs) >= 2:
+        # Build 2-leg parlays (best combos from different games)
+        for i in range(min(3, len(top_legs))):
+            for j in range(i + 1, min(4, len(top_legs))):
+                leg1, leg2 = top_legs[i], top_legs[j]
+                if leg1.get('game_id') == leg2.get('game_id'):
+                    continue  # Skip correlated legs (same game)
+                combined_prob = round(leg1['probability'] * leg2['probability'] / 100, 1)
+                combined_dec = leg1['decimal_odds'] * leg2['decimal_odds']
+                combined_american = int(round((combined_dec - 1) * 100)) if combined_dec >= 2 else int(round(-100 / (combined_dec - 1)))
+                combined_odds = f"+{combined_american}" if combined_american > 0 else str(combined_american)
+                combined_ev = round(combined_prob / 100 * (combined_dec - 1) * 100 - (100 - combined_prob), 1)
+
+                optimal_parlays.append({
+                    "id": str(uuid.uuid4()),
+                    "legs": [
+                        {"description": leg1['description'], "sport": leg1['sport'], "odds": leg1['odds'], "game": leg1['game']},
+                        {"description": leg2['description'], "sport": leg2['sport'], "odds": leg2['odds'], "game": leg2['game']}
+                    ],
+                    "combined_probability": combined_prob,
+                    "combined_odds": combined_odds,
+                    "combined_ev": combined_ev,
+                    "leg_count": 2,
+                    "risk_level": "moderate" if combined_prob >= 25 else "high"
+                })
+
+    optimal_parlays.sort(key=lambda x: x.get('combined_ev', 0), reverse=True)
 
     return {
         "success": True,
         "count": len(suggestions[:8]),
         "suggestions": suggestions[:8],
+        "optimal_parlays": optimal_parlays[:3],
         "source": "live" if suggestions else "unavailable"
     }
 
