@@ -16,7 +16,11 @@ const PlayerProps = () => {
   const token = localStorage.getItem('betrslip_token');
   const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => { fetchProps(); }, [sport]);
+  useEffect(() => {
+    fetchProps();
+    const timer = setTimeout(() => { if (!data?.props?.length) fetchProps(); }, 15000);
+    return () => clearTimeout(timer);
+  }, [sport]);
 
   const fetchProps = async () => {
     setLoading(true);
