@@ -190,9 +190,14 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
                 if opp:
                     opportunities.extend(opp)
 
-    # Fallback to picks-based simulation if no real or cached data
     if not opportunities:
-        opportunities = await _fallback_ev_scan()
+        return {
+            "count": 0,
+            "opportunities": [],
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "source": "unavailable",
+            "message": "No live odds data available right now. Try again later."
+        }
 
     opportunities.sort(key=lambda x: x['best_edge'], reverse=True)
 
@@ -200,7 +205,7 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
         "count": len(opportunities),
         "opportunities": opportunities[:10],
         "last_updated": datetime.now(timezone.utc).isoformat(),
-        "source": "live" if ODDS_API_KEY and opportunities else "simulated"
+        "source": "live"
     }
 
 

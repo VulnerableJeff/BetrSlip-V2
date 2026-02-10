@@ -157,8 +157,8 @@ class SmartPicksService:
                         else:
                             error_text = await response.text()
                             if "OUT_OF_USAGE_CREDITS" in error_text or "quota" in error_text.lower():
-                                logger.warning("Odds API out of credits, using fallback")
-                                return self._get_fallback_games()
+                                logger.warning("Odds API out of credits")
+                                return []
                 except Exception as e:
                     logger.error(f"Error fetching {sport} odds: {e}")
                     continue
