@@ -32,10 +32,16 @@ class PickOutcomeUpdate(BaseModel):
 
 
 # Public endpoints
+# Track last generation attempt to avoid repeated retries
+_last_picks_gen_attempt = None
+_PICKS_GEN_COOLDOWN = 300  # 5 minutes between generation attempts
+
 @router.get("/daily-picks")
 async def get_daily_picks():
-    """Get active daily picks - auto-generates if needed"""
-    # Check for picks from last 16 hours (more aggressive refresh)
+    """Get active daily picks - auto-generates if needed (with cooldown)"""
+    global _last_picks_gen_attempt
+    
+    # Check for picks from last 16 hours
     sixteen_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=16)).isoformat()
     
     active_recent = await db.daily_picks.count_documents({
@@ -43,11 +49,18 @@ async def get_daily_picks():
         "created_at": {"$gte": sixteen_hours_ago}
     })
     
-    # Auto-generate if we have fewer than 2 recent picks
+    # Auto-generate only if: few recent picks AND cooldown has passed
     if active_recent < 2:
-        logger.info(f"Only {active_recent} recent picks, attempting smart AI generation...")
-        smart_service = SmartPicksService(db)
-        await smart_service.generate_smart_picks(force=True)
+        now = datetime.now(timezone.utc)
+        should_try = (
+            _last_picks_gen_attempt is None or
+            (now - _last_picks_gen_attempt).total_seconds() > _PICKS_GEN_COOLDOWN
+        )
+        if should_try:
+            _last_picks_gen_attempt = now
+            logger.info(f"Only {active_recent} recent picks, attempting smart AI generation...")
+            smart_service = SmartPicksService(db)
+            await smart_service.generate_smart_picks(force=True)
     
     # Get active picks, sorted by probability
     picks = await db.daily_picks.find(
