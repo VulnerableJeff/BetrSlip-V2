@@ -28,50 +28,9 @@ SPORT_KEYS = {
 
 
 async def _fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals'):
-    """Fetch live upcoming odds — caches results in MongoDB for when API is down"""
-    sorted_markets = '_'.join(sorted(markets.split(',')))
-    cache_key = f"odds_cache_{sport_key}_{sorted_markets}"
-
-    if ODDS_API_KEY:
-        try:
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    'apiKey': ODDS_API_KEY,
-                    'regions': 'us',
-                    'markets': markets,
-                    'oddsFormat': 'american',
-                    'dateFormat': 'iso'
-                }
-                async with session.get(
-                    f"{ODDS_BASE}/sports/{sport_key}/odds",
-                    params=params,
-                    timeout=aiohttp.ClientTimeout(total=12)
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        # Cache successful response
-                        if data:
-                            await db.api_cache.update_one(
-                                {"key": cache_key},
-                                {"$set": {
-                                    "key": cache_key,
-                                    "data": data,
-                                    "updated_at": datetime.now(timezone.utc).isoformat()
-                                }},
-                                upsert=True
-                            )
-                        return data
-                    logger.warning(f"Odds API {resp.status} for {sport_key}")
-        except Exception as e:
-            logger.error(f"Odds fetch error: {e}")
-
-    # Fallback: serve cached data
-    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
-    if cached and cached.get('data'):
-        logger.info(f"Serving cached odds for {sport_key}")
-        return cached['data']
-
-    return None
+    """Fetch odds via centralized client with rate limiting + 3-layer cache"""
+    from .odds_client import fetch_odds
+    return await fetch_odds(sport_key, markets, db=db)
 
 
 def _format_time(iso_str):
