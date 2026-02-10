@@ -238,8 +238,8 @@ async def fetch_events(sport_key: str, db=None) -> list:
 async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None) -> dict | None:
     """Fetch player props for a specific event. Memory + DB cached."""
     global _last_api_call
-    sorted_markets = '_'.join(sorted(markets.split(',')))
-    cache_key = f"props_cache_{event_id}_{sorted_markets}"
+    # Use markets as-is for props (they contain underscores like player_points)
+    cache_key = f"props_cache_{event_id}_{markets.replace(',','_')}"
 
     mem_data = _get_from_mem_cache(cache_key)
     if mem_data is not None:
