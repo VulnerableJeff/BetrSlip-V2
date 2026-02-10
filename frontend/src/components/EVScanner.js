@@ -66,9 +66,14 @@ const EVScanner = () => {
       <CardContent className="space-y-2">
         {opportunities.length === 0 ? (
           <div className="text-center py-8">
-            <AlertTriangle className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-sm text-slate-400">No +EV opportunities found right now</p>
-            <p className="text-xs text-slate-500">Check back when new games are available</p>
+            <RefreshCw className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+            <p className="text-sm text-slate-400">
+              {data?.source === 'unavailable' ? 'Live odds data is loading...' : 'No +EV opportunities found right now'}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Data refreshes automatically</p>
+            <Button variant="outline" size="sm" onClick={fetchEV} className="mt-3 text-xs border-slate-700 text-slate-400 hover:text-white">
+              <RefreshCw className="w-3 h-3 mr-1" /> Refresh Now
+            </Button>
           </div>
         ) : (
           opportunities.map((opp, i) => (
