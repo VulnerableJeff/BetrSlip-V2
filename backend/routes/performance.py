@@ -68,6 +68,8 @@ async def get_my_performance(current_user: dict = Depends(get_current_user)):
 
     # AI accuracy - how often AI's prediction aligned with outcome
     ai_correct = 0
+    clv_total = 0
+    clv_count = 0
     for a in analyses:
         prob = a.get('analysis', {}).get('overall_probability', 50)
         outcome = a.get('outcome')
@@ -75,7 +77,25 @@ async def get_my_performance(current_user: dict = Depends(get_current_user)):
             ai_correct += 1
         elif outcome == 'lost' and prob < 50:
             ai_correct += 1
+
+        # CLV (Closing Line Value) - measure how good the odds were at time of pick
+        # Compare AI probability vs implied probability from odds
+        bets = a.get('analysis', {}).get('bets', [])
+        for bet in bets:
+            bet_odds = bet.get('odds', '')
+            ai_prob = bet.get('win_probability', 0)
+            if bet_odds and ai_prob:
+                try:
+                    odds_val = int(str(bet_odds).replace('+', ''))
+                    implied = 100 / (abs(odds_val) + 100) * 100 if odds_val < 0 else 100 / (odds_val + 100) * 100
+                    clv = round(ai_prob - implied, 1)
+                    clv_total += clv
+                    clv_count += 1
+                except (ValueError, ZeroDivisionError):
+                    pass
+
     ai_accuracy = round((ai_correct / total_bets * 100), 1) if total_bets > 0 else 0
+    avg_clv = round(clv_total / clv_count, 1) if clv_count > 0 else 0
 
     return {
         "total_bets": total_bets,
@@ -88,6 +108,8 @@ async def get_my_performance(current_user: dict = Depends(get_current_user)):
         "roi": roi,
         "best_streak": best_streak,
         "ai_accuracy": ai_accuracy,
+        "avg_clv": avg_clv,
+        "clv_bets_tracked": clv_count,
         "pl_chart": pl_data
     }
 
