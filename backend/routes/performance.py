@@ -150,12 +150,15 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
     ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
     opportunities = []
 
-    # Try real odds first
-    if ODDS_API_KEY:
-        sport_keys = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb']
-        async with aiohttp.ClientSession() as session:
-            for sport_key in sport_keys:
-                try:
+    # Try real odds first, with caching
+    sport_keys = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb']
+    for sport_key in sport_keys:
+        cache_key = f"odds_cache_{sport_key}_h2h_spreads"
+        games = None
+
+        if ODDS_API_KEY:
+            try:
+                async with aiohttp.ClientSession() as session:
                     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
                     params = {
                         'apiKey': ODDS_API_KEY,
@@ -166,14 +169,28 @@ async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
                     async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                         if resp.status == 200:
                             games = await resp.json()
-                            for game in games[:6]:
-                                opp = _analyze_game_ev(game)
-                                if opp:
-                                    opportunities.extend(opp)
-                except Exception as e:
-                    logging.getLogger(__name__).error(f"EV scan error for {sport_key}: {e}")
+                            if games:
+                                await db.api_cache.update_one(
+                                    {"key": cache_key},
+                                    {"$set": {"key": cache_key, "data": games, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                                    upsert=True
+                                )
+            except Exception as e:
+                logging.getLogger(__name__).error(f"EV scan error for {sport_key}: {e}")
 
-    # Fallback to picks-based simulation if no real data
+        # Fallback to cache
+        if not games:
+            cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+            if cached:
+                games = cached.get('data', [])
+
+        if games:
+            for game in games[:6]:
+                opp = _analyze_game_ev(game)
+                if opp:
+                    opportunities.extend(opp)
+
+    # Fallback to picks-based simulation if no real or cached data
     if not opportunities:
         opportunities = await _fallback_ev_scan()
 
