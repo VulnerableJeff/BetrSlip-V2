@@ -31,26 +31,39 @@ BOOKMAKERS = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'pointsbet', 'bovada
 
 
 async def fetch_odds_from_api(sport_key: str, markets: str = 'h2h,spreads,totals'):
-    """Fetch live odds from The Odds API"""
-    if not ODDS_API_KEY:
-        return None
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = f"{BASE_URL}/sports/{sport_key}/odds"
-            params = {
-                'apiKey': ODDS_API_KEY,
-                'regions': 'us',
-                'markets': markets,
-                'oddsFormat': 'american'
-            }
-            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                logger.warning(f"Odds API returned {resp.status} for {sport_key}")
-                return None
-    except Exception as e:
-        logger.error(f"Error fetching odds for {sport_key}: {e}")
-        return None
+    """Fetch live odds from The Odds API with MongoDB caching"""
+    cache_key = f"odds_cache_{sport_key}_{markets.replace(',','_')}"
+
+    if ODDS_API_KEY:
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{BASE_URL}/sports/{sport_key}/odds"
+                params = {
+                    'apiKey': ODDS_API_KEY,
+                    'regions': 'us',
+                    'markets': markets,
+                    'oddsFormat': 'american'
+                }
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if data:
+                            await db.api_cache.update_one(
+                                {"key": cache_key},
+                                {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                                upsert=True
+                            )
+                        return data
+                    logger.warning(f"Odds API returned {resp.status} for {sport_key}")
+        except Exception as e:
+            logger.error(f"Error fetching odds for {sport_key}: {e}")
+
+    # Fallback: serve cached data
+    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+    if cached and cached.get('data'):
+        return cached['data']
+
+    return None
 
 
 # ==================== ARBITRAGE SCANNER ====================
