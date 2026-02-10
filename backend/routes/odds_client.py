@@ -273,8 +273,7 @@ async def fetch_events(sport_key: str, db=None) -> list:
 
 async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None) -> dict | None:
     """Fetch player props for a specific event. Memory + DB cached."""
-    global _last_api_call
-    # Use markets as-is for props (they contain underscores like player_points)
+    global _last_api_call, _consecutive_failures, _circuit_open_until
     cache_key = f"props_cache_{event_id}_{markets.replace(',','_')}"
 
     mem_data = _get_from_mem_cache(cache_key)
@@ -299,7 +298,17 @@ async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None
         except Exception:
             pass
 
-    if not ODDS_API_KEY:
+    api_key = _get_api_key()
+    if not api_key or _is_circuit_open():
+        # Try stale cache
+        if db is not None:
+            try:
+                cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+                if cached and cached.get('data'):
+                    _set_mem_cache(cache_key, cached['data'], ttl=120)
+                    return cached['data']
+            except Exception:
+                pass
         return None
 
     async with _api_semaphore:
@@ -316,7 +325,7 @@ async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None
             async with aiohttp.ClientSession() as session:
                 url = f"{BASE_URL}/sports/{sport_key}/events/{event_id}/odds"
                 params = {
-                    'apiKey': ODDS_API_KEY,
+                    'apiKey': api_key,
                     'regions': 'us',
                     'markets': markets,
                     'oddsFormat': 'american'
@@ -325,6 +334,7 @@ async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None
                     _last_api_call = time.time()
                     if resp.status == 200:
                         data = await resp.json()
+                        _consecutive_failures = 0
                         if data:
                             _set_mem_cache(cache_key, data)
                             if db is not None:
@@ -337,7 +347,13 @@ async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None
                                 except Exception:
                                     pass
                         return data
-                    logger.warning(f"Props API {resp.status} for event {event_id}")
+                    elif resp.status in (401, 429):
+                        _consecutive_failures += 1
+                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                            logger.warning(f"Props API {resp.status} — circuit breaker OPEN")
+                        else:
+                            logger.warning(f"Props API {resp.status} for event {event_id}")
         except Exception as e:
             logger.error(f"Props fetch error: {e}")
 
