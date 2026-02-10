@@ -16,43 +16,41 @@ Build a powerful and credible sports betting analysis platform. All betting data
 - **Backend**: Python, FastAPI, MongoDB
 - **AI**: OpenAI GPT-4o (Emergent LLM Key)
 - **Data**: The Odds API (api.the-odds-api.com/v4)
-- **Key**: ODDS_API_KEY=573d0ac7e92497f4068c28a671db5226
+- **Key**: ODDS_API_KEY in backend/.env
 
 ## What's Been Implemented
 
 ### P0 - Live Data Feed (DONE - Feb 10, 2026)
 - Updated Odds API key, verified working
 - All endpoints return real live data
-- NBA (13 games), NHL (8 games), NCAAB (48 games) active
+- NBA, NHL, NCAAB active (NFL/MLB off-season)
 - Removed ALL mock/sample data fallbacks
-- Fixed Player Props to use event-level API endpoint
 
-### P1 - Data Integrity Pass (DONE - Feb 10, 2026)  
-- Audited all backend services for real data flow
+### P1 - Data Integrity Pass (DONE - Feb 10, 2026)
 - Removed `_get_fallback_games()`, `_get_sample_props()`, `_fallback_ev_scan()`
-- Updated sport lists to in-season sports (NBA, NHL, NCAAB)
-- All components show "unavailable" when API data unavailable
+- Updated sport lists to in-season sports
+- All components show "unavailable" when data unavailable
 
 ### P2 - DeepChampAI Enhancements (DONE - Feb 10, 2026)
-- **CLV Tracking**: Added avg_clv and clv_bets_tracked to P/L endpoint
-- **Enhanced Parlay Optimizer**: AI-built optimal 2-leg parlays with combined EV, odds, risk
-- **Enhanced Player Props**: Cross-book comparison, value indicators, edge calculation
+- **CLV Tracking**: avg_clv and clv_bets_tracked in P/L Tracker
+- **Enhanced Parlay Optimizer**: AI optimal 2-leg parlays with combined EV
+- **Enhanced Player Props**: Cross-book comparison, value indicators
+
+### Daily Bet Card (DONE - Feb 10, 2026)
+- Pro-only shareable card with top 3 +EV picks
+- Dark/neon theme matching app design
+- Download as PNG (Canvas API) and Copy to clipboard
+- Picks from real live odds, sorted by edge
+- Cached hourly for performance
 
 ### Previously Completed
-- AI Chat Assistant
-- P/L Tracker with ROI, win rate, streak
-- EV Scanner (live odds comparison)
-- Parlay Builder with add/remove legs
-- Social Leaderboard
-- Arbitrage Scanner
-- Player Props Tool
-- Game Plan Generator
-- Landing Page redesign
-- Flask-Caching for API rate limits
+- AI Chat Assistant, P/L Tracker, EV Scanner
+- Parlay Builder, Leaderboard, Arbitrage Scanner
+- Player Props, Game Plan Generator
+- Landing Page, Flask-Caching, Auth
 
 ## Remaining Backlog
 - **P2**: Prop Bet Research with historical stats
 - **P3**: Backend refactoring (modularize server.py)
-- **P3**: CLV tracking with real closing line data (currently uses AI probability vs odds)
-- **Future**: Parlay 3-leg optimizer
+- **P3**: 3-leg parlay optimizer
 - **Future**: Push notifications for line movement alerts
