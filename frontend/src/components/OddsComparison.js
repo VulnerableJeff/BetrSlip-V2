@@ -23,10 +23,12 @@ const OddsComparison = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState('NBA');
 
-  const sports = ['NBA', 'NFL', 'NHL', 'MLB'];
+  const sports = ['NBA', 'NHL', 'NCAAB'];
 
   useEffect(() => {
     fetchOdds();
+    const timer = setTimeout(() => { if (!comparisons.length) fetchOdds(); }, 15000);
+    return () => clearTimeout(timer);
   }, [selectedSport]);
 
   const fetchOdds = async () => {
