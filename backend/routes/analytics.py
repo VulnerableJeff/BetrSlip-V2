@@ -384,3 +384,132 @@ async def get_best_value(current_user: dict = Depends(get_current_user)):
         "best_recommendation": value_findings[0] if value_findings else None,
         "source": "analysis"
     }
+
+
+
+# ===== DAILY BET CARD =====
+@router.get("/daily-bet-card")
+async def get_daily_bet_card(current_user: dict = Depends(get_current_user)):
+    """Get top 3 +EV picks for the daily shareable bet card (Pro only)"""
+    from .deps import get_user_subscription_status
+
+    user_id = current_user['user_id']
+    sub_status = await get_user_subscription_status(user_id)
+
+    if not sub_status.get('is_subscribed'):
+        return {
+            "success": False,
+            "pro_required": True,
+            "message": "Daily Bet Card is a Pro feature",
+            "picks": []
+        }
+
+    # Check cache first (refreshes every 30 min)
+    cache_key = f"daily_bet_card_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H')}"
+    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+    if cached and cached.get('data'):
+        return cached['data']
+
+    # Scan all in-season sports for best +EV opportunities
+    all_opps = []
+    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NHL', 'icehockey_nhl'), ('NCAAB', 'basketball_ncaab')]:
+        games = await _fetch_odds(sport_key, 'h2h,spreads,totals')
+        if not games:
+            continue
+
+        for game in games[:6]:
+            home = game.get('home_team', '')
+            away = game.get('away_team', '')
+            commence = game.get('commence_time', '')
+            bookmakers = game.get('bookmakers', [])
+
+            if len(bookmakers) < 2:
+                continue
+
+            # Check each market across bookmakers
+            all_prices = {}
+            for bm in bookmakers:
+                book_name = bm.get('title', '')
+                for market in bm.get('markets', []):
+                    key = market.get('key', '')
+                    for outcome in market.get('outcomes', []):
+                        name = outcome.get('name', '')
+                        price = outcome.get('price', 0)
+                        point = outcome.get('point', '')
+                        okey = f"{key}_{name}_{point}"
+
+                        if okey not in all_prices:
+                            all_prices[okey] = []
+                        all_prices[okey].append({'price': price, 'book': book_name, 'name': name, 'point': point, 'key': key})
+
+            for okey, prices in all_prices.items():
+                if len(prices) < 2:
+                    continue
+
+                best = max(prices, key=lambda x: x['price'])
+                avg_price = sum(p['price'] for p in prices) / len(prices)
+                price = best['price']
+
+                dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
+                avg_dec = (avg_price / 100 + 1) if avg_price > 0 else (100 / abs(avg_price) + 1)
+
+                implied = 1 / dec
+                market_implied = 1 / avg_dec
+                edge = round((market_implied - implied) * 100, 1)
+
+                if edge > 1.5:
+                    key = best['key']
+                    name = best['name']
+                    point = best['point']
+
+                    if key == 'h2h':
+                        pick_desc = f"{name} ML"
+                        bet_type = "Moneyline"
+                    elif key == 'spreads':
+                        pick_desc = f"{name} {'+' if point > 0 else ''}{point}"
+                        bet_type = "Spread"
+                    elif key == 'totals':
+                        pick_desc = f"{name} {point}"
+                        bet_type = "Total"
+                    else:
+                        continue
+
+                    odds_str = f"+{price}" if price > 0 else str(price)
+                    confidence = "high" if edge > 4 else "medium" if edge > 2.5 else "low"
+
+                    all_opps.append({
+                        "pick": pick_desc,
+                        "game": f"{away} @ {home}",
+                        "sport": sport_name,
+                        "bet_type": bet_type,
+                        "odds": odds_str,
+                        "edge": edge,
+                        "book": best['book'],
+                        "confidence": confidence,
+                        "game_time": _format_time(commence)
+                    })
+
+    # Sort by edge and take top 3
+    all_opps.sort(key=lambda x: x['edge'], reverse=True)
+    top_picks = all_opps[:3]
+
+    today = datetime.now(timezone.utc).strftime('%B %d, %Y')
+
+    result = {
+        "success": True,
+        "pro_required": False,
+        "date": today,
+        "picks": top_picks,
+        "total_scanned": len(all_opps),
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Cache for this hour
+    if top_picks:
+        await db.api_cache.update_one(
+            {"key": cache_key},
+            {"$set": {"key": cache_key, "data": result, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True
+        )
+
+    return result
