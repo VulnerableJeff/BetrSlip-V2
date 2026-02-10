@@ -153,7 +153,7 @@ class SmartPicksService:
                                 game['sport_name'] = SPORT_NAMES.get(sport, sport)
                                 all_games.append(game)
                         elif response.status == 401 or response.status == 403:
-                            logger.warning(f"Odds API auth failed for {sport}, using fallback")
+                            logger.warning(f"Odds API auth failed for {sport}")
                         else:
                             error_text = await response.text()
                             if "OUT_OF_USAGE_CREDITS" in error_text or "quota" in error_text.lower():
