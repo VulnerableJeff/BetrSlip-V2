@@ -147,63 +147,15 @@ PROP_MARKETS = {
 
 
 async def _fetch_events(sport_key: str) -> list:
-    """Fetch upcoming events for a sport"""
-    cache_key = f"events_cache_{sport_key}"
-    if ODDS_API_KEY:
-        try:
-            async with aiohttp.ClientSession() as session:
-                url = f"{BASE_URL}/sports/{sport_key}/events"
-                params = {'apiKey': ODDS_API_KEY}
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=12)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        if data:
-                            await db.api_cache.update_one(
-                                {"key": cache_key},
-                                {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
-                                upsert=True
-                            )
-                        return data
-        except Exception as e:
-            logger.error(f"Error fetching events for {sport_key}: {e}")
-
-    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
-    if cached and cached.get('data'):
-        return cached['data']
-    return []
+    """Fetch events via centralized client with rate limiting"""
+    from .odds_client import fetch_events
+    return await fetch_events(sport_key, db=db)
 
 
 async def _fetch_event_props(sport_key: str, event_id: str, markets: str) -> dict | None:
-    """Fetch player props for a specific event using the event-level endpoint"""
-    cache_key = f"props_cache_{event_id}_{markets.replace(',','_')}"
-    if ODDS_API_KEY:
-        try:
-            async with aiohttp.ClientSession() as session:
-                url = f"{BASE_URL}/sports/{sport_key}/events/{event_id}/odds"
-                params = {
-                    'apiKey': ODDS_API_KEY,
-                    'regions': 'us',
-                    'markets': markets,
-                    'oddsFormat': 'american'
-                }
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=12)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        if data:
-                            await db.api_cache.update_one(
-                                {"key": cache_key},
-                                {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
-                                upsert=True
-                            )
-                        return data
-                    logger.warning(f"Props API returned {resp.status} for event {event_id}")
-        except Exception as e:
-            logger.error(f"Error fetching props for event {event_id}: {e}")
-
-    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
-    if cached and cached.get('data'):
-        return cached['data']
-    return None
+    """Fetch props via centralized client with rate limiting"""
+    from .odds_client import fetch_event_props
+    return await fetch_event_props(sport_key, event_id, markets, db=db)
 
 
 @router.get("/player-props")
