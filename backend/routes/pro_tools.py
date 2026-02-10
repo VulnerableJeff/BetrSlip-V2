@@ -166,81 +166,146 @@ async def scan_arbitrage(current_user: dict = Depends(get_current_user)):
 
 # ==================== PLAYER PROPS ====================
 
+PROP_MARKETS = {
+    'NBA': 'player_points,player_rebounds,player_assists,player_threes',
+    'NCAAB': 'player_points,player_rebounds,player_assists',
+    'NFL': 'player_passing_yards,player_rushing_yards,player_receiving_yards,player_touchdowns',
+    'NCAAF': 'player_passing_yards,player_rushing_yards,player_receiving_yards',
+    'NHL': 'player_points,player_goals,player_assists,player_shots_on_goal',
+    'MLB': 'player_hits,player_home_runs,player_pitcher_strikeouts',
+}
+
+
+async def _fetch_events(sport_key: str) -> list:
+    """Fetch upcoming events for a sport"""
+    cache_key = f"events_cache_{sport_key}"
+    if ODDS_API_KEY:
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{BASE_URL}/sports/{sport_key}/events"
+                params = {'apiKey': ODDS_API_KEY}
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if data:
+                            await db.api_cache.update_one(
+                                {"key": cache_key},
+                                {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                                upsert=True
+                            )
+                        return data
+        except Exception as e:
+            logger.error(f"Error fetching events for {sport_key}: {e}")
+
+    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+    if cached and cached.get('data'):
+        return cached['data']
+    return []
+
+
+async def _fetch_event_props(sport_key: str, event_id: str, markets: str) -> dict | None:
+    """Fetch player props for a specific event using the event-level endpoint"""
+    cache_key = f"props_cache_{event_id}_{markets.replace(',','_')}"
+    if ODDS_API_KEY:
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{BASE_URL}/sports/{sport_key}/events/{event_id}/odds"
+                params = {
+                    'apiKey': ODDS_API_KEY,
+                    'regions': 'us',
+                    'markets': markets,
+                    'oddsFormat': 'american'
+                }
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if data:
+                            await db.api_cache.update_one(
+                                {"key": cache_key},
+                                {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                                upsert=True
+                            )
+                        return data
+                    logger.warning(f"Props API returned {resp.status} for event {event_id}")
+        except Exception as e:
+            logger.error(f"Error fetching props for event {event_id}: {e}")
+
+    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+    if cached and cached.get('data'):
+        return cached['data']
+    return None
+
+
 @router.get("/player-props")
 async def get_player_props(
     sport: str = "NBA",
     current_user: dict = Depends(get_current_user)
 ):
-    """Get player prop opportunities with analysis"""
-    sport_key = SPORT_KEYS.get(sport.upper(), 'basketball_nba')
+    """Get player prop opportunities using event-level Odds API endpoint"""
+    sport_upper = sport.upper()
+    sport_key = SPORT_KEYS.get(sport_upper, 'basketball_nba')
+    prop_markets = PROP_MARKETS.get(sport_upper, 'player_points')
 
     props = []
-    prop_markets = 'player_points,player_rebounds,player_assists,player_threes'
-    if sport.upper() in ['NFL', 'NCAAF']:
-        prop_markets = 'player_pass_yds,player_rush_yds,player_reception_yds,player_pass_tds'
 
-    games = await fetch_odds_from_api(sport_key, prop_markets)
+    # Step 1: Get events for the sport
+    events = await _fetch_events(sport_key)
+    if not events:
+        return {
+            "count": 0,
+            "props": [],
+            "sport": sport_upper,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "source": "unavailable",
+            "message": f"No upcoming {sport_upper} events found"
+        }
 
-    if games:
-        for game in games[:5]:
-            home = game.get('home_team', '')
-            away = game.get('away_team', '')
-            for bm in game.get('bookmakers', [])[:3]:
-                book = bm.get('title', '')
-                for market in bm.get('markets', []):
-                    market_key = market.get('key', '')
-                    for outcome in market.get('outcomes', []):
-                        player = outcome.get('description', outcome.get('name', ''))
-                        point = outcome.get('point', 0)
-                        price = outcome.get('price', 0)
-                        over_under = outcome.get('name', 'Over')
+    # Step 2: Fetch props for first few events (limit API usage)
+    for event in events[:3]:
+        event_id = event.get('id', '')
+        home = event.get('home_team', '')
+        away = event.get('away_team', '')
 
-                        if player and point:
-                            dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
-                            implied = round((1 / dec) * 100, 1)
+        event_data = await _fetch_event_props(sport_key, event_id, prop_markets)
+        if not event_data:
+            continue
 
-                            props.append({
-                                "player": player,
-                                "game": f"{home} vs {away}",
-                                "market": market_key.replace('player_', '').replace('_', ' ').title(),
-                                "line": point,
-                                "over_under": over_under,
-                                "odds": price,
-                                "implied_probability": implied,
-                                "book": book,
-                                "sport": sport.upper()
-                            })
+        for bm in event_data.get('bookmakers', [])[:3]:
+            book = bm.get('title', '')
+            for market in bm.get('markets', []):
+                market_key = market.get('key', '')
+                for outcome in market.get('outcomes', []):
+                    player = outcome.get('description', outcome.get('name', ''))
+                    point = outcome.get('point', 0)
+                    price = outcome.get('price', 0)
+                    over_under = outcome.get('name', 'Over')
 
-    # Sort by best odds (most value)
+                    if player and point and price:
+                        dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
+                        implied = round((1 / dec) * 100, 1)
+
+                        props.append({
+                            "player": player,
+                            "game": f"{away} @ {home}",
+                            "market": market_key.replace('player_', '').replace('_', ' ').title(),
+                            "line": point,
+                            "over_under": over_under,
+                            "odds": price,
+                            "implied_probability": implied,
+                            "book": book,
+                            "sport": sport_upper
+                        })
+
     props.sort(key=lambda x: x.get('implied_probability', 100))
-
-    # If no real data, provide sample data
-    if not props:
-        props = _get_sample_props(sport.upper())
 
     return {
         "count": len(props),
         "props": props[:30],
-        "sport": sport.upper(),
-        "last_updated": datetime.now(timezone.utc).isoformat()
+        "sport": sport_upper,
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "source": "live" if props else "unavailable",
+        "message": None if props else f"No player props available for {sport_upper} right now"
     }
-
-
-def _get_sample_props(sport: str):
-    """Fallback sample props when API unavailable"""
-    if sport in ['NBA', 'NCAAB']:
-        return [
-            {"player": "LeBron James", "game": "Lakers vs Celtics", "market": "Points", "line": 25.5, "over_under": "Over", "odds": -115, "implied_probability": 53.5, "book": "DraftKings", "sport": sport},
-            {"player": "Stephen Curry", "game": "Warriors vs Suns", "market": "Threes", "line": 4.5, "over_under": "Over", "odds": +110, "implied_probability": 47.6, "book": "FanDuel", "sport": sport},
-            {"player": "Jayson Tatum", "game": "Celtics vs Lakers", "market": "Rebounds", "line": 8.5, "over_under": "Over", "odds": -105, "implied_probability": 51.2, "book": "BetMGM", "sport": sport},
-            {"player": "Luka Doncic", "game": "Mavericks vs Nuggets", "market": "Assists", "line": 9.5, "over_under": "Under", "odds": -110, "implied_probability": 52.4, "book": "Caesars", "sport": sport},
-        ]
-    else:
-        return [
-            {"player": "Patrick Mahomes", "game": "Chiefs vs Bills", "market": "Pass Yds", "line": 275.5, "over_under": "Over", "odds": -115, "implied_probability": 53.5, "book": "DraftKings", "sport": sport},
-            {"player": "Josh Allen", "game": "Bills vs Chiefs", "market": "Pass Tds", "line": 2.5, "over_under": "Over", "odds": +120, "implied_probability": 45.5, "book": "FanDuel", "sport": sport},
-            {"player": "Derrick Henry", "game": "Ravens vs Steelers", "market": "Rush Yds", "line": 85.5, "over_under": "Over", "odds": -110, "implied_probability": 52.4, "book": "BetMGM", "sport": sport},
-        ]
 
 
 # ==================== CUSTOM GAME PLANS ====================

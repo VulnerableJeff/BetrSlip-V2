@@ -129,7 +129,7 @@ class SmartPicksService:
         """Fetch live odds from The Odds API with enhanced data"""
         if not ODDS_API_KEY:
             logger.warning("No ODDS_API_KEY found")
-            return self._get_fallback_games()
+            return []
         
         sports = list(SPORT_KEYS.values())[:4]  # NFL, NBA, MLB, NHL
         all_games = []
@@ -163,104 +163,10 @@ class SmartPicksService:
                     logger.error(f"Error fetching {sport} odds: {e}")
                     continue
         
-        # If no games from API, use fallback
         if not all_games:
-            return self._get_fallback_games()
+            logger.warning("No games returned from Odds API for any sport")
         
         return all_games
-    
-    def _get_fallback_games(self) -> List[Dict]:
-        """Generate fallback game data when API is unavailable"""
-        from datetime import datetime, timezone, timedelta
-        
-        # Get current day and generate plausible games
-        now = datetime.now(timezone.utc)
-        
-        fallback_games = [
-            {
-                "sport_name": "NBA",
-                "sport_key": "basketball_nba",
-                "home_team": "Los Angeles Lakers",
-                "away_team": "Boston Celtics",
-                "commence_time": (now + timedelta(hours=3)).isoformat(),
-                "bookmakers": [{
-                    "title": "DraftKings",
-                    "markets": [
-                        {"key": "spreads", "outcomes": [
-                            {"name": "Los Angeles Lakers", "point": -3.5, "price": -110},
-                            {"name": "Boston Celtics", "point": 3.5, "price": -110}
-                        ]},
-                        {"key": "h2h", "outcomes": [
-                            {"name": "Los Angeles Lakers", "price": -150},
-                            {"name": "Boston Celtics", "price": 130}
-                        ]}
-                    ]
-                }]
-            },
-            {
-                "sport_name": "NBA",
-                "sport_key": "basketball_nba",
-                "home_team": "Golden State Warriors",
-                "away_team": "Phoenix Suns",
-                "commence_time": (now + timedelta(hours=5)).isoformat(),
-                "bookmakers": [{
-                    "title": "DraftKings",
-                    "markets": [
-                        {"key": "spreads", "outcomes": [
-                            {"name": "Golden State Warriors", "point": -5.5, "price": -110},
-                            {"name": "Phoenix Suns", "point": 5.5, "price": -110}
-                        ]},
-                        {"key": "h2h", "outcomes": [
-                            {"name": "Golden State Warriors", "price": -200},
-                            {"name": "Phoenix Suns", "price": 170}
-                        ]}
-                    ]
-                }]
-            },
-            {
-                "sport_name": "NFL",
-                "sport_key": "americanfootball_nfl",
-                "home_team": "Kansas City Chiefs",
-                "away_team": "Buffalo Bills",
-                "commence_time": (now + timedelta(hours=24)).isoformat(),
-                "bookmakers": [{
-                    "title": "DraftKings",
-                    "markets": [
-                        {"key": "spreads", "outcomes": [
-                            {"name": "Kansas City Chiefs", "point": -2.5, "price": -110},
-                            {"name": "Buffalo Bills", "point": 2.5, "price": -110}
-                        ]},
-                        {"key": "h2h", "outcomes": [
-                            {"name": "Kansas City Chiefs", "price": -130},
-                            {"name": "Buffalo Bills", "price": 110}
-                        ]}
-                    ]
-                }]
-            },
-            {
-                "sport_name": "NFL",
-                "sport_key": "americanfootball_nfl",
-                "home_team": "Philadelphia Eagles",
-                "away_team": "Dallas Cowboys",
-                "commence_time": (now + timedelta(hours=28)).isoformat(),
-                "bookmakers": [{
-                    "title": "DraftKings",
-                    "markets": [
-                        {"key": "spreads", "outcomes": [
-                            {"name": "Philadelphia Eagles", "point": -6.5, "price": -110},
-                            {"name": "Dallas Cowboys", "point": 6.5, "price": -110}
-                        ]},
-                        {"key": "h2h", "outcomes": [
-                            {"name": "Philadelphia Eagles", "price": -250},
-                            {"name": "Dallas Cowboys", "price": 210}
-                        ]}
-                    ]
-                }]
-            }
-        ]
-        
-        logger.info("Using fallback game data for pick generation")
-        return fallback_games
     
     async def get_team_recent_form(self, team_name: str, sport: str) -> Optional[Dict]:
         """Get team's recent form from ESPN API"""
