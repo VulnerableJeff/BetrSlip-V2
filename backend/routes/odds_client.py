@@ -17,7 +17,7 @@ BASE_URL = 'https://api.the-odds-api.com/v4'
 
 # In-memory cache: {cache_key: {"data": ..., "expires_at": timestamp}}
 _mem_cache = {}
-CACHE_TTL = 300  # 5 minutes
+CACHE_TTL = 600  # 10 minutes — prevents hammering API on page loads
 
 # Global semaphore: max 1 concurrent API call to avoid bursts
 _api_semaphore = asyncio.Semaphore(1)
