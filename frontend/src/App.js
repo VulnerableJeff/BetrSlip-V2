@@ -10,7 +10,7 @@ import Admin from './pages/Admin';
 import { SubscriptionSuccess, SubscriptionCancel } from './pages/Subscription';
 import '@/App.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
 
 // Axios interceptor for auth token

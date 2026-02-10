@@ -26,7 +26,7 @@ import PlayerProps from '@/components/PlayerProps';
 import GamePlan from '@/components/GamePlan';
 import DailyBetCard from '@/components/DailyBetCard';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
 
 // Admin email for showing admin link

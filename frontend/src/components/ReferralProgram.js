@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Gift, Copy, Users, Crown, CheckCircle, Share2, Link2 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const ReferralProgram = () => {
   const [referralData, setReferralData] = useState(null);

@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Bell, BellOff, TrendingUp, Clock, Trophy, Target, Info } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const NotificationSettings = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);

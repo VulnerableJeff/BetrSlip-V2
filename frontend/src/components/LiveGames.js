@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Tv, Crown, X, ExternalLink, Radio, Clock } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const LiveGames = ({ usage, onSubscribe }) => {
   const [liveGames, setLiveGames] = useState([]);

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, TrendingUp, ExternalLink, RefreshCw, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const EVScanner = () => {
   const [data, setData] = useState(null);

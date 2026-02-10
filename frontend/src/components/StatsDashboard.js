@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, Target, DollarSign, BarChart3 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
 
 const StatsDashboard = () => {

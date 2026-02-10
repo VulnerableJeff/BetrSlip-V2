@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const Landing = () => {
   const navigate = useNavigate();

@@ -4,7 +4,7 @@ import { Play, Tv, Radio, RefreshCw, X, Maximize2, Volume2, ExternalLink } from 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const LiveStreamsHub = () => {
   const [matches, setMatches] = useState([]);

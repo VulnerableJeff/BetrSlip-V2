@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Shield, RefreshCw, AlertTriangle, DollarSign, ArrowRight } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const ArbitrageScanner = () => {
   const [data, setData] = useState(null);

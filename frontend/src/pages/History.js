@@ -8,7 +8,7 @@ import { ArrowLeft, TrendingUp, LogOut, BarChart3, AlertCircle, CheckCircle2, Th
 import StatsDashboard from '@/components/StatsDashboard';
 import PLTracker from '@/components/PLTracker';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
 
 const History = ({ onLogout }) => {

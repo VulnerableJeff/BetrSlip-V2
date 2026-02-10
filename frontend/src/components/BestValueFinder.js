@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Scale, ExternalLink, TrendingUp, Star, Sparkles, ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 // Sportsbook info with colors and links
 const SPORTSBOOKS = {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Plus, X, Calculator, Save, Trash2, AlertTriangle, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const ParlayBuilder = () => {
   const [legs, setLegs] = useState([]);

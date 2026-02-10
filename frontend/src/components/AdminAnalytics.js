@@ -8,7 +8,7 @@ import {
   Calendar, Clock, Trophy, Zap
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const AdminAnalytics = () => {
   const [overview, setOverview] = useState(null);

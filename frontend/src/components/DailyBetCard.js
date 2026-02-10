@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Crown, Download, Copy, Zap, Shield, TrendingUp, Clock } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '@/config/api';
 
 const DailyBetCard = ({ isSubscribed }) => {
   const [data, setData] = useState(null);
