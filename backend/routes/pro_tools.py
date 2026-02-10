@@ -261,6 +261,8 @@ async def get_player_props(
         }
 
     # Step 2: Fetch props for first few events (limit API usage)
+    # Collect all props, then group by player+market to find best odds
+    raw_props = []
     for event in events[:3]:
         event_id = event.get('id', '')
         home = event.get('home_team', '')
@@ -270,7 +272,7 @@ async def get_player_props(
         if not event_data:
             continue
 
-        for bm in event_data.get('bookmakers', [])[:3]:
+        for bm in event_data.get('bookmakers', []):
             book = bm.get('title', '')
             for market in bm.get('markets', []):
                 market_key = market.get('key', '')
@@ -283,20 +285,52 @@ async def get_player_props(
                     if player and point and price:
                         dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
                         implied = round((1 / dec) * 100, 1)
+                        prop_key = f"{player}_{market_key}_{point}_{over_under}"
 
-                        props.append({
+                        raw_props.append({
                             "player": player,
                             "game": f"{away} @ {home}",
                             "market": market_key.replace('player_', '').replace('_', ' ').title(),
                             "line": point,
                             "over_under": over_under,
                             "odds": price,
+                            "decimal_odds": round(dec, 3),
                             "implied_probability": implied,
                             "book": book,
-                            "sport": sport_upper
+                            "sport": sport_upper,
+                            "prop_key": prop_key
                         })
 
-    props.sort(key=lambda x: x.get('implied_probability', 100))
+    # Group props by player+market+line to find best odds across books
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for p in raw_props:
+        grouped[p['prop_key']].append(p)
+
+    props = []
+    for key, entries in grouped.items():
+        best = max(entries, key=lambda x: x['odds'])
+        books_available = len(set(e['book'] for e in entries))
+        avg_odds = sum(e['odds'] for e in entries) / len(entries)
+        edge = round(best['odds'] - avg_odds, 1) if len(entries) > 1 else 0
+
+        prop_data = {
+            "player": best['player'],
+            "game": best['game'],
+            "market": best['market'],
+            "line": best['line'],
+            "over_under": best['over_under'],
+            "odds": best['odds'],
+            "implied_probability": best['implied_probability'],
+            "book": best['book'],
+            "sport": best['sport'],
+            "books_available": books_available,
+            "edge_vs_avg": edge,
+            "is_value": edge > 5
+        }
+        props.append(prop_data)
+
+    props.sort(key=lambda x: (-1 if x.get('is_value') else 0, x.get('implied_probability', 100)))
 
     return {
         "count": len(props),
