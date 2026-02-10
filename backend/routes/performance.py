@@ -166,45 +166,14 @@ async def get_leaderboard():
 @router.get("/ev-scanner")
 async def get_ev_opportunities(current_user: dict = Depends(get_current_user)):
     """Scan for +EV betting opportunities using real odds data"""
-    import aiohttp
-    import os
+    from .odds_client import fetch_odds
 
-    ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
     opportunities = []
 
     # Try real odds first, with caching - focus on in-season sports
     sport_keys = ['basketball_nba', 'icehockey_nhl', 'basketball_ncaab']
     for sport_key in sport_keys:
-        cache_key = f"odds_cache_{sport_key}_h2h_spreads"
-        games = None
-
-        if ODDS_API_KEY:
-            try:
-                async with aiohttp.ClientSession() as session:
-                    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
-                    params = {
-                        'apiKey': ODDS_API_KEY,
-                        'regions': 'us',
-                        'markets': 'h2h,spreads',
-                        'oddsFormat': 'american'
-                    }
-                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                        if resp.status == 200:
-                            games = await resp.json()
-                            if games:
-                                await db.api_cache.update_one(
-                                    {"key": cache_key},
-                                    {"$set": {"key": cache_key, "data": games, "updated_at": datetime.now(timezone.utc).isoformat()}},
-                                    upsert=True
-                                )
-            except Exception as e:
-                logging.getLogger(__name__).error(f"EV scan error for {sport_key}: {e}")
-
-        # Fallback to cache
-        if not games:
-            cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
-            if cached:
-                games = cached.get('data', [])
+        games = await fetch_odds(sport_key, 'h2h,spreads', db=db)
 
         if games:
             for game in games[:6]:
