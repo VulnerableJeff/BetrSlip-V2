@@ -71,7 +71,7 @@ class StreamSourcesService:
         """Get live games with streaming source suggestions"""
         games = []
         
-        if not ODDS_API_KEY:
+        if not _get_odds_api_key():
             return games
         
         sport_mapping = {
@@ -86,7 +86,7 @@ class StreamSourcesService:
                 try:
                     # Get scores (includes live games)
                     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/scores"
-                    params = {'apiKey': ODDS_API_KEY, 'daysFrom': 1}
+                    params = {'apiKey': _get_odds_api_key(), 'daysFrom': 1}
                     
                     async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                         if resp.status == 200:
