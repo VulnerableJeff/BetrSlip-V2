@@ -566,10 +566,10 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
     """Get user's betting performance statistics"""
     user_id = current_user['user_id']
     
-    # Get all analyses with outcomes
+    # Get analyses with outcomes (capped for performance)
     analyses = await db.analyses.find(
         {"user_id": user_id, "outcome": {"$exists": True}}
-    ).to_list(None)
+    ).sort("created_at", -1).to_list(500)
     
     total_tracked = len(analyses)
     
@@ -659,11 +659,11 @@ async def get_public_stats():
         "created_at": {"$gte": yesterday.isoformat()}
     })
     
-    # Calculate AI accuracy from marked outcomes
+    # Calculate AI accuracy from marked outcomes (capped for performance)
     outcomes = await db.analyses.find(
         {"outcome": {"$exists": True}},
         {"analysis.overall_probability": 1, "outcome": 1}
-    ).to_list(1000)
+    ).sort("created_at", -1).to_list(500)
     
     accurate = 0
     total_marked = 0

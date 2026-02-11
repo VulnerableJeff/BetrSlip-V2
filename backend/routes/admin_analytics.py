@@ -56,11 +56,11 @@ async def get_analytics_overview(admin_user: dict = Depends(get_admin_user)):
     # Conversion rate (free to paid)
     conversion_rate = round((active_subscriptions / total_users * 100), 1) if total_users > 0 else 0
     
-    # AI accuracy
+    # AI accuracy (capped for performance)
     outcomes = await db.analyses.find(
         {"outcome": {"$exists": True}},
         {"analysis.overall_probability": 1, "outcome": 1}
-    ).to_list(1000)
+    ).sort("created_at", -1).to_list(500)
     
     accurate = 0
     total_decided = 0
