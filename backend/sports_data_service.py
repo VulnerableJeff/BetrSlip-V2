@@ -15,8 +15,12 @@ load_dotenv(ROOT_DIR / '.env')
 logger = logging.getLogger(__name__)
 
 # The Odds API configuration
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
 ODDS_API_BASE = 'https://api.the-odds-api.com/v4'
+
+
+def _get_odds_api_key():
+    """Read ODDS_API_KEY at runtime, not import time."""
+    return os.environ.get('ODDS_API_KEY', '')
 
 # ESPN API base
 ESPN_API_BASE = 'https://site.api.espn.com/apis/site/v2/sports'

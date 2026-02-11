@@ -16,8 +16,15 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 logger = logging.getLogger(__name__)
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+
+def _get_odds_api_key():
+    """Read ODDS_API_KEY at runtime, not import time."""
+    return os.environ.get('ODDS_API_KEY', '')
+
+
+def _get_emergent_key():
+    """Read EMERGENT_LLM_KEY at runtime, not import time."""
+    return os.environ.get('EMERGENT_LLM_KEY', '')
 
 # Sport mappings
 SPORT_KEYS = {

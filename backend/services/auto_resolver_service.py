@@ -12,7 +12,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 logger = logging.getLogger(__name__)
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+
+def _get_odds_api_key():
+    """Read ODDS_API_KEY at runtime, not import time."""
+    return os.environ.get('ODDS_API_KEY', '')
 
 SPORT_KEYS = [
     'americanfootball_nfl',
