@@ -224,7 +224,16 @@ async def health_check():
 
 @api_router.get("/health")
 async def api_health_check():
-    return {"status": "healthy", "service": "betrslip-api", "version": "2.1.0"}
+    api_key = os.environ.get('ODDS_API_KEY', '')
+    cache_count = await db.api_cache.count_documents({})
+    return {
+        "status": "healthy",
+        "service": "betrslip-api",
+        "version": "2.1.0",
+        "odds_key_set": bool(api_key),
+        "odds_key_len": len(api_key),
+        "cache_entries": cache_count
+    }
 
 
 @api_router.get("/diagnostics")
