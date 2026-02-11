@@ -33,8 +33,27 @@ CIRCUIT_BREAKER_RESET = 120  # seconds to wait before retrying
 
 
 def _get_api_key() -> str:
-    """Read API key at call time (not import time) to ensure .env is loaded"""
-    return os.environ.get('ODDS_API_KEY', '')
+    """Read API key at call time (not import time) to ensure .env is loaded.
+    Falls back to known working key if env var is empty."""
+    key = os.environ.get('ODDS_API_KEY', '')
+    if not key:
+        # Fallback: try loading .env directly
+        try:
+            from pathlib import Path
+            env_path = Path(__file__).parent.parent / '.env'
+            if env_path.exists():
+                with open(env_path) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('ODDS_API_KEY='):
+                            key = line.split('=', 1)[1].strip().strip('"').strip("'")
+                            if key:
+                                os.environ['ODDS_API_KEY'] = key
+                                logger.info(f"Loaded ODDS_API_KEY from .env file (len={len(key)})")
+                            break
+        except Exception as e:
+            logger.warning(f"Failed to read .env fallback: {e}")
+    return key
 
 
 def _is_circuit_open() -> bool:
