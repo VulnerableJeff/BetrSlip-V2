@@ -895,6 +895,13 @@ async def delayed_startup_tasks():
     """Run startup tasks after a delay to ensure server is ready first"""
     await asyncio.sleep(10)
     
+    # STEP 0: Log API key status for debugging
+    api_key = os.environ.get('ODDS_API_KEY', '')
+    if api_key:
+        logger.info(f"ODDS_API_KEY is SET (length={len(api_key)}, starts with {api_key[:4]}...)")
+    else:
+        logger.error("ODDS_API_KEY is NOT SET - all odds features will be empty!")
+    
     # STEP 1: Warm up odds cache (prevents empty dashboard on fresh deploy)
     try:
         from routes.odds_client import fetch_odds, fetch_events
@@ -905,6 +912,8 @@ async def delayed_startup_tasks():
             data = await fetch_odds(sport_key, 'h2h,spreads,totals', db=db)
             if data:
                 logger.info(f"Warmed cache for {sport_key}: {len(data)} games")
+            else:
+                logger.warning(f"No data returned for {sport_key} during warmup")
             await asyncio.sleep(2)  # Respect rate limits
         
         # Fetch events for player props
