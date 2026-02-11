@@ -28,13 +28,16 @@ RATE_LIMIT_DELAY = 1.2  # seconds between API calls
 # Circuit breaker: stop calling API after consecutive failures
 _consecutive_failures = 0
 _circuit_open_until = 0  # timestamp when circuit breaker resets
-CIRCUIT_BREAKER_THRESHOLD = 3  # open circuit after N consecutive failures
-CIRCUIT_BREAKER_RESET = 120  # seconds to wait before retrying
+CIRCUIT_BREAKER_THRESHOLD = 5  # open circuit after N consecutive failures (raised for deploy resilience)
+CIRCUIT_BREAKER_RESET = 60  # seconds to wait before retrying (reduced for faster recovery)
+
+# Warmup mode: don't count startup failures toward circuit breaker
+_warmup_mode = True
 
 
 def _get_api_key() -> str:
     """Read API key at call time (not import time) to ensure .env is loaded.
-    Falls back to known working key if env var is empty."""
+    Falls back to reading .env file directly if env var is empty."""
     key = os.environ.get('ODDS_API_KEY', '')
     if not key:
         # Fallback: try loading .env directly
@@ -54,6 +57,21 @@ def _get_api_key() -> str:
         except Exception as e:
             logger.warning(f"Failed to read .env fallback: {e}")
     return key
+
+
+def reset_circuit_breaker():
+    """Reset circuit breaker state — call after warmup to give user requests a clean slate."""
+    global _consecutive_failures, _circuit_open_until, _warmup_mode
+    _consecutive_failures = 0
+    _circuit_open_until = 0
+    _warmup_mode = False
+    logger.info("Circuit breaker reset — ready for live requests")
+
+
+def set_warmup_mode(enabled: bool):
+    """Toggle warmup mode. In warmup mode, failures don't trigger circuit breaker."""
+    global _warmup_mode
+    _warmup_mode = enabled
 
 
 def _is_circuit_open() -> bool:
@@ -180,19 +198,25 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
                         return data or []
 
                     elif resp.status == 401:
-                        _consecutive_failures += 1
-                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
-                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
-                            logger.warning(f"Odds API auth failed {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                        if not _warmup_mode:
+                            _consecutive_failures += 1
+                            if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                                _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                                logger.warning(f"Odds API auth failed {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                            else:
+                                logger.warning(f"Odds API auth failed for {sport_key} (key prefix: {api_key[:6]}...)")
                         else:
-                            logger.warning(f"Odds API auth failed for {sport_key}")
+                            logger.warning(f"Odds API auth failed for {sport_key} during warmup (not counting toward circuit breaker)")
                     elif resp.status == 429:
-                        _consecutive_failures += 1
-                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
-                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
-                            logger.warning(f"Odds API rate limited {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                        if not _warmup_mode:
+                            _consecutive_failures += 1
+                            if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                                _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                                logger.warning(f"Odds API rate limited {_consecutive_failures}x — circuit breaker OPEN for {CIRCUIT_BREAKER_RESET}s")
+                            else:
+                                logger.warning(f"Odds API rate limited for {sport_key}")
                         else:
-                            logger.warning(f"Odds API rate limited for {sport_key}")
+                            logger.warning(f"Odds API rate limited for {sport_key} during warmup (not counting)")
                     else:
                         logger.warning(f"Odds API {resp.status} for {sport_key}")
 
