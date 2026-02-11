@@ -33,7 +33,7 @@ class AutoResolverService:
     
     async def fetch_completed_scores(self, days_back: int = 3) -> List[Dict]:
         """Fetch completed game scores from The Odds API"""
-        if not ODDS_API_KEY:
+        if not _get_odds_api_key():
             logger.warning("No ODDS_API_KEY found for score fetching")
             return []
         
@@ -44,7 +44,7 @@ class AutoResolverService:
                 try:
                     url = f"https://api.the-odds-api.com/v4/sports/{sport}/scores"
                     params = {
-                        'apiKey': ODDS_API_KEY,
+                        'apiKey': _get_odds_api_key(),
                         'daysFrom': days_back
                     }
                     
