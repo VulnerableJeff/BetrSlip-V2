@@ -237,7 +237,6 @@ async def diagnostics(current_user: dict = Depends(get_admin_user)):
     # Test the API key
     key_status = "not_set"
     if api_key:
-        import aiohttp
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -262,7 +261,6 @@ async def diagnostics(current_user: dict = Depends(get_admin_user)):
 @api_router.post("/admin/seed-cache")
 async def seed_cache(current_user: dict = Depends(get_admin_user)):
     """Admin-only: Directly fetch and cache odds data from Odds API"""
-    import aiohttp
     api_key = os.environ.get('ODDS_API_KEY', '')
     if not api_key:
         return {"success": False, "error": "ODDS_API_KEY not set"}
