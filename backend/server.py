@@ -227,6 +227,85 @@ async def api_health_check():
     return {"status": "healthy", "service": "betrslip-api", "version": "2.1.0"}
 
 
+@api_router.get("/diagnostics")
+async def diagnostics(current_user: dict = Depends(get_admin_user)):
+    """Admin-only: Check API key and cache status"""
+    api_key = os.environ.get('ODDS_API_KEY', '')
+    cache_count = await db.api_cache.count_documents({})
+    picks_count = await db.daily_picks.count_documents({"is_active": True})
+    
+    # Test the API key
+    key_status = "not_set"
+    if api_key:
+        import aiohttp
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://api.the-odds-api.com/v4/sports/?apiKey={api_key}",
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as resp:
+                    key_status = "valid" if resp.status == 200 else f"error_{resp.status}"
+        except Exception as e:
+            key_status = f"error_{str(e)[:50]}"
+    
+    return {
+        "api_key_set": bool(api_key),
+        "api_key_length": len(api_key),
+        "api_key_prefix": api_key[:6] + "..." if api_key else "none",
+        "api_key_status": key_status,
+        "cache_entries": cache_count,
+        "active_picks": picks_count,
+        "env_file_exists": (ROOT_DIR / '.env').exists()
+    }
+
+
+@api_router.post("/admin/seed-cache")
+async def seed_cache(current_user: dict = Depends(get_admin_user)):
+    """Admin-only: Directly fetch and cache odds data from Odds API"""
+    import aiohttp
+    api_key = os.environ.get('ODDS_API_KEY', '')
+    if not api_key:
+        return {"success": False, "error": "ODDS_API_KEY not set"}
+    
+    results = {}
+    sports = {
+        'basketball_nba': 'h2h,spreads,totals',
+        'icehockey_nhl': 'h2h,spreads,totals',
+        'basketball_ncaab': 'h2h,spreads,totals'
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        for sport_key, markets in sports.items():
+            try:
+                url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
+                params = {
+                    'apiKey': api_key,
+                    'regions': 'us',
+                    'markets': markets,
+                    'oddsFormat': 'american',
+                    'dateFormat': 'iso'
+                }
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        sorted_markets = '_'.join(sorted(markets.split(',')))
+                        cache_key = f"odds_cache_{sport_key}_{sorted_markets}"
+                        await db.api_cache.update_one(
+                            {"key": cache_key},
+                            {"$set": {"key": cache_key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                            upsert=True
+                        )
+                        results[sport_key] = f"OK - {len(data)} games cached"
+                    else:
+                        body = await resp.text()
+                        results[sport_key] = f"FAILED {resp.status}: {body[:100]}"
+                await asyncio.sleep(1.5)
+            except Exception as e:
+                results[sport_key] = f"ERROR: {str(e)[:100]}"
+    
+    return {"success": True, "results": results}
+
+
 # ===== BET SLIP ANALYSIS =====
 class AnalysisResult(BaseModel):
     id: str
