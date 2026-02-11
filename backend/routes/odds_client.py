@@ -304,10 +304,13 @@ async def fetch_events(sport_key: str, db=None) -> list:
                                     pass
                         return data or []
                     elif resp.status in (401, 429):
-                        _consecutive_failures += 1
-                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
-                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
-                            logger.warning(f"Events API {resp.status} — circuit breaker OPEN")
+                        if not _warmup_mode:
+                            _consecutive_failures += 1
+                            if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                                _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                                logger.warning(f"Events API {resp.status} — circuit breaker OPEN")
+                        else:
+                            logger.warning(f"Events API {resp.status} for {sport_key} during warmup (not counting)")
                     else:
                         logger.warning(f"Events API {resp.status} for {sport_key}")
         except Exception as e:
@@ -393,12 +396,15 @@ async def fetch_event_props(sport_key: str, event_id: str, markets: str, db=None
                                     pass
                         return data
                     elif resp.status in (401, 429):
-                        _consecutive_failures += 1
-                        if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
-                            _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
-                            logger.warning(f"Props API {resp.status} — circuit breaker OPEN")
+                        if not _warmup_mode:
+                            _consecutive_failures += 1
+                            if _consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+                                _circuit_open_until = time.time() + CIRCUIT_BREAKER_RESET
+                                logger.warning(f"Props API {resp.status} — circuit breaker OPEN")
+                            else:
+                                logger.warning(f"Props API {resp.status} for event {event_id}")
                         else:
-                            logger.warning(f"Props API {resp.status} for event {event_id}")
+                            logger.warning(f"Props API {resp.status} for event {event_id} during warmup (not counting)")
         except Exception as e:
             logger.error(f"Props fetch error: {e}")
 
