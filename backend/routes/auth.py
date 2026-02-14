@@ -6,6 +6,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
+import os
 
 from .deps import (
     db, security, get_current_user, get_admin_user,
