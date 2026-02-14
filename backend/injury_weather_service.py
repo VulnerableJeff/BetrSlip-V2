@@ -13,8 +13,12 @@ load_dotenv(ROOT_DIR / '.env')
 logger = logging.getLogger(__name__)
 
 # WeatherAPI.com (Free tier: 1M calls/month!)
-WEATHERAPI_KEY = os.environ.get('WEATHERAPI_KEY', '')
 WEATHERAPI_BASE = 'http://api.weatherapi.com/v1'
+
+
+def _get_weatherapi_key():
+    """Read WEATHERAPI_KEY at runtime, not import time."""
+    return os.environ.get('WEATHERAPI_KEY', '')
 
 # Stadium/Venue locations (major NFL stadiums)
 STADIUM_LOCATIONS = {
@@ -139,7 +143,7 @@ class InjuryWeatherService:
         Fetch weather forecast for game location using WeatherAPI.com
         Only relevant for outdoor stadiums
         """
-        if not WEATHERAPI_KEY:
+        if not _get_weatherapi_key():
             logger.warning("WEATHERAPI_KEY not set")
             return None
         
@@ -162,7 +166,7 @@ class InjuryWeatherService:
             # Use city name for WeatherAPI
             url = f'{WEATHERAPI_BASE}/forecast.json'
             params = {
-                'key': WEATHERAPI_KEY,
+                'key': _get_weatherapi_key(),
                 'q': location['city'],
                 'days': 1,
                 'aqi': 'no',

@@ -10,7 +10,12 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-SPORTSRC_API_KEY = os.environ.get('SPORTSRC_API_KEY', '')
+
+def _get_sportsrc_key():
+    """Read SPORTSRC_API_KEY at runtime, not import time."""
+    return os.environ.get('SPORTSRC_API_KEY', '')
+
+
 SPORTSRC_BASE_URL = "https://api.sportsrc.org/v2/"
 
 
@@ -18,7 +23,7 @@ class SportSRCService:
     """Service for fetching live sports data and streams from SportSRC API"""
     
     def __init__(self):
-        self.api_key = SPORTSRC_API_KEY
+        self.api_key = _get_sportsrc_key()
         self.headers = {"X-API-KEY": self.api_key}
     
     async def get_account_info(self) -> Dict:
