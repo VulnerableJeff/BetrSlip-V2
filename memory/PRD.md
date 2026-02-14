@@ -12,13 +12,20 @@ Build a powerful and credible sports betting analysis platform. All betting data
 6. **UX**: Modern responsive UI, live data indicators
 
 ## Architecture
-- **Frontend**: React, Vite, Tailwind CSS, Shadcn/UI, Recharts
+- **Frontend**: React, Craco, Tailwind CSS
 - **Backend**: Python, FastAPI, MongoDB
 - **AI**: OpenAI GPT-4o (Emergent LLM Key)
 - **Data**: The Odds API (api.the-odds-api.com/v4)
 - **Key**: ODDS_API_KEY in backend/.env
 
 ## What's Been Implemented
+
+### Deployment Resilience Fix (DONE - Feb 14, 2026)
+- **Lazy env var loading**: All API keys (ODDS_API_KEY, EMERGENT_LLM_KEY, STRIPE_API_KEY, WEATHERAPI_KEY, SPORTSRC_API_KEY) now read at runtime, not module import time. Fixes production deployments where env vars may not be available at import time.
+- **Warmup mode for circuit breaker**: Startup cache warmup no longer triggers the circuit breaker. Failures during warmup are logged but don't block user requests.
+- **Circuit breaker tuning**: Threshold raised from 3→5, cooldown reduced from 120s→60s. More resilient to transient API failures.
+- **Circuit breaker reset after warmup**: After startup warmup completes (success or fail), circuit breaker is reset to give live user requests a clean slate.
+- **Files modified**: odds_client.py, server.py, smart_picks_service.py, auto_resolver_service.py, analytics.py, pro_tools.py, chat.py, subscriptions.py, enhanced_sports_intelligence.py, stream_sources_service.py, sportsrc_service.py, sports_data_service.py, injury_weather_service.py
 
 ### P0 - Live Data Feed (DONE - Feb 10, 2026)
 - Updated Odds API key, verified working
