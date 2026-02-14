@@ -989,29 +989,45 @@ async def delayed_startup_tasks():
         logger.error("ODDS_API_KEY is NOT SET - all odds features will be empty!")
     
     # STEP 1: Warm up odds cache (prevents empty dashboard on fresh deploy)
+    # Use warmup mode so failures don't trigger circuit breaker for user requests
     try:
-        from routes.odds_client import fetch_odds, fetch_events
-        logger.info("Starting odds cache warmup...")
+        from routes.odds_client import fetch_odds, fetch_events, set_warmup_mode, reset_circuit_breaker
+        set_warmup_mode(True)
+        logger.info("Starting odds cache warmup (warmup mode ON — failures won't trigger circuit breaker)...")
         
         # Sequentially fetch the most important sports data
         for sport_key in ['basketball_nba', 'icehockey_nhl', 'basketball_ncaab']:
-            data = await fetch_odds(sport_key, 'h2h,spreads,totals', db=db)
-            if data:
-                logger.info(f"Warmed cache for {sport_key}: {len(data)} games")
-            else:
-                logger.warning(f"No data returned for {sport_key} during warmup")
+            try:
+                data = await fetch_odds(sport_key, 'h2h,spreads,totals', db=db)
+                if data:
+                    logger.info(f"Warmed cache for {sport_key}: {len(data)} games")
+                else:
+                    logger.warning(f"No data returned for {sport_key} during warmup")
+            except Exception as e:
+                logger.warning(f"Warmup fetch failed for {sport_key}: {e}")
             await asyncio.sleep(2)  # Respect rate limits
         
         # Fetch events for player props
         for sport_key in ['basketball_nba']:
-            events = await fetch_events(sport_key, db=db)
-            if events:
-                logger.info(f"Warmed events cache for {sport_key}: {len(events)} events")
+            try:
+                events = await fetch_events(sport_key, db=db)
+                if events:
+                    logger.info(f"Warmed events cache for {sport_key}: {len(events)} events")
+            except Exception as e:
+                logger.warning(f"Warmup events fetch failed for {sport_key}: {e}")
             await asyncio.sleep(2)
         
-        logger.info("Odds cache warmup completed")
+        # Reset circuit breaker after warmup so user requests get a clean slate
+        reset_circuit_breaker()
+        logger.info("Odds cache warmup completed — circuit breaker reset for live requests")
     except Exception as e:
         logger.warning(f"Cache warmup failed (non-critical): {e}")
+        # Still reset circuit breaker even if warmup fails
+        try:
+            from routes.odds_client import reset_circuit_breaker
+            reset_circuit_breaker()
+        except Exception:
+            pass
     
     # STEP 2: Auto-resolve old picks
     try:
