@@ -13,7 +13,8 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 
 # Ensure .env is loaded BEFORE reading any env vars (critical for production)
-load_dotenv(Path(__file__).parent.parent / '.env')
+# override=True ensures .env values take precedence over stale K8s-cached env vars
+load_dotenv(Path(__file__).parent.parent / '.env', override=True)
 
 logger = logging.getLogger(__name__)
 
