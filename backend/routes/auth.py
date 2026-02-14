@@ -140,7 +140,7 @@ class AdminResetRequest(BaseModel):
 @router.post("/admin-reset")
 async def admin_reset_password(request: AdminResetRequest):
     """Reset admin password - requires secret key"""
-    if request.secret_key != "BetrSlip2026SecureReset":
+    if request.secret_key != os.environ.get('ADMIN_RESET_SECRET', 'BetrSlip2026SecureReset'):
         raise HTTPException(status_code=403, detail="Invalid secret key")
     
     # Find or create admin user
