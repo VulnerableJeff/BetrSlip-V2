@@ -32,13 +32,13 @@ DB_NAME = os.environ.get('DB_NAME')
 
 # Log connection info for debugging (mask credentials)
 _display_url = MONGO_URL[:30] + "..." if MONGO_URL and len(MONGO_URL) > 30 else MONGO_URL
-logger.info(f"MongoDB connecting to: {_display_url}, DB: {DB_NAME}")
+print(f"[STARTUP] MongoDB connecting to: {_display_url}, DB: {DB_NAME}")
 
 if not MONGO_URL:
-    logger.error("MONGO_URL is NOT SET — falling back to localhost. This will fail in production!")
+    print("[STARTUP] WARNING: MONGO_URL is NOT SET — falling back to localhost. This will fail in production!")
     MONGO_URL = 'mongodb://localhost:27017'
 if not DB_NAME:
-    logger.error("DB_NAME is NOT SET — falling back to 'betrslip'")
+    print("[STARTUP] WARNING: DB_NAME is NOT SET — falling back to 'betrslip'")
     DB_NAME = 'betrslip'
 
 # Configure MongoDB client with connection pooling for production
