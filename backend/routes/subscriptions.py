@@ -46,7 +46,7 @@ async def create_subscription_checkout(
         host_url = str(request.base_url).rstrip('/')
         webhook_url = f"{host_url}/api/webhook/stripe"
         
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        stripe_checkout = StripeCheckout(api_key=_get_stripe_key(), webhook_url=webhook_url)
         
         success_url = f"{checkout_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{checkout_request.origin_url}/subscription/cancel"
@@ -90,7 +90,7 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
         host_url = os.environ.get('BACKEND_URL', os.environ.get('REACT_APP_BACKEND_URL', ''))
         webhook_url = f"{host_url}/api/webhook/stripe"
         
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        stripe_checkout = StripeCheckout(api_key=_get_stripe_key(), webhook_url=webhook_url)
         status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
         
         if status.payment_status == 'paid':

@@ -60,7 +60,7 @@ async def send_chat_message(
 
     try:
         chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
+            api_key=_get_emergent_key(),
             session_id=f"chat_{user_id}_{session_id}",
             system_message=SYSTEM_PROMPT
         )

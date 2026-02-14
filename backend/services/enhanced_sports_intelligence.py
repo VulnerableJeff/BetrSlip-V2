@@ -236,7 +236,7 @@ class EnhancedSportsIntelligence:
     
     async def _get_weather_for_game(self, home_team: str) -> Optional[Dict]:
         """Get weather for outdoor game location"""
-        if not WEATHER_API_KEY:
+        if not _get_weather_api_key():
             return None
         
         # Map teams to cities (simplified)
