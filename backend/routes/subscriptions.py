@@ -19,7 +19,10 @@ from .referrals import process_referral_reward
 router = APIRouter(prefix="/subscription", tags=["Subscriptions"])
 logger = logging.getLogger(__name__)
 
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
+
+def _get_stripe_key():
+    """Read STRIPE_API_KEY at runtime, not import time."""
+    return os.environ.get('STRIPE_API_KEY', '')
 SUBSCRIPTION_PRICE = 500  # $5.00 in cents
 
 

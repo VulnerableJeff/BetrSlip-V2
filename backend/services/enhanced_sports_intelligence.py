@@ -18,8 +18,15 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 logger = logging.getLogger(__name__)
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
-WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '')
+
+def _get_odds_api_key():
+    """Read ODDS_API_KEY at runtime, not import time."""
+    return os.environ.get('ODDS_API_KEY', '')
+
+
+def _get_weather_api_key():
+    """Read WEATHER_API_KEY at runtime, not import time."""
+    return os.environ.get('WEATHER_API_KEY', '')
 
 
 class EnhancedSportsIntelligence:

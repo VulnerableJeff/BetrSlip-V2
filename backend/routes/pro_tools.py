@@ -15,7 +15,12 @@ from .deps import db, get_current_user
 router = APIRouter(tags=["pro-tools"])
 logger = logging.getLogger(__name__)
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+
+def _get_odds_api_key():
+    """Read ODDS_API_KEY at runtime, not import time."""
+    return os.environ.get('ODDS_API_KEY', '')
+
+
 BASE_URL = 'https://api.the-odds-api.com/v4'
 
 SPORT_KEYS = {

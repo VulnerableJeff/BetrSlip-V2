@@ -17,7 +17,10 @@ from .deps import db, get_current_user
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+
+def _get_emergent_key():
+    """Read EMERGENT_LLM_KEY at runtime, not import time."""
+    return os.environ.get('EMERGENT_LLM_KEY', '')
 
 SYSTEM_PROMPT = """You are BetrSlip AI, an expert sports betting analyst and assistant. You help users with:
 - Game analysis and predictions
