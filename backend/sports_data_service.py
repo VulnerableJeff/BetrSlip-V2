@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env', override=True)
+load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 

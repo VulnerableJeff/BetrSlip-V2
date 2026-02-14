@@ -24,7 +24,7 @@ import time
 
 # Load environment
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env', override=True)
+load_dotenv(ROOT_DIR / '.env')
 
 # Import route modules
 from routes.deps import db, client, get_current_user, get_admin_user, security
