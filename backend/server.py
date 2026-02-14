@@ -56,10 +56,12 @@ from emergentintegrations.payments.stripe.checkout import StripeCheckout, Checko
 app = FastAPI(title="BetrSlip API", version="2.1.0")
 api_router = APIRouter(prefix="/api")
 
-# Environment variables
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+# Environment variables — read lazily via functions for deployment resilience
+def _get_stripe_key():
+    return os.environ.get('STRIPE_API_KEY', '')
+
+def _get_emergent_key():
+    return os.environ.get('EMERGENT_LLM_KEY', '')
 
 # ===== SECURITY: Rate Limiting =====
 class RateLimiter:
