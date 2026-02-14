@@ -983,7 +983,42 @@ async def delayed_startup_tasks():
     """Run startup tasks after a delay to ensure server is ready first"""
     await asyncio.sleep(10)
     
-    # STEP 0: Log API key status for debugging
+    # STEP 0a: Ensure admin account exists (critical for fresh DB / production Atlas)
+    try:
+        admin_email = os.environ.get('ADMIN_EMAIL', 'hundojeff@icloud.com')
+        admin_user = await db.users.find_one({"email": admin_email})
+        if not admin_user:
+            from routes.deps import get_password_hash
+            admin_password = os.environ.get('ADMIN_PASSWORD', 'Boo-boo600$')
+            user_id = str(uuid.uuid4())
+            await db.users.insert_one({
+                "id": user_id,
+                "email": admin_email,
+                "password_hash": get_password_hash(admin_password),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "is_admin": True,
+                "is_banned": False
+            })
+            await db.subscriptions.insert_one({
+                "user_id": user_id,
+                "email": admin_email,
+                "subscription_status": "active",
+                "subscription_start": datetime.now(timezone.utc).isoformat(),
+                "granted_by_admin": True
+            })
+            await db.user_usage.insert_one({
+                "user_id": user_id,
+                "analyses_count": 0,
+                "device_fingerprints": [],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            logger.info(f"Admin account auto-created for {admin_email}")
+        else:
+            logger.info(f"Admin account exists for {admin_email}")
+    except Exception as e:
+        logger.error(f"Failed to ensure admin account: {e}")
+    
+    # STEP 0b: Log API key status for debugging
     api_key = os.environ.get('ODDS_API_KEY', '')
     if api_key:
         logger.info(f"ODDS_API_KEY is SET (length={len(api_key)}, starts with {api_key[:4]}...)")
