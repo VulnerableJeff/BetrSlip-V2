@@ -3,11 +3,19 @@ Shared dependencies for all route modules
 """
 import os
 import jwt
+import logging
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+# Ensure .env is loaded BEFORE reading any env vars (critical for production)
+load_dotenv(Path(__file__).parent.parent / '.env')
+
+logger = logging.getLogger(__name__)
 
 # Security
 security = HTTPBearer()
@@ -19,8 +27,19 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 72  # Extended to 72 hours
 
 # MongoDB connection - single shared connection with production settings
-MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-DB_NAME = os.environ.get('DB_NAME', 'betrslip')
+MONGO_URL = os.environ.get('MONGO_URL')
+DB_NAME = os.environ.get('DB_NAME')
+
+# Log connection info for debugging (mask credentials)
+_display_url = MONGO_URL[:30] + "..." if MONGO_URL and len(MONGO_URL) > 30 else MONGO_URL
+logger.info(f"MongoDB connecting to: {_display_url}, DB: {DB_NAME}")
+
+if not MONGO_URL:
+    logger.error("MONGO_URL is NOT SET — falling back to localhost. This will fail in production!")
+    MONGO_URL = 'mongodb://localhost:27017'
+if not DB_NAME:
+    logger.error("DB_NAME is NOT SET — falling back to 'betrslip'")
+    DB_NAME = 'betrslip'
 
 # Configure MongoDB client with connection pooling for production
 client = AsyncIOMotorClient(
