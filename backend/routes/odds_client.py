@@ -36,27 +36,29 @@ _warmup_mode = True
 
 
 def _get_api_key() -> str:
-    """Read API key at call time (not import time) to ensure .env is loaded.
-    Falls back to reading .env file directly if env var is empty."""
-    key = os.environ.get('ODDS_API_KEY', '')
-    if not key:
-        # Fallback: try loading .env directly
-        try:
-            from pathlib import Path
-            env_path = Path(__file__).parent.parent / '.env'
-            if env_path.exists():
-                with open(env_path) as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith('ODDS_API_KEY='):
-                            key = line.split('=', 1)[1].strip().strip('"').strip("'")
-                            if key:
-                                os.environ['ODDS_API_KEY'] = key
-                                logger.info(f"Loaded ODDS_API_KEY from .env file (len={len(key)})")
-                            break
-        except Exception as e:
-            logger.warning(f"Failed to read .env fallback: {e}")
-    return key
+    """Read API key, preferring the .env file value over stale K8s env vars.
+    In production, Emergent may cache old env vars between deploys."""
+    # First: try reading directly from .env file (most up-to-date source)
+    try:
+        from pathlib import Path
+        env_path = Path(__file__).parent.parent / '.env'
+        if env_path.exists():
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('ODDS_API_KEY='):
+                        file_key = line.split('=', 1)[1].strip().strip('"').strip("'")
+                        if file_key:
+                            env_key = os.environ.get('ODDS_API_KEY', '')
+                            if env_key and env_key != file_key:
+                                logger.warning(f"ODDS_API_KEY mismatch: env={env_key[:6]}... vs .env={file_key[:6]}... — using .env value")
+                            os.environ['ODDS_API_KEY'] = file_key
+                            return file_key
+                        break
+    except Exception as e:
+        logger.warning(f"Failed to read .env: {e}")
+    # Fallback: use environment variable
+    return os.environ.get('ODDS_API_KEY', '')
 
 
 def reset_circuit_breaker():
