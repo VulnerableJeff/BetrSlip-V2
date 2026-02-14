@@ -434,7 +434,7 @@ Be realistic - most parlays have <30% win probability. Single bets rarely exceed
 
     try:
         chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
+            api_key=_get_emergent_key(),
             session_id=f"analysis_{uuid.uuid4()}",
             system_message="You are an expert sports betting analyst providing detailed, honest analysis."
         )
@@ -899,7 +899,7 @@ async def admin_get_top_bets_stats(admin_user: dict = Depends(get_admin_user)):
 async def stripe_webhook(request: Request):
     try:
         body = await request.body()
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+        stripe_checkout = StripeCheckout(api_key=_get_stripe_key(), webhook_url="")
         webhook_response = await stripe_checkout.process_webhook(body, request.headers.get("Stripe-Signature"))
         
         if webhook_response.payment_status == 'paid':
