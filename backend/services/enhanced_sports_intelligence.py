@@ -267,7 +267,7 @@ class EnhancedSportsIntelligence:
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"http://api.weatherapi.com/v1/current.json"
-                params = {'key': WEATHER_API_KEY, 'q': city}
+                params = {'key': _get_weather_api_key(), 'q': city}
                 async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
