@@ -488,6 +488,29 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
     cache_key = f"bet_of_day_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H')}"
     cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
     if cached and cached.get('data'):
+        # Still auto-save to history even from cache
+        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        pick_data = cached['data'].get('pick')
+        if pick_data:
+            existing = await db.bot_pick_history.find_one({"date": today_str, "source": "bet_of_day"})
+            if not existing:
+                await db.bot_pick_history.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "date": today_str,
+                    "source": "bet_of_day",
+                    "pick": pick_data.get("pick", ""),
+                    "game": pick_data.get("game", ""),
+                    "sport": pick_data.get("sport", ""),
+                    "bet_type": pick_data.get("bet_type", ""),
+                    "odds": pick_data.get("odds", ""),
+                    "edge": pick_data.get("edge", 0),
+                    "winning_probability": pick_data.get("winning_probability", 0),
+                    "confidence_score": pick_data.get("confidence_score", 0),
+                    "book": pick_data.get("book", ""),
+                    "game_time": pick_data.get("game_time", ""),
+                    "outcome": None,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
         return cached['data']
 
     all_opps = []
