@@ -12,11 +12,12 @@ import DailyPicks from '@/components/DailyPicks';
 import USASportsHub from '@/components/USASportsHub';
 import LineMovementAlerts from '@/components/LineMovementAlerts';
 import ParlayOptimizer from '@/components/ParlayOptimizer';
-import OddsComparison from '@/components/OddsComparison';
 import BestValueFinder from '@/components/BestValueFinder';
 import ReferralProgram from '@/components/ReferralProgram';
 import NotificationSettings from '@/components/NotificationSettings';
 import AIChatAssistant from '@/components/AIChatAssistant';
+import EVScanner from '@/components/EVScanner';
+import ParlayBuilder from '@/components/ParlayBuilder';
 import DailyBetCard from '@/components/DailyBetCard';
 
 import { BACKEND_URL } from '@/config/api';
