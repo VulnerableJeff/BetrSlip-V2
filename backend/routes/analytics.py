@@ -652,7 +652,6 @@ async def get_weekly_leaderboard(current_user: dict = Depends(get_current_user))
 
     now = datetime.now(timezone.utc)
     seven_days_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d')
-    thirty_days_ago = (now - timedelta(days=30)).strftime('%Y-%m-%d')
 
     # Get this week's Bet of the Day picks
     weekly_picks = await db.bot_pick_history.find(
