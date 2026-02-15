@@ -17,13 +17,6 @@ import BestValueFinder from '@/components/BestValueFinder';
 import ReferralProgram from '@/components/ReferralProgram';
 import NotificationSettings from '@/components/NotificationSettings';
 import AIChatAssistant from '@/components/AIChatAssistant';
-import PLTracker from '@/components/PLTracker';
-import EVScanner from '@/components/EVScanner';
-import ParlayBuilder from '@/components/ParlayBuilder';
-import Leaderboard from '@/components/Leaderboard';
-import ArbitrageScanner from '@/components/ArbitrageScanner';
-import PlayerProps from '@/components/PlayerProps';
-import GamePlan from '@/components/GamePlan';
 import DailyBetCard from '@/components/DailyBetCard';
 
 import { BACKEND_URL } from '@/config/api';
