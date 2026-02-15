@@ -872,34 +872,20 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* ANALYTICS ROW - Line Movements, Parlay Optimizer, Odds Comparison */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        {/* ANALYTICS ROW - Line Movers & AI Parlay Picks */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <LineMovementAlerts />
           <ParlayOptimizer />
-          <OddsComparison />
         </div>
 
-        {/* EV SCANNER & PARLAY BUILDER */}
+        {/* BEST VALUE BETS & BUILD YOUR OWN PARLAY */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <EVScanner />
           <ParlayBuilder />
         </div>
 
-        {/* ARBITRAGE & PLAYER PROPS */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <ArbitrageScanner />
-          <PlayerProps />
-        </div>
-
-        {/* GAME PLAN & LEADERBOARD */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <GamePlan />
-          <Leaderboard />
-        </div>
-
-        {/* P/L TRACKER & DAILY BET CARD */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <PLTracker />
+        {/* TODAY'S BEST BETS */}
+        <div className="mb-8">
           <DailyBetCard isSubscribed={usage?.is_subscribed} />
         </div>
 
