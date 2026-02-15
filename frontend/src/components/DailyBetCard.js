@@ -348,10 +348,15 @@ const DailyBetCard = ({ isSubscribed }) => {
                   </div>
                 </div>
 
-                {/* Odds & Edge */}
+                {/* Odds, Edge & Win Prob */}
                 <div className="text-right flex-shrink-0">
                   <p className="text-base font-bold text-emerald-400">{pick.odds}</p>
-                  <p className="text-xs font-semibold text-amber-400">+{pick.edge}% EV</p>
+                  {pick.winning_probability && (
+                    <p className={`text-xs font-bold ${pick.winning_probability >= 55 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {pick.winning_probability}% win
+                    </p>
+                  )}
+                  <p className="text-[10px] font-semibold text-amber-400/80">+{pick.edge}% EV</p>
                 </div>
               </div>
             </div>
