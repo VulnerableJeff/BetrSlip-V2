@@ -205,6 +205,46 @@ const DailyPicks = ({ usage, onSubscribe }) => {
         <Flame className="w-6 h-6 text-orange-400 animate-pulse flex-shrink-0" />
       </div>
 
+      {/* Share Bar */}
+      <div className="flex items-center gap-2 mb-4">
+        <Button
+          variant="outline" size="sm"
+          onClick={() => {
+            const text = [
+              `BetrSlip - Today's Top Picks`,
+              '',
+              ...picks.map((p, i) => `${i + 1}. ${p.title} (${p.odds}) - ${p.win_probability}% win\n   ${p.description}`),
+              '',
+              'betrslip.com'
+            ].join('\n');
+            if (navigator.share) {
+              navigator.share({ title: "BetrSlip - Today's Top Picks", text }).catch(() => {});
+            } else {
+              navigator.clipboard.writeText(text);
+              toast.success('Picks copied to clipboard!');
+            }
+          }}
+          className="h-7 px-3 text-xs border-slate-700 text-slate-400 hover:text-white"
+          data-testid="daily-picks-share"
+        >
+          <Share2 className="w-3 h-3 mr-1" /> Share Picks
+        </Button>
+        <Button
+          variant="outline" size="sm"
+          onClick={() => {
+            const text = picks.map((p, i) =>
+              `${i + 1}. ${p.title} (${p.odds}) - ${p.win_probability}% win prob\n   ${p.description}`
+            ).join('\n\n');
+            navigator.clipboard.writeText(`BetrSlip Daily Picks\n\n${text}\n\nbetrslip.com`);
+            toast.success('Copied!');
+          }}
+          className="h-7 px-3 text-xs border-slate-700 text-slate-400 hover:text-white"
+          data-testid="daily-picks-copy"
+        >
+          <Copy className="w-3 h-3 mr-1" /> Copy
+        </Button>
+      </div>
+
       {/* Picks List */}
       <div className="space-y-3">
         {picks.map((pick, index) => (
