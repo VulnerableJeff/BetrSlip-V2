@@ -71,7 +71,12 @@ const EVScanner = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {opportunities.length === 0 ? (
+        {opportunities.length > 0 && (
+          <div className="flex items-start gap-2 text-xs text-slate-400 mb-3 bg-slate-900/50 rounded-lg p-2.5">
+            <Zap className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <p>These bets have odds in your favor. Higher EV% = bigger edge. Think of it like finding a sale — you're getting more value than the bet is really worth.</p>
+          </div>
+        )}
           <div className="text-center py-8">
             <RefreshCw className="w-8 h-8 text-slate-600 mx-auto mb-2" />
             <p className="text-sm text-slate-400">
