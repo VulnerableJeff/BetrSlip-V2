@@ -863,15 +863,27 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
 
+        {/* TODAY'S TOP PICKS - Below upload, above analytics */}
+        <div className="mb-6">
+          <DailyPicks 
+            usage={usage} 
+            onSubscribe={() => setShowSubscriptionModal(true)} 
+          />
+        </div>
+
         {/* AI PICKS & VALUE BETS - Side by Side */}
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6">
           <ParlayOptimizer />
           <EVScanner />
         </div>
 
-        {/* TODAY'S BEST BETS */}
-        <div className="mb-6">
+        {/* TODAY'S BEST BETS + PICK OF THE WEEK LEADERBOARD */}
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6">
           <DailyBetCard isSubscribed={usage?.is_subscribed} />
+          <WeeklyLeaderboard 
+            isSubscribed={usage?.is_subscribed} 
+            onSubscribe={() => setShowSubscriptionModal(true)} 
+          />
         </div>
 
         {/* USA Sports Hub - Live Scores & Where to Watch */}
