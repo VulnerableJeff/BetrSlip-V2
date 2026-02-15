@@ -237,16 +237,16 @@ const DailyBetCard = ({ isSubscribed }) => {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <CardTitle className="text-lg text-white">Daily Bet Card</CardTitle>
+            <CardTitle className="text-lg text-white">Today's Best Bets</CardTitle>
             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded-full">PRO</span>
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6">
             <Crown className="w-10 h-10 text-amber-500 mx-auto mb-3 opacity-80" />
-            <p className="text-sm font-medium text-white mb-1">Unlock Daily Bet Card</p>
+            <p className="text-sm font-medium text-white mb-1">Unlock Today's Best Bets</p>
             <p className="text-xs text-slate-400 max-w-[250px] mx-auto">
-              Get a shareable card with today's top 3 +EV picks, auto-scanned from live odds across all sportsbooks.
+              Get a daily card with today's top 3 picks, auto-scanned from live odds across all sportsbooks.
             </p>
           </div>
         </CardContent>
@@ -262,7 +262,7 @@ const DailyBetCard = ({ isSubscribed }) => {
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-amber-400" />
-            <CardTitle className="text-lg text-white">Daily Bet Card</CardTitle>
+            <CardTitle className="text-lg text-white">Today's Best Bets</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
