@@ -61,15 +61,15 @@ const LineMovementAlerts = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-yellow-400" />
-            <CardTitle className="text-lg text-white">Line Movement Alerts</CardTitle>
+            <CardTitle className="text-lg text-white">Line Movers</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="w-4 h-4 text-slate-500 hover:text-slate-300 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs bg-slate-800 border-slate-700 text-white p-3">
-                  <p className="font-semibold mb-1">What are Line Movements?</p>
-                  <p className="text-sm text-slate-300">When betting odds change significantly, it often signals "sharp" (professional) money or important news. These alerts help you spot valuable opportunities before the market adjusts.</p>
+                  <p className="font-semibold mb-1">Why lines move matters</p>
+                  <p className="text-sm text-slate-300">When odds shift, it usually means sharp bettors or breaking news is moving the market. Follow these moves to bet where the smart money is going.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

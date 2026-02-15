@@ -61,8 +61,8 @@ const EVScanner = () => {
               <Zap className="w-4 h-4 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg text-white">EV Scanner</CardTitle>
-              <p className="text-xs text-slate-400">Positive expected value opportunities</p>
+              <CardTitle className="text-lg text-white">Best Value Bets</CardTitle>
+              <p className="text-xs text-slate-400">Bets where the odds are in your favor</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={fetchEV} disabled={loading} className="text-slate-400 hover:text-white">
