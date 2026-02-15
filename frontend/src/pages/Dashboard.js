@@ -294,12 +294,6 @@ const Dashboard = ({ onLogout }) => {
         {/* BET OF THE DAY SPOTLIGHT - HERO */}
         <BetOfTheDay />
 
-        {/* TOP PICKS */}
-        <DailyPicks 
-          usage={usage} 
-          onSubscribe={() => setShowSubscriptionModal(true)} 
-        />
-
         {/* UPLOAD SECTION */}
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mt-6 mb-6">
           {/* Upload Section */}
