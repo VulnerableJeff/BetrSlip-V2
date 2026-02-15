@@ -451,7 +451,8 @@ async def get_daily_bet_card(current_user: dict = Depends(get_current_user)):
                         "edge": edge,
                         "book": best['book'],
                         "confidence": confidence,
-                        "game_time": _format_time(commence)
+                        "game_time": _format_time(commence),
+                        "winning_probability": round(market_implied * 100, 1)
                     })
 
     # Sort by edge and take top 3
