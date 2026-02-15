@@ -868,30 +868,24 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* ANALYTICS ROW - Line Movers & AI Parlay Picks */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <LineMovementAlerts />
+        {/* AI PICKS & VALUE BETS - Side by Side */}
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6">
           <ParlayOptimizer />
-        </div>
-
-        {/* BEST VALUE BETS & BUILD YOUR OWN PARLAY */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <EVScanner />
-          <ParlayBuilder />
         </div>
 
         {/* TODAY'S BEST BETS */}
-        <div className="mb-8">
+        <div className="mb-6">
           <DailyBetCard isSubscribed={usage?.is_subscribed} />
         </div>
 
         {/* USA Sports Hub - Live Scores & Where to Watch */}
-        <div className="mt-6">
+        <div className="mt-4">
           <USASportsHub />
         </div>
 
         {/* Referral & Notifications Section */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <ReferralProgram />
           <NotificationSettings />
         </div>
