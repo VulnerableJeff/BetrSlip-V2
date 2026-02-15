@@ -75,9 +75,9 @@ const EVScanner = () => {
           <div className="text-center py-8">
             <RefreshCw className="w-8 h-8 text-slate-600 mx-auto mb-2" />
             <p className="text-sm text-slate-400">
-              {data?.source === 'unavailable' ? 'Live odds data is loading...' : 'No +EV opportunities found right now'}
+              {data?.source === 'unavailable' ? 'Live odds data is loading...' : 'No value bets found right now — check back soon'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Data refreshes automatically</p>
+            <p className="text-xs text-slate-500 mt-1">We scan odds from multiple sportsbooks every few minutes</p>
             <Button variant="outline" size="sm" onClick={fetchEV} className="mt-3 text-xs border-slate-700 text-slate-400 hover:text-white">
               <RefreshCw className="w-3 h-3 mr-1" /> Refresh Now
             </Button>
