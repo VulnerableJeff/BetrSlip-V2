@@ -632,3 +632,140 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
 
     return result
 
+
+
+# ===== WEEKLY LEADERBOARD =====
+@router.get("/weekly-leaderboard")
+async def get_weekly_leaderboard(current_user: dict = Depends(get_current_user)):
+    """Get Pick of the Week leaderboard - Pro only. Tracks Bet of the Day performance."""
+    from .deps import get_user_subscription_status
+
+    user_id = current_user['user_id']
+    sub_status = await get_user_subscription_status(user_id)
+
+    if not sub_status.get('is_subscribed'):
+        return {
+            "success": False,
+            "pro_required": True,
+            "message": "Weekly Leaderboard is a Pro feature"
+        }
+
+    now = datetime.now(timezone.utc)
+    seven_days_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d')
+    thirty_days_ago = (now - timedelta(days=30)).strftime('%Y-%m-%d')
+
+    # Get this week's Bet of the Day picks
+    weekly_picks = await db.bot_pick_history.find(
+        {"source": "bet_of_day", "date": {"$gte": seven_days_ago}},
+        {"_id": 0}
+    ).sort("date", -1).to_list(7)
+
+    # Get all-time stats from bot_pick_history
+    all_picks = await db.bot_pick_history.find(
+        {"source": "bet_of_day"},
+        {"_id": 0}
+    ).sort("date", -1).to_list(100)
+
+    # Also include resolved daily_picks for broader stats
+    resolved_daily = await db.daily_picks.find(
+        {"outcome": {"$in": ["won", "lost", "push"]}},
+        {"_id": 0}
+    ).sort("outcome_updated_at", -1).to_list(50)
+
+    # Calculate weekly stats
+    week_won = sum(1 for p in weekly_picks if p.get('outcome') == 'won')
+    week_lost = sum(1 for p in weekly_picks if p.get('outcome') == 'lost')
+    week_push = sum(1 for p in weekly_picks if p.get('outcome') == 'push')
+    week_pending = sum(1 for p in weekly_picks if not p.get('outcome'))
+    week_decided = week_won + week_lost + week_push
+
+    # Calculate ROI (assuming $100 unit bet on each pick)
+    week_roi = 0
+    for p in weekly_picks:
+        if p.get('outcome') == 'won':
+            odds_str = p.get('odds', '0')
+            try:
+                odds_val = int(odds_str.replace('+', ''))
+                profit = (odds_val / 100 * 100) if odds_val > 0 else (100 / abs(odds_val) * 100)
+                week_roi += profit
+            except (ValueError, ZeroDivisionError):
+                week_roi += 100
+        elif p.get('outcome') == 'lost':
+            week_roi -= 100
+
+    # All-time stats
+    total_won = sum(1 for p in all_picks if p.get('outcome') == 'won')
+    total_lost = sum(1 for p in all_picks if p.get('outcome') == 'lost')
+    total_decided = total_won + total_lost
+    all_time_win_rate = round(total_won / total_decided * 100, 1) if total_decided > 0 else 0
+
+    # Also incorporate daily_picks resolved data
+    daily_won = sum(1 for p in resolved_daily if p.get('outcome') == 'won')
+    daily_lost = sum(1 for p in resolved_daily if p.get('outcome') == 'lost')
+    combined_won = total_won + daily_won
+    combined_lost = total_lost + daily_lost
+    combined_decided = combined_won + combined_lost
+    combined_win_rate = round(combined_won / combined_decided * 100, 1) if combined_decided > 0 else 0
+
+    # All-time ROI
+    all_time_roi = 0
+    for p in all_picks:
+        if p.get('outcome') == 'won':
+            odds_str = p.get('odds', '0')
+            try:
+                odds_val = int(odds_str.replace('+', ''))
+                profit = (odds_val / 100 * 100) if odds_val > 0 else (100 / abs(odds_val) * 100)
+                all_time_roi += profit
+            except (ValueError, ZeroDivisionError):
+                all_time_roi += 100
+        elif p.get('outcome') == 'lost':
+            all_time_roi -= 100
+
+    # Current streak from all resolved picks
+    all_resolved = sorted(
+        [p for p in (all_picks + resolved_daily) if p.get('outcome') in ['won', 'lost']],
+        key=lambda x: x.get('outcome_updated_at', x.get('created_at', '')),
+        reverse=True
+    )
+    current_streak = 0
+    streak_type = None
+    for p in all_resolved:
+        if streak_type is None:
+            streak_type = p['outcome']
+            current_streak = 1
+        elif p['outcome'] == streak_type:
+            current_streak += 1
+        else:
+            break
+
+    # Best pick of the week
+    best_pick = None
+    for p in weekly_picks:
+        if p.get('outcome') == 'won':
+            if not best_pick or p.get('edge', 0) > best_pick.get('edge', 0):
+                best_pick = p
+
+    return {
+        "success": True,
+        "pro_required": False,
+        "week": {
+            "picks": weekly_picks,
+            "won": week_won,
+            "lost": week_lost,
+            "push": week_push,
+            "pending": week_pending,
+            "win_rate": round(week_won / week_decided * 100, 1) if week_decided > 0 else 0,
+            "roi": round(week_roi, 2),
+            "best_pick": best_pick
+        },
+        "all_time": {
+            "won": combined_won,
+            "lost": combined_lost,
+            "win_rate": combined_win_rate,
+            "total_picks": combined_decided,
+            "roi": round(all_time_roi, 2),
+            "streak": current_streak,
+            "streak_type": streak_type
+        },
+        "generated_at": now.isoformat()
+    }
