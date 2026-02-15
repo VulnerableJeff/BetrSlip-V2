@@ -363,7 +363,7 @@ const Dashboard = ({ onLogout }) => {
 
           {/* Results Section */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6" data-testid="results-section-title">
+            <h2 className="text-xl sm:text-2xl font-black text-white mb-3 sm:mb-5" data-testid="results-section-title">
               Analysis Results
             </h2>
             
