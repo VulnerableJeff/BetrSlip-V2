@@ -73,7 +73,7 @@ const ParlayBuilder = () => {
               <Calculator className="w-4 h-4 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg text-white">Parlay Builder</CardTitle>
+              <CardTitle className="text-lg text-white">Build Your Parlay</CardTitle>
               <p className="text-xs text-slate-400">Build & analyze multi-leg parlays</p>
             </div>
           </div>
