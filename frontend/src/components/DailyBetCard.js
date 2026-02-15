@@ -87,7 +87,7 @@ const DailyBetCard = ({ isSubscribed }) => {
       // Title
       ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText("Today's Top +EV Picks", 30, 90);
+      ctx.fillText("Today's Best Bets", 30, 90);
 
       // Subtitle
       ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -282,7 +282,7 @@ const DailyBetCard = ({ isSubscribed }) => {
               <Zap className="w-4 h-4 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg text-white">Daily Bet Card</CardTitle>
+              <CardTitle className="text-lg text-white">Today's Best Bets</CardTitle>
               <p className="text-[10px] text-slate-500">{data?.date} &middot; {data?.total_scanned} scanned</p>
             </div>
           </div>
