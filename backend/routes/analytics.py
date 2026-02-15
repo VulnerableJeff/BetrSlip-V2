@@ -608,5 +608,27 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
             upsert=True
         )
 
+        # Auto-save to pick history for leaderboard tracking
+        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        existing = await db.bot_pick_history.find_one({"date": today_str, "source": "bet_of_day"})
+        if not existing:
+            await db.bot_pick_history.insert_one({
+                "id": str(uuid.uuid4()),
+                "date": today_str,
+                "source": "bet_of_day",
+                "pick": top_pick["pick"],
+                "game": top_pick["game"],
+                "sport": top_pick["sport"],
+                "bet_type": top_pick["bet_type"],
+                "odds": top_pick["odds"],
+                "edge": top_pick["edge"],
+                "winning_probability": top_pick["winning_probability"],
+                "confidence_score": top_pick["confidence_score"],
+                "book": top_pick["book"],
+                "game_time": top_pick["game_time"],
+                "outcome": None,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+
     return result
 
