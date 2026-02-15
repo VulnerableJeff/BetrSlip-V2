@@ -695,8 +695,6 @@ async def get_weekly_leaderboard(current_user: dict = Depends(get_current_user))
     # All-time stats
     total_won = sum(1 for p in all_picks if p.get('outcome') == 'won')
     total_lost = sum(1 for p in all_picks if p.get('outcome') == 'lost')
-    total_decided = total_won + total_lost
-    all_time_win_rate = round(total_won / total_decided * 100, 1) if total_decided > 0 else 0
 
     # Also incorporate daily_picks resolved data
     daily_won = sum(1 for p in resolved_daily if p.get('outcome') == 'won')
