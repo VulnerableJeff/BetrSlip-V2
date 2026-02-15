@@ -6,26 +6,36 @@ Build a powerful and credible sports betting analysis platform. All betting data
 ## Core Requirements
 1. **Data Integrity**: All data from live Odds API, no mocks
 2. **AI-Powered Tools**: AI Chat, AI Picks, Game Plan Generator
-3. **Edge-Finding**: +EV Finder, Arbitrage Scanner, Line Movements
-4. **Betting Tools**: Player Props, Parlay Builder/Optimizer
-5. **Performance**: P/L Tracker with CLV, Leaderboard
-6. **UX**: Modern responsive UI, live data indicators
+3. **Edge-Finding**: +EV Finder, Line Movements
+4. **Betting Tools**: Parlay Builder/Optimizer
+5. **UX**: Modern responsive UI, noob-friendly labels and descriptions
 
 ## Architecture
 - **Frontend**: React, Craco, Tailwind CSS
 - **Backend**: Python, FastAPI, MongoDB
 - **AI**: OpenAI GPT-4o (Emergent LLM Key)
 - **Data**: The Odds API (api.the-odds-api.com/v4)
-- **Key**: ODDS_API_KEY in backend/.env
 
 ## What's Been Implemented
 
-### Deployment Resilience Fix (DONE - Feb 14, 2026)
-- **Lazy env var loading**: All API keys (ODDS_API_KEY, EMERGENT_LLM_KEY, STRIPE_API_KEY, WEATHERAPI_KEY, SPORTSRC_API_KEY) now read at runtime, not module import time. Fixes production deployments where env vars may not be available at import time.
-- **Warmup mode for circuit breaker**: Startup cache warmup no longer triggers the circuit breaker. Failures during warmup are logged but don't block user requests.
-- **Circuit breaker tuning**: Threshold raised from 3→5, cooldown reduced from 120s→60s. More resilient to transient API failures.
-- **Circuit breaker reset after warmup**: After startup warmup completes (success or fail), circuit breaker is reset to give live user requests a clean slate.
-- **Files modified**: odds_client.py, server.py, smart_picks_service.py, auto_resolver_service.py, analytics.py, pro_tools.py, chat.py, subscriptions.py, enhanced_sports_intelligence.py, stream_sources_service.py, sportsrc_service.py, sports_data_service.py, injury_weather_service.py
+### Noob-Friendly Rename & Section Cleanup (Feb 14, 2026)
+- Renamed all sections: "Line Movers", "AI Parlay Picks", "Best Value Bets", "Build Your Parlay", "Today's Best Bets"
+- Added noob-friendly tooltips and descriptions to every section
+- Removed 6 dead/broken sections: Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P/L Tracker, Game Plan
+
+### Deployment Resilience Fixes (Feb 14, 2026)
+- Lazy env var loading for all API keys (runtime, not import time)
+- Warmup mode for circuit breaker (startup failures don't block users)
+- Circuit breaker tuning: threshold 5, cooldown 60s
+- Admin auto-creation on startup for fresh databases
+- Fixed load_dotenv override issue (don't override K8s MONGO_URL with localhost)
+- ODDS_API_KEY read from .env file first to handle stale K8s cache
+
+### Previous Session
+- Full live data integration with The Odds API
+- All features: EV Scanner, Parlay Optimizer, Daily Bet Card, CLV Tracking
+- Frontend resilience: loading/empty states, auto-retry
+- Circuit breaker, in-memory cache, DB cache fallback
 
 ### P0 - Live Data Feed (DONE - Feb 10, 2026)
 - Updated Odds API key, verified working
