@@ -479,3 +479,134 @@ async def get_daily_bet_card(current_user: dict = Depends(get_current_user)):
         )
 
     return result
+
+
+# ===== BET OF THE DAY =====
+@router.get("/bet-of-the-day")
+async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
+    """Get the single highest-confidence pick of the day with confidence score"""
+    cache_key = f"bet_of_day_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H')}"
+    cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
+    if cached and cached.get('data'):
+        return cached['data']
+
+    all_opps = []
+    for sport_name, sport_key in [('NBA', 'basketball_nba'), ('NHL', 'icehockey_nhl'), ('NCAAB', 'basketball_ncaab'), ('NFL', 'americanfootball_nfl')]:
+        games = await _fetch_odds(sport_key, 'h2h,spreads,totals')
+        if not games:
+            continue
+
+        for game in games[:8]:
+            home = game.get('home_team', '')
+            away = game.get('away_team', '')
+            commence = game.get('commence_time', '')
+            bookmakers = game.get('bookmakers', [])
+
+            if len(bookmakers) < 2:
+                continue
+
+            all_prices = {}
+            for bm in bookmakers:
+                book_name = bm.get('title', '')
+                for market in bm.get('markets', []):
+                    key = market.get('key', '')
+                    for outcome in market.get('outcomes', []):
+                        name = outcome.get('name', '')
+                        price = outcome.get('price', 0)
+                        point = outcome.get('point', '')
+                        okey = f"{key}_{name}_{point}"
+                        if okey not in all_prices:
+                            all_prices[okey] = []
+                        all_prices[okey].append({'price': price, 'book': book_name, 'name': name, 'point': point, 'key': key})
+
+            for okey, prices in all_prices.items():
+                if len(prices) < 3:
+                    continue
+
+                best = max(prices, key=lambda x: x['price'])
+                avg_price = sum(p['price'] for p in prices) / len(prices)
+                price = best['price']
+
+                dec = (price / 100 + 1) if price > 0 else (100 / abs(price) + 1)
+                avg_dec = (avg_price / 100 + 1) if avg_price > 0 else (100 / abs(avg_price) + 1)
+
+                implied = 1 / dec
+                market_implied = 1 / avg_dec
+                edge = round((market_implied - implied) * 100, 1)
+                winning_prob = round(market_implied * 100, 1)
+
+                if edge > 2.0 and winning_prob >= 45:
+                    key = best['key']
+                    name = best['name']
+                    point = best['point']
+
+                    if key == 'h2h':
+                        pick_desc = f"{name} ML"
+                        bet_type = "Moneyline"
+                    elif key == 'spreads':
+                        pick_desc = f"{name} {'+' if point > 0 else ''}{point}"
+                        bet_type = "Spread"
+                    elif key == 'totals':
+                        pick_desc = f"{name} {point}"
+                        bet_type = "Total"
+                    else:
+                        continue
+
+                    odds_str = f"+{price}" if price > 0 else str(price)
+                    books_agreeing = len(prices)
+
+                    # Confidence score: 0-100 based on edge, books agreeing, and winning probability
+                    conf_edge = min(edge * 5, 40)  # Max 40 points from edge
+                    conf_books = min(books_agreeing * 5, 30)  # Max 30 points from book agreement
+                    conf_prob = min((winning_prob - 40) * 0.6, 30)  # Max 30 points from win prob
+                    confidence_score = round(min(conf_edge + conf_books + conf_prob, 100))
+
+                    # Build reasoning based on data
+                    reasons = []
+                    if edge > 4:
+                        reasons.append(f"Significant {edge}% edge over market consensus")
+                    elif edge > 2.5:
+                        reasons.append(f"Solid {edge}% value edge found across books")
+                    if books_agreeing >= 5:
+                        reasons.append(f"Odds compared across {books_agreeing} sportsbooks for accuracy")
+                    if winning_prob >= 60:
+                        reasons.append(f"Strong {winning_prob}% consensus winning probability")
+                    elif winning_prob >= 50:
+                        reasons.append(f"Favorable {winning_prob}% implied win probability")
+
+                    all_opps.append({
+                        "pick": pick_desc,
+                        "game": f"{away} @ {home}",
+                        "sport": sport_name,
+                        "bet_type": bet_type,
+                        "odds": odds_str,
+                        "edge": edge,
+                        "book": best['book'],
+                        "winning_probability": winning_prob,
+                        "confidence_score": confidence_score,
+                        "books_compared": books_agreeing,
+                        "game_time": _format_time(commence),
+                        "reasons": reasons
+                    })
+
+    # Sort by confidence score, then edge
+    all_opps.sort(key=lambda x: (x['confidence_score'], x['edge']), reverse=True)
+    top_pick = all_opps[0] if all_opps else None
+
+    result = {
+        "success": True,
+        "pick": top_pick,
+        "alternatives_count": len(all_opps),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "date": datetime.now(timezone.utc).strftime('%B %d, %Y')
+    }
+
+    if top_pick:
+        await db.api_cache.update_one(
+            {"key": cache_key},
+            {"$set": {"key": cache_key, "data": result, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True
+        )
+
+    return result
+
