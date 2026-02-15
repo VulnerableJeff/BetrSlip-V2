@@ -1,80 +1,56 @@
-# BetrSlip - Sports Betting Analysis Platform
+# BetrSlip - Product Requirements Document
 
 ## Original Problem Statement
-Build a powerful and credible sports betting analysis platform. All betting data must be real, live, and for upcoming games. No mock or placeholder data.
+Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI + MongoDB app that provides AI-powered betting slip analysis, live odds scanning, and value betting tools using The Odds API.
 
 ## Core Requirements
-1. **Data Integrity**: All data from live Odds API, no mocks
-2. **AI-Powered Tools**: AI Chat, AI Picks, Game Plan Generator
-3. **Edge-Finding**: +EV Finder, Line Movements
-4. **Betting Tools**: Parlay Builder/Optimizer
-5. **UX**: Modern responsive UI, noob-friendly labels and descriptions
+- Upload & analyze bet slips with AI (GPT-powered)
+- Live odds data from The Odds API across multiple sportsbooks
+- EV scanning, parlay optimization, daily picks
+- Pro subscription tier ($5/mo) with premium features
+- Admin dashboard for managing picks and users
 
 ## Architecture
-- **Frontend**: React, Craco, Tailwind CSS
-- **Backend**: Python, FastAPI, MongoDB
-- **AI**: OpenAI GPT-4o (Emergent LLM Key)
-- **Data**: The Odds API (api.the-odds-api.com/v4)
+- **Frontend**: React + Tailwind CSS + Shadcn UI
+- **Backend**: FastAPI + MongoDB
+- **External APIs**: The Odds API, WeatherAPI, SportsRC API
+- **Auth**: JWT-based with admin auto-creation on startup
 
-## What's Been Implemented
+## What's Been Implemented (as of Feb 15, 2026)
 
-### Noob-Friendly Rename & Section Cleanup (Feb 14, 2026)
-- Renamed all sections: "Line Movers", "AI Parlay Picks", "Best Value Bets", "Build Your Parlay", "Today's Best Bets"
-- Added noob-friendly tooltips and descriptions to every section
-- Removed 6 dead/broken sections: Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P/L Tracker, Game Plan
+### Production Stability
+- Database connection fix (no `load_dotenv(override=True)`)
+- Stale API key fix (reads ODDS_API_KEY from .env directly)
+- Admin user auto-creation on startup
+- Cache warming with circuit breaker pattern
 
-### Deployment Resilience Fixes (Feb 14, 2026)
-- Lazy env var loading for all API keys (runtime, not import time)
-- Warmup mode for circuit breaker (startup failures don't block users)
-- Circuit breaker tuning: threshold 5, cooldown 60s
-- Admin auto-creation on startup for fresh databases
-- Fixed load_dotenv override issue (don't override K8s MONGO_URL with localhost)
-- ODDS_API_KEY read from .env file first to handle stale K8s cache
+### Dashboard Features (Active)
+- **Bet of the Day** — Hero spotlight with circular confidence meter (0-100), win probability, edge %, share button
+- **Today's Top Picks** — AI daily picks with Share/Copy buttons, win probability display
+- **Upload Betting Slip** — Image upload + AI analysis with real-time intelligence
+- **AI Parlay Picks** — AI-optimized 2-leg parlays (Build Your Own removed)
+- **Best Value Bets** — EV scanner across sportsbooks
+- **Today's Best Bets** — Top 3 +EV picks with winning probability %
+- **USA Sports Hub** — Live scores & where to watch
+- **AI Chat Assistant** — Floating chat
+- **Referral Program & Notification Settings**
 
-### Previous Session
-- Full live data integration with The Odds API
-- All features: EV Scanner, Parlay Optimizer, Daily Bet Card, CLV Tracking
-- Frontend resilience: loading/empty states, auto-retry
-- Circuit breaker, in-memory cache, DB cache fallback
+### Removed Components (Feb 15, 2026)
+- Line Movers (LineMovementAlerts)
+- Build Your Own Parlay (ParlayBuilder)
+- Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P&L Tracker, Game Plan
 
-### P0 - Live Data Feed (DONE - Feb 10, 2026)
-- Updated Odds API key, verified working
-- All endpoints return real live data
-- NBA, NHL, NCAAB active (NFL/MLB off-season)
-- Removed ALL mock/sample data fallbacks
+### Backend Endpoints
+- `/api/bet-of-the-day` — Single highest-confidence pick with confidence_score
+- `/api/daily-bet-card` — Top 3 picks with winning_probability field
+- `/api/parlay-optimizer` — AI optimal parlays
+- `/api/ev-scanner` — Value bet opportunities
+- `/api/daily-picks` — Admin-curated daily picks
+- `/api/analyze` — Bet slip image analysis
 
-### P1 - Data Integrity Pass (DONE - Feb 10, 2026)
-- Removed `_get_fallback_games()`, `_get_sample_props()`, `_fallback_ev_scan()`
-- Updated sport lists to in-season sports
-- All components show "unavailable" when data unavailable
+## Credentials
+- Admin: hundojeff@icloud.com / Boo-boo600$
 
-### P2 - DeepChampAI Enhancements (DONE - Feb 10, 2026)
-- **CLV Tracking**: avg_clv and clv_bets_tracked in P/L Tracker
-- **Enhanced Parlay Optimizer**: AI optimal 2-leg parlays with combined EV
-- **Enhanced Player Props**: Cross-book comparison, value indicators
-
-### Daily Bet Card (DONE - Feb 10, 2026)
-- Pro-only shareable card with top 3 +EV picks
-- Dark/neon theme matching app design
-- Download as PNG (Canvas API) and Copy to clipboard
-- Picks from real live odds, sorted by edge
-- Cached hourly for performance
-
-### Previously Completed
-- AI Chat Assistant, P/L Tracker, EV Scanner
-- Parlay Builder, Leaderboard, Arbitrage Scanner
-- Player Props, Game Plan Generator
-- Landing Page, Flask-Caching, Auth
-
-### Deployment Fix - Rate Limiting (DONE - Feb 10, 2026)
-- Created centralized `odds_client.py` with 3-layer cache (memory → MongoDB → API)
-- Global asyncio semaphore limits to 1 concurrent API call
-- 1.2s rate limiter between API calls prevents 429 bursts
-- All routes (analytics, pro_tools, performance, smart_picks, sports_data_service) now use single client
-- In-memory cache with 5min TTL eliminates duplicate API calls on page loads
-
-## Remaining Backlog
-- **P2**: Prop Bet Research with historical stats
-- **P3**: Backend refactoring (modularize server.py)
-- **P3**: 3-leg parlay optimizer
-- **Future**: Push notifications for line movement alerts
+## Prioritized Backlog
+- No pending tasks currently defined
+- Potential: Historical performance tracking, ROI dashboards, notification alerts for value bets
