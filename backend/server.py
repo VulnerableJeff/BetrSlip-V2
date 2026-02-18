@@ -1032,9 +1032,22 @@ async def delayed_startup_tasks():
         set_warmup_mode(True)
         logger.info("Starting odds cache warmup (warmup mode ON — failures won't trigger circuit breaker)...")
         
-        # Sequentially fetch the most important sports data
+        # Sequentially fetch the most important sports data (skip if cache is fresh)
         for sport_key in ['basketball_nba', 'icehockey_nhl', 'basketball_ncaab']:
             try:
+                # Check if MongoDB cache is fresh (< 60 min) to skip API call
+                cache_key = f"odds_cache_{sport_key}_h2h_spreads_totals"
+                cached = await db.api_cache.find_one({"key": cache_key})
+                if cached and cached.get('updated_at'):
+                    from datetime import datetime as dt, timezone as tz
+                    try:
+                        cache_time = dt.fromisoformat(cached['updated_at'].replace('Z', '+00:00'))
+                        age = (dt.now(tz.utc) - cache_time).total_seconds()
+                        if age < 3600:
+                            logger.info(f"Skipping warmup for {sport_key} — cache is {int(age)}s old")
+                            continue
+                    except (ValueError, TypeError):
+                        pass
                 data = await fetch_odds(sport_key, 'h2h,spreads,totals', db=db)
                 if data:
                     logger.info(f"Warmed cache for {sport_key}: {len(data)} games")
