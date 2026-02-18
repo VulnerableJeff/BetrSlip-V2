@@ -616,6 +616,30 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
     all_opps.sort(key=lambda x: (x['confidence_score'], x['edge']), reverse=True)
     top_pick = all_opps[0] if all_opps else None
 
+    # Fallback: if no fresh pick found (API quota exhausted), use last known pick
+    if not top_pick:
+        last_pick = await db.bot_pick_history.find_one(
+            {"source": "bet_of_day"},
+            {"_id": 0},
+            sort=[("date", -1)]
+        )
+        if last_pick:
+            top_pick = {
+                "pick": last_pick.get("pick", ""),
+                "game": last_pick.get("game", ""),
+                "sport": last_pick.get("sport", ""),
+                "bet_type": last_pick.get("bet_type", ""),
+                "odds": last_pick.get("odds", ""),
+                "edge": last_pick.get("edge", 0),
+                "book": last_pick.get("book", ""),
+                "winning_probability": last_pick.get("winning_probability", 0),
+                "confidence_score": last_pick.get("confidence_score", 0),
+                "books_compared": last_pick.get("books_compared", 0),
+                "game_time": last_pick.get("game_time", ""),
+                "reasons": ["Based on our most recent analysis (live odds data refreshes hourly)"],
+                "is_cached_pick": True
+            }
+
     result = {
         "success": True,
         "pick": top_pick,
