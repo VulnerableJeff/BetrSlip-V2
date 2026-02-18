@@ -134,8 +134,8 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
                     except (ValueError, TypeError):
                         cache_age = 999
 
-                # Use DB cache if less than 10 minutes old
-                if cache_age < 600:
+                # Use DB cache if less than 60 minutes old
+                if cache_age < 3600:
                     _set_mem_cache(cache_key, cached['data'])
                     return cached['data']
         except Exception as e:
