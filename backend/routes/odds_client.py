@@ -182,6 +182,10 @@ async def fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals', db=Non
                     if resp.status == 200:
                         data = await resp.json()
                         _consecutive_failures = 0  # Reset circuit breaker
+                        # Log remaining quota
+                        remaining = resp.headers.get('x-requests-remaining', '?')
+                        if remaining != '?' and int(remaining) < 50:
+                            logger.warning(f"Odds API quota low: {remaining} requests remaining")
                         if data:
                             _set_mem_cache(cache_key, data)
                             if db is not None:
