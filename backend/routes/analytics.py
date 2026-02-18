@@ -485,7 +485,7 @@ async def get_daily_bet_card(current_user: dict = Depends(get_current_user)):
 @router.get("/bet-of-the-day")
 async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
     """Get the single highest-confidence pick of the day with confidence score"""
-    cache_key = f"bet_of_day_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H')}"
+    cache_key = f"bet_of_day_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
     cached = await db.api_cache.find_one({"key": cache_key}, {"_id": 0})
     if cached and cached.get('data'):
         # Still auto-save to history even from cache
