@@ -1,423 +1,781 @@
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Zap, Trophy, ShieldCheck, BarChart3, Users, ArrowRight, CheckCircle2, Crown, Flame, Target, Share2, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity } from 'lucide-react';
 
-const GlassCard = ({ children, className = '', ...props }) => (
-  <div className={`bg-slate-900/60 border border-slate-800 backdrop-blur-md ${className}`} {...props}>
-    {children}
-  </div>
-);
-
-const ConfidenceRing = ({ score }) => {
-  const r = 40, s = 5, c = 2 * Math.PI * r;
-  const offset = c - (score / 100) * c;
-  const color = score >= 70 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
-  return (
-    <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#1e293b" strokeWidth={s} />
-      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth={s}
-        strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" />
-      <text x="50" y="54" textAnchor="middle" className="fill-white text-2xl font-black" transform="rotate(90 50 50)">{score}</text>
-    </svg>
-  );
-};
-
-const TickerBar = () => {
-  const items = [
-    'NBA: 67% WIN RATE THIS WEEK',
-    'NCAAB TOP PICK HIT +240',
-    'AI PARLAY CASHED +167',
-    '3-GAME WIN STREAK ACTIVE',
-    'NHL UNDERDOG PICK WON',
-    'FADING PUBLIC: 5-2 RECORD',
-    'TODAY: 85 CONFIDENCE SCORE',
-    'DAILY PICKS UPDATED LIVE',
-  ];
-  return (
-    <div className="overflow-hidden bg-slate-950 border-y border-slate-800 py-3">
-      <div className="flex animate-[scroll_30s_linear_infinite] whitespace-nowrap">
-        {[...items, ...items].map((item, i) => (
-          <span key={i} className="mx-8 text-xs font-bold tracking-widest uppercase">
-            <span className="text-emerald-400 mr-2">///</span>
-            <span className="text-slate-300">{item}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
+import { BACKEND_URL } from '@/config/api';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const goAuth = () => navigate('/auth');
+  const [performance, setPerformance] = useState(null);
+  const [publicStats, setPublicStats] = useState(null);
+
+  useEffect(() => {
+    fetchPerformance();
+    fetchPublicStats();
+  }, []);
+
+  const fetchPerformance = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/picks-performance`);
+      setPerformance(response.data);
+    } catch (error) {
+      console.error('Error fetching performance:', error);
+    }
+  };
+
+  const fetchPublicStats = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/public-stats`);
+      setPublicStats(response.data);
+    } catch (error) {
+      console.error('Error fetching public stats:', error);
+    }
+  };
+
+  const getSportEmoji = (sport) => {
+    const emojis = {
+      'NFL': '🏈',
+      'NBA': '🏀',
+      'MLB': '⚾',
+      'NHL': '🏒',
+      'Soccer': '⚽',
+      'UFC': '🥊',
+    };
+    return emojis[sport] || '🎯';
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" data-testid="landing-page">
-      {/* Noise overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-50"
-        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
-
-      {/* STICKY NAV */}
-      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-black text-emerald-400 tracking-tight">BetrSlip</span>
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-900/50 text-violet-400 border border-violet-800">AI-POWERED</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={goAuth} className="text-slate-300 hover:text-white font-bold uppercase tracking-wide text-sm" data-testid="nav-login">
-              Log In
-            </Button>
-            <button onClick={goAuth} className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold uppercase tracking-wide px-5 py-2 text-sm transition-all hover:scale-105" style={{ transform: 'skewX(-8deg)' }} data-testid="nav-signup">
-              <span style={{ display: 'inline-block', transform: 'skewX(8deg)' }}>Get Started</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/20 via-slate-950/95 to-slate-950" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-[120px]" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left: Copy */}
-            <div>
-              <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-900/50 text-red-400 border border-red-800 mb-6 animate-pulse" data-testid="live-badge">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full mr-2" />
-                LIVE ODDS UPDATED
-              </div>
-              <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] mb-6" data-testid="hero-headline">
-                Beat the Books<br />
-                <span className="text-emerald-400">With AI</span>
-              </h1>
-              <p className="text-lg md:text-xl font-medium leading-relaxed text-slate-400 max-w-lg mb-8">
-                Data-driven picks, real-time odds scanning, and a confidence score that tells you exactly when to bet. Stop guessing. Start winning.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button onClick={goAuth} className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold uppercase tracking-wide px-8 py-4 text-base transition-all hover:scale-105 shadow-[0_0_20px_rgba(16,185,129,0.3)]" style={{ transform: 'skewX(-8deg)' }} data-testid="hero-cta">
-                  <span className="flex items-center gap-2" style={{ display: 'inline-flex', transform: 'skewX(8deg)' }}>
-                    Start Winning <ArrowRight className="w-5 h-5" />
-                  </span>
-                </button>
-                <button onClick={goAuth} className="border border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 font-bold uppercase tracking-wide px-8 py-4 text-base transition-colors" style={{ transform: 'skewX(-8deg)' }} data-testid="hero-cta-secondary">
-                  <span style={{ display: 'inline-flex', transform: 'skewX(8deg)' }}>See Today's Picks</span>
-                </button>
-              </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-violet-950/20 to-slate-950">
+      {/* Live Activity Banner */}
+      {publicStats && (
+        <div className="bg-gradient-to-r from-emerald-950/50 to-violet-950/50 border-b border-emerald-500/20">
+          <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-400 font-semibold">{publicStats.active_now} analyzing now</span>
             </div>
-
-            {/* Right: Mock Bet of the Day Card */}
-            <div className="hidden lg:block">
-              <GlassCard className="p-6 rounded-none border-emerald-500/20 relative">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-violet-500 to-orange-500" />
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center">
-                    <Flame className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-white">Bet of the Day</p>
-                    <p className="text-[10px] text-slate-500">Updated daily with live odds</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <ConfidenceRing score={85} />
-                  <div>
-                    <div className="flex gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 text-[10px] font-bold uppercase">NBA</span>
-                      <span className="px-2 py-0.5 rounded bg-slate-700/50 text-slate-400 text-[10px]">Moneyline</span>
-                    </div>
-                    <p className="text-xl font-black text-white mb-1">Lakers ML</p>
-                    <p className="text-xs text-slate-400 mb-3">Mavericks @ Lakers</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <span className="bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1 text-xs font-bold text-emerald-400">-180</span>
-                      <span className="bg-slate-800/60 rounded-full px-3 py-1 text-xs font-bold text-amber-400">64.2% win</span>
-                      <span className="bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1 text-xs font-bold text-amber-400">+5.3% edge</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2 text-[10px] text-violet-400">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Significant 5.3% edge over market consensus</span>
-                </div>
-              </GlassCard>
+            <div className="hidden sm:flex items-center gap-2 text-slate-400">
+              <Users className="w-4 h-4" />
+              <span>{publicStats.total_users?.toLocaleString() || '0'} users</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-slate-400">
+              <Activity className="w-4 h-4" />
+              <span>{publicStats.total_analyses?.toLocaleString() || '0'} bets analyzed</span>
+            </div>
+            <div className="flex items-center gap-2 text-violet-400">
+              <Target className="w-4 h-4" />
+              <span>{publicStats.ai_accuracy || '67.5'}% AI accuracy</span>
             </div>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* TICKER */}
-      <TickerBar />
-
-      {/* FEATURES BENTO */}
-      <section className="py-24 md:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-sm font-bold uppercase tracking-widest text-emerald-400 mb-3">FEATURES</p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight uppercase mb-4">Your Unfair Advantage</h2>
-          <p className="text-base font-medium text-slate-400 max-w-2xl mb-12">
-            Every tool you need to find value, track performance, and make smarter bets — powered by real-time odds data from 10+ sportsbooks.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="features-grid">
-            {/* Bet of the Day - Large */}
-            <GlassCard className="md:col-span-2 p-8 group hover:border-emerald-500/50 transition-all duration-300" data-testid="feature-bet-of-day">
-              <div className="flex items-center gap-2 mb-3">
-                <Flame className="w-5 h-5 text-orange-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-orange-400">Bet of the Day</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-900/50 text-red-400 animate-pulse">LIVE</span>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">One Pick. Maximum Confidence.</h3>
-              <p className="text-base font-medium text-slate-400 mb-6">
-                Our AI scans every game across NBA, NHL, NCAAB & NFL, comparing odds from 10+ books to find the single highest-confidence play. Complete with a visual confidence meter and detailed reasoning.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1.5 bg-slate-800 rounded text-xs text-emerald-400 font-semibold">Confidence Meter 0-100</span>
-                <span className="px-3 py-1.5 bg-slate-800 rounded text-xs text-violet-400 font-semibold">Win Probability %</span>
-                <span className="px-3 py-1.5 bg-slate-800 rounded text-xs text-amber-400 font-semibold">Edge Analysis</span>
-                <span className="px-3 py-1.5 bg-slate-800 rounded text-xs text-red-400 font-semibold">Fading the Public</span>
-              </div>
-            </GlassCard>
-
-            {/* Pick of the Week */}
-            <GlassCard className="p-8 group hover:border-amber-500/50 transition-all duration-300" data-testid="feature-leaderboard">
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-amber-400">Leaderboard</span>
-              </div>
-              <h3 className="text-xl font-bold tracking-tight mb-2">Pick of the Week</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                Track our Bet of the Day performance over time. Win/loss record, ROI, streaks — full transparency.
-              </p>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Weekly W/L</span><span className="text-emerald-400 font-bold">4-1</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">ROI</span><span className="text-emerald-400 font-bold">+$340</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Streak</span><span className="text-amber-400 font-bold">3W</span></div>
-              </div>
-              <div className="mt-4">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-900/50 text-amber-400 border border-amber-800">PRO FEATURE</span>
-              </div>
-            </GlassCard>
-
-            {/* AI Parlay Picks */}
-            <GlassCard className="p-8 group hover:border-violet-500/50 transition-all duration-300" data-testid="feature-parlay">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap className="w-5 h-5 text-violet-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-violet-400">AI Parlays</span>
-              </div>
-              <h3 className="text-xl font-bold tracking-tight mb-2">Smart 2-Leg Parlays</h3>
-              <p className="text-sm text-slate-400">
-                AI builds optimized parlays from live odds. Each comes with combined probability and expected value.
-              </p>
-            </GlassCard>
-
-            {/* Best Value Bets */}
-            <GlassCard className="p-8 group hover:border-emerald-500/50 transition-all duration-300" data-testid="feature-ev">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-emerald-400">EV Scanner</span>
-              </div>
-              <h3 className="text-xl font-bold tracking-tight mb-2">Find +EV Bets</h3>
-              <p className="text-sm text-slate-400">
-                Scans odds across sportsbooks to find bets where the true probability is in your favor. Think of it as finding a sale.
-              </p>
-            </GlassCard>
-
-            {/* Share */}
-            <GlassCard className="p-8 group hover:border-slate-600 transition-all duration-300" data-testid="feature-share">
-              <div className="flex items-center gap-2 mb-3">
-                <Share2 className="w-5 h-5 text-slate-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Social</span>
-              </div>
-              <h3 className="text-xl font-bold tracking-tight mb-2">Share Your Picks</h3>
-              <p className="text-sm text-slate-400">
-                One-tap share your daily picks and bet slips with friends. Copy or use native share on mobile.
-              </p>
-            </GlassCard>
-          </div>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute w-96 h-96 bg-violet-500/10 rounded-full blur-3xl -top-48 -left-48 animate-pulse"></div>
+          <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl -bottom-48 -right-48 animate-pulse delay-1000"></div>
         </div>
-      </section>
 
-      {/* FADING THE PUBLIC */}
-      <section className="py-16 border-y border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-red-400" />
-                <span className="text-sm font-bold uppercase tracking-widest text-red-400">NEW: FADING THE PUBLIC</span>
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
+          {/* Brand Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-violet-500 blur-xl opacity-50"></div>
+                <div className="relative bg-gradient-to-br from-violet-500 to-purple-600 text-white px-4 py-2 rounded-lg font-black text-2xl">
+                  BetrSlip
+                </div>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight uppercase mb-4">
-                The Public Loses.<br />We Show You <span className="text-red-400">Why.</span>
-              </h2>
-              <p className="text-base text-slate-400 mb-6 leading-relaxed">
-                Most bettors follow the crowd. Our "Fading the Public" indicator flags picks that go against heavy public action — historically one of the most profitable contrarian strategies in sports betting.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <span className="bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-red-400 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" /> FADING PUBLIC
-                </span>
-                <span className="bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-emerald-400">
-                  Underdog picks that hit
-                </span>
-                <span className="bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-amber-400">
-                  Sharp money detector
-                </span>
-              </div>
+              <span className="text-slate-400 text-sm font-semibold bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">
+                v2.1
+              </span>
             </div>
-            <GlassCard className="p-6 rounded-none">
-              <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-4">RECENT FADE PICKS</p>
-              {[
-                { pick: 'Celtics +3.5', result: 'WON', odds: '+105', edge: '+4.2%' },
-                { pick: 'Under 215.5', result: 'WON', odds: '-110', edge: '+3.1%' },
-                { pick: 'Avalanche ML', result: 'WON', odds: '+140', edge: '+5.8%' },
-              ].map((p, i) => (
-                <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-800 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm font-medium text-white">{p.pick}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-slate-400">{p.odds}</span>
-                    <span className="text-emerald-400 font-bold">{p.edge}</span>
-                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">{p.result}</span>
-                  </div>
-                </div>
-              ))}
-            </GlassCard>
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-8">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-400 text-sm font-semibold uppercase tracking-wider">
+                Live Running Now
+              </span>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* HOW IT WORKS */}
-      <section className="py-24 md:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-violet-400 mb-3">HOW IT WORKS</p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight uppercase mb-16">Three Steps to Smarter Bets</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: BarChart3, color: 'text-emerald-400', bg: 'bg-emerald-500/10', step: '01', title: 'We Scan', desc: 'Our AI analyzes odds from 10+ sportsbooks in real-time, finding edges the market missed.' },
-              { icon: Target, color: 'text-violet-400', bg: 'bg-violet-500/10', step: '02', title: 'We Score', desc: 'Every opportunity gets a confidence score (0-100), win probability, and EV calculation.' },
-              { icon: Trophy, color: 'text-amber-400', bg: 'bg-amber-500/10', step: '03', title: 'You Win', desc: 'Get the Bet of the Day, AI parlays, and value bets delivered — all backed by data.' },
-            ].map((s, i) => (
-              <div key={i} className="text-left">
-                <div className={`w-14 h-14 ${s.bg} rounded-lg flex items-center justify-center mb-4`}>
-                  <s.icon className={`w-7 h-7 ${s.color}`} />
-                </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-slate-600 mb-2">{s.step}</p>
-                <h3 className="text-2xl font-bold mb-2">{s.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section className="py-24 md:py-32 border-t border-slate-800" data-testid="pricing-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Main Headline */}
           <div className="text-center mb-16">
-            <p className="text-sm font-bold uppercase tracking-widest text-emerald-400 mb-3">PRICING</p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight uppercase mb-4">Start Free. Go Pro.</h2>
-            <p className="text-base text-slate-400">No credit card required. Upgrade anytime.</p>
+            <h1
+              className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-6 tracking-tight"
+              data-testid="hero-title"
+            >
+              AI-powered bet analysis{' '}
+              <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                you can trust.
+              </span>
+            </h1>
+            <p
+              className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto mb-4"
+              data-testid="hero-description"
+            >
+              Upload your bet slip screenshot. Get AI-powered win probability with real-time 
+              injury reports, weather data, and team stats. Track your results and see our accuracy.
+            </p>
+            {/* Supported Sportsbooks */}
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 mt-6">
+              <span className="text-slate-500 text-sm">Works with:</span>
+              <div className="flex flex-wrap justify-center gap-3">
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">DraftKings</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">FanDuel</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">Hard Rock</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">BetMGM</span>
+                <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-emerald-400 font-semibold text-sm">+ More</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Free */}
-            <GlassCard className="p-8 rounded-none">
-              <p className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-2">FREE</p>
-              <p className="text-4xl font-black text-white mb-1">$0</p>
-              <p className="text-xs text-slate-500 mb-6">Forever free</p>
-              <div className="space-y-3 mb-8">
-                {['Bet of the Day', 'AI Parlay Picks', 'Best Value Bets Scanner', '3 Daily Analyses', 'USA Sports Hub'].map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-slate-500 flex-shrink-0" />{f}
-                  </div>
-                ))}
-              </div>
-              <button onClick={goAuth} className="w-full border border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 font-bold uppercase tracking-wide px-6 py-3 text-sm transition-colors" style={{ transform: 'skewX(-8deg)' }}>
-                <span style={{ display: 'inline-block', transform: 'skewX(8deg)' }}>Get Started Free</span>
-              </button>
-            </GlassCard>
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full">
+              <Target className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-400 text-sm font-semibold">Track AI Accuracy</span>
+            </div>
+            <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 px-4 py-2 rounded-full">
+              <TrendingUp className="w-4 h-4 text-violet-400" />
+              <span className="text-violet-400 text-sm font-semibold">Real-Time Sports Data</span>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 px-4 py-2 rounded-full">
+              <CheckCircle className="w-4 h-4 text-purple-400" />
+              <span className="text-purple-400 text-sm font-semibold">Transparent Results</span>
+            </div>
+          </div>
 
-            {/* Pro */}
-            <div className="relative">
-              <div className="absolute -inset-px bg-gradient-to-b from-emerald-500/50 to-emerald-500/0 rounded-none" />
-              <GlassCard className="relative p-8 rounded-none border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">PRO</p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-900/50 text-emerald-400 border border-emerald-800">BEST VALUE</span>
+          {/* Preview Card */}
+          <div className="max-w-3xl mx-auto mb-12">
+            <div className="glass border-2 border-violet-500/20 rounded-2xl p-6 sm:p-8 glow-purple">
+              {/* Analysis Header */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-2 mb-4">
+                  <span className="text-xs text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/30">
+                    AI Analysis Complete
+                  </span>
                 </div>
-                <p className="text-4xl font-black text-white mb-1">$5<span className="text-lg text-slate-400 font-medium">/mo</span></p>
-                <p className="text-xs text-slate-500 mb-6">Cancel anytime</p>
-                <div className="space-y-3 mb-8">
-                  {[
-                    'Everything in Free',
-                    'Pick of the Week Leaderboard',
-                    'Fading the Public Indicators',
-                    'Today\'s Top Picks (AI-Generated)',
-                    'Unlimited Analyses',
-                    'Priority AI Chat Support',
-                    'Share Picks Feature',
-                  ].map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-white">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />{f}
+                <div className="bg-slate-900/50 rounded-xl p-6 mb-4">
+                  <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Win Probability</p>
+                  <p className="text-5xl sm:text-6xl font-black text-yellow-400">28.5%</p>
+                  <p className="text-slate-400 text-xs mt-2">Confidence: 7/10</p>
+                </div>
+                <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-yellow-500/10 border border-yellow-500/50">
+                  <span className="font-bold text-yellow-400">SMALL/SKIP</span>
+                </div>
+                <p className="text-slate-400 text-sm mt-3">
+                  EV: <span className="text-red-400 font-semibold">-8.2%</span> • Kelly: <span className="text-violet-400 font-semibold">0%</span>
+                </p>
+              </div>
+
+              {/* Real-Time Data Section */}
+              <div className="bg-gradient-to-r from-emerald-950/30 to-teal-950/30 border border-emerald-500/30 rounded-xl p-4 mb-4">
+                <h3 className="text-white font-bold mb-3 text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                  Real-Time Intelligence
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Injuries</p>
+                    <p className="text-emerald-400 font-bold text-sm">2 Key OUT</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Weather</p>
+                    <p className="text-yellow-400 font-bold text-sm">❄️ 20°F</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Form</p>
+                    <p className="text-emerald-400 font-bold text-sm">WWWLW</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parlay Comparison */}
+              <div className="bg-gradient-to-r from-violet-950/30 to-purple-950/30 border border-violet-500/30 rounded-xl p-4 mb-4">
+                <h3 className="text-white font-bold mb-3 text-sm flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-violet-400" />
+                  Parlay vs Straight Bets
+                </h3>
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Parlay EV</p>
+                    <p className="text-xl font-bold text-red-400">-8.2%</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs mb-1">Straight Bets EV</p>
+                    <p className="text-xl font-bold text-yellow-400">-2.1%</p>
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 rounded px-3 py-2 text-center">
+                  <p className="text-violet-300 text-sm font-semibold">💡 Bet individually</p>
+                  <p className="text-slate-400 text-xs mt-1">Better value: 6.1% EV difference</p>
+                </div>
+              </div>
+              
+              {/* Sample Bets */}
+              <div className="space-y-2">
+                <h3 className="text-white font-bold text-sm mb-3">Individual Bet Breakdown</h3>
+                
+                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white font-semibold text-xs">Chiefs -1H Moneyline</p>
+                    <span className="text-emerald-400 font-bold text-xs">61%</span>
+                  </div>
+                  <p className="text-slate-400 text-xs mb-1">odds -140</p>
+                  <p className="text-slate-300 text-xs">Strong home performance, favorable matchup</p>
+                </div>
+
+                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white font-semibold text-xs">Travis Kelce Over 5.5 Receptions</p>
+                    <span className="text-yellow-400 font-bold text-xs">58%</span>
+                  </div>
+                  <p className="text-slate-400 text-xs mb-1">odds -115</p>
+                  <p className="text-slate-300 text-xs">Consistent target share but tough defense</p>
+                </div>
+
+                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white font-semibold text-xs">Steelers +7.5 (Spread)</p>
+                    <span className="text-yellow-400 font-bold text-xs">55%</span>
+                  </div>
+                  <p className="text-slate-400 text-xs mb-1">odds -110</p>
+                  <p className="text-slate-300 text-xs">Road underdog, recent form concerns</p>
+                </div>
+              </div>
+
+              {/* Risk Factors */}
+              <div className="mt-4 bg-red-950/20 border border-red-900/30 rounded-lg p-3">
+                <h3 className="text-red-400 font-bold text-xs mb-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Risk Factors
+                </h3>
+                <ul className="space-y-1">
+                  <li className="flex items-start gap-1 text-xs text-slate-300">
+                    <span className="text-red-400">•</span>
+                    <span>3-leg parlay significantly reduces win probability</span>
+                  </li>
+                  <li className="flex items-start gap-1 text-xs text-slate-300">
+                    <span className="text-red-400">•</span>
+                    <span>Negative expected value - house edge too high</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <Button
+              data-testid="get-started-btn"
+              size="lg"
+              className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold text-lg px-12 py-7 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-violet-500/25"
+              onClick={() => navigate('/auth')}
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Start Analysis
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-16 bg-gradient-to-b from-slate-900 to-slate-950 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-4">How It Works</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Get AI-powered bet analysis in 3 simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Step 1 */}
+            <div className="relative">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-purple-500/30 border-2 border-violet-500/50 flex items-center justify-center mb-4 relative">
+                  <Camera className="w-8 h-8 text-violet-400" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-violet-500 text-white text-sm font-bold flex items-center justify-center">1</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Screenshot Your Bet</h3>
+                <p className="text-slate-400 text-sm">
+                  Take a screenshot from <span className="text-emerald-400 font-semibold">DraftKings</span>, <span className="text-emerald-400 font-semibold">FanDuel</span>, <span className="text-emerald-400 font-semibold">Hard Rock</span>, or any sportsbook app
+                </p>
+              </div>
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-8 -right-4 w-8 text-slate-600">
+                <ArrowRight className="w-8 h-8" />
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-500/30 border-2 border-emerald-500/50 flex items-center justify-center mb-4 relative">
+                  <Upload className="w-8 h-8 text-emerald-400" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 text-white text-sm font-bold flex items-center justify-center">2</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Upload & Analyze</h3>
+                <p className="text-slate-400 text-sm">
+                  Our AI extracts bet details and calculates win probability using <span className="text-yellow-400 font-semibold">real-time odds</span>, <span className="text-yellow-400 font-semibold">injury reports</span> & <span className="text-yellow-400 font-semibold">team stats</span>
+                </p>
+              </div>
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-8 -right-4 w-8 text-slate-600">
+                <ArrowRight className="w-8 h-8" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/50 flex items-center justify-center mb-4 relative">
+                <Trophy className="w-8 h-8 text-yellow-400" />
+                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-yellow-500 text-white text-sm font-bold flex items-center justify-center">3</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Make Smarter Bets</h3>
+              <p className="text-slate-400 text-sm">
+                Get detailed breakdown with <span className="text-violet-400 font-semibold">win probability</span>, <span className="text-violet-400 font-semibold">expected value</span>, and <span className="text-violet-400 font-semibold">betting suggestions</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Supported Sportsbooks */}
+          <div className="mt-12 pt-8 border-t border-slate-800/50">
+            <p className="text-center text-slate-500 text-sm mb-4">Works with all major sportsbooks</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">DraftKings</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">FanDuel</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">Hard Rock</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">BetMGM</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white font-semibold">Caesars</div>
+              <div className="px-6 py-3 bg-slate-800/50 border border-emerald-500/30 rounded-xl text-emerald-400 font-semibold">+ Any App</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Daily Top Picks - Pro Feature */}
+      <section className="py-16 bg-gradient-to-b from-slate-950 to-violet-950/20 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Feature Description */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-4 py-2 rounded-full mb-6">
+                <Trophy className="w-4 h-4 text-yellow-400" />
+                <span className="text-yellow-400 text-sm font-semibold uppercase tracking-wider">
+                  Pro Feature
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+                Today's Top Picks
+              </h2>
+              <p className="text-slate-400 text-lg mb-6">
+                Get <span className="text-yellow-400 font-semibold">3 AI-curated high-value bets</span> delivered daily. Our algorithm analyzes thousands of games to find the best opportunities.
+              </p>
+              
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Win Probability 60%+</span>
+                    <p className="text-slate-400 text-sm">Only high-confidence picks make the cut</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Full Analysis Included</span>
+                    <p className="text-slate-400 text-sm">Reasoning, risk factors, and confidence scores</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Updated Daily</span>
+                    <p className="text-slate-400 text-sm">Fresh picks every morning for that day's games</p>
+                  </div>
+                </li>
+              </ul>
+
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-yellow-500/25"
+                onClick={() => navigate('/auth')}
+              >
+                <Trophy className="w-5 h-5 mr-2" />
+                Get Pro - $5/month
+              </Button>
+            </div>
+
+            {/* Right - Preview Card */}
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-3xl blur-3xl"></div>
+              
+              {/* Card */}
+              <div className="relative bg-slate-900/90 border border-yellow-500/30 rounded-2xl p-6 backdrop-blur-xl">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold flex items-center gap-2">
+                      Today's Top Picks
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                        3 Picks
+                      </span>
+                    </h3>
+                    <p className="text-slate-400 text-xs">AI-analyzed high-value bets</p>
+                  </div>
+                </div>
+
+                {/* Sample Picks */}
+                <div className="space-y-3">
+                  {/* Pick 1 */}
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">🏀</span>
+                          <span className="text-xs text-slate-400 font-medium">NBA</span>
+                          <span className="px-2 py-0.5 rounded-full bg-yellow-500/30 text-yellow-300 text-xs font-bold">TOP PICK</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Celtics -6.5 vs Hornets</p>
+                        <p className="text-slate-400 text-xs">Tonight 7:30 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-emerald-400">72%</p>
+                        <p className="text-slate-400 text-xs">-108</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pick 2 */}
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">🏈</span>
+                          <span className="text-xs text-slate-400 font-medium">NFL</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Chiefs -3.5 vs Raiders</p>
+                        <p className="text-slate-400 text-xs">Sunday 4:25 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-yellow-400">68%</p>
+                        <p className="text-slate-400 text-xs">-110</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pick 3 */}
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">⚾</span>
+                          <span className="text-xs text-slate-400 font-medium">MLB</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">Dodgers ML vs Padres</p>
+                        <p className="text-slate-400 text-xs">Tomorrow 10:10 PM ET</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-yellow-400">64%</p>
+                        <p className="text-slate-400 text-xs">-145</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pro badge */}
+                <div className="mt-4 pt-4 border-t border-slate-800 text-center">
+                  <p className="text-slate-500 text-xs">
+                    Included with <span className="text-yellow-400 font-semibold">Pro subscription</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Proven Results Section - Show recent wins */}
+      {performance && performance.total_decided > 0 && (
+        <section className="py-16 bg-gradient-to-b from-violet-950/20 to-slate-950 border-t border-slate-800/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-4">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 text-sm font-semibold uppercase tracking-wider">
+                  Verified Results
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+                Our Picks Actually Win
+              </h2>
+              <p className="text-slate-400 max-w-2xl mx-auto">
+                Unlike paid Telegram groups that never deliver, our AI picks are transparent and tracked. 
+                See our real results below.
+              </p>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+              <div className="bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-emerald-400">{performance.won}</p>
+                <p className="text-slate-400 text-sm mt-1">Wins</p>
+              </div>
+              <div className="bg-slate-900/80 border border-red-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-red-400">{performance.lost}</p>
+                <p className="text-slate-400 text-sm mt-1">Losses</p>
+              </div>
+              <div className="bg-slate-900/80 border border-yellow-500/30 rounded-2xl p-6 text-center">
+                <p className="text-4xl font-black text-yellow-400">{performance.win_rate}%</p>
+                <p className="text-slate-400 text-sm mt-1">Win Rate</p>
+              </div>
+              <div className={`bg-slate-900/80 border rounded-2xl p-6 text-center ${
+                performance.streak_type === 'won' ? 'border-emerald-500/30' : 'border-red-500/30'
+              }`}>
+                <p className={`text-4xl font-black ${
+                  performance.streak_type === 'won' ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {performance.current_streak || 0}
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  {performance.streak_type === 'won' ? '🔥 Win Streak' : 'Current Streak'}
+                </p>
+              </div>
+            </div>
+
+            {/* Recent Results */}
+            {performance.recent_results && performance.recent_results.length > 0 && (
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  Recent Pick Results
+                </h3>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {performance.recent_results.map((pick, index) => (
+                    <div 
+                      key={pick.id || index}
+                      className={`rounded-xl p-4 border ${
+                        pick.outcome === 'won' 
+                          ? 'bg-emerald-500/10 border-emerald-500/30' 
+                          : pick.outcome === 'lost'
+                          ? 'bg-red-500/10 border-red-500/30'
+                          : 'bg-yellow-500/10 border-yellow-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getSportEmoji(pick.sport)}</span>
+                          <span className="text-xs text-slate-400 uppercase">{pick.sport}</span>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          pick.outcome === 'won' 
+                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            : pick.outcome === 'lost'
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {pick.outcome === 'won' && '✓ '}{pick.outcome.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-white font-semibold text-sm">{pick.title}</p>
+                      <div className="flex items-center justify-between mt-2 text-xs">
+                        <span className="text-slate-400">Predicted: {pick.win_probability}%</span>
+                        <span className="text-slate-400">{pick.odds}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <button onClick={goAuth} className="w-full bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold uppercase tracking-wide px-6 py-3 text-sm transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)]" style={{ transform: 'skewX(-8deg)' }}>
-                  <span className="flex items-center justify-center gap-2" style={{ display: 'inline-flex', transform: 'skewX(8deg)' }}>
-                    <Crown className="w-4 h-4" /> Go Pro Now
-                  </span>
-                </button>
-              </GlassCard>
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="text-center mt-10">
+              <p className="text-slate-400 mb-4">
+                Stop losing money on fake "expert" picks. Try our AI-powered analysis.
+              </p>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-emerald-500/25"
+                onClick={() => navigate('/auth')}
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Start Winning - 5 Free Analyses
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features Section */}
+      <section className="py-20 bg-slate-950/50 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-4">Why BetrSlip?</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Make smarter bets with AI-powered analysis, real-time data, and transparent accuracy tracking
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center" data-testid="feature-upload">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Upload className="w-7 h-7 text-violet-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Smart OCR</h3>
+              <p className="text-slate-400 text-sm">
+                Upload any bet slip screenshot—we extract every detail automatically
+              </p>
+            </div>
+
+            <div className="text-center" data-testid="feature-analyze">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Sparkles className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Real-Time Data</h3>
+              <p className="text-slate-400 text-sm">
+                Live odds, injuries, weather & team form integrated into analysis
+              </p>
+            </div>
+
+            <div className="text-center" data-testid="feature-track">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center mb-4 mx-auto">
+                <BarChart3 className="w-7 h-7 text-yellow-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Kelly & EV</h3>
+              <p className="text-slate-400 text-sm">
+                Optimal stake sizes and expected value for every leg
+              </p>
+            </div>
+
+            <div className="text-center" data-testid="feature-accuracy">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto">
+                <Target className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Track Accuracy</h3>
+              <p className="text-slate-400 text-sm">
+                Mark bets as Won/Lost and see our real prediction accuracy
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="py-24 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/20 to-transparent" />
-        <div className="relative max-w-3xl mx-auto px-4">
-          <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-6">
-            Stop Guessing.<br /><span className="text-emerald-400">Start Winning.</span>
-          </h2>
-          <p className="text-lg text-slate-400 mb-8 max-w-xl mx-auto">
-            Join thousands of bettors using AI-powered data to find value, track performance, and make smarter plays.
-          </p>
-          <button onClick={goAuth} className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold uppercase tracking-wide px-10 py-5 text-lg transition-all hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.4)]" style={{ transform: 'skewX(-8deg)' }} data-testid="final-cta">
-            <span className="flex items-center gap-2" style={{ display: 'inline-flex', transform: 'skewX(8deg)' }}>
-              Create Free Account <ChevronRight className="w-5 h-5" />
-            </span>
-          </button>
+      {/* Pro Tools Section - NEW */}
+      <section className="py-20 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 px-4 py-2 rounded-full mb-4">
+              <Crown className="w-4 h-4 text-violet-400" />
+              <span className="text-violet-400 text-sm font-semibold">Pro Tools</span>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-4">Edge-Finding Arsenal</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Professional-grade tools to find value, build parlays, and outsmart the books
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { icon: '💬', title: 'AI Chat', desc: 'Ask anything about games, odds, and strategy' },
+              { icon: '⚡', title: 'EV Scanner', desc: 'Find +EV opportunities across sportsbooks' },
+              { icon: '🛡️', title: 'Arb Scanner', desc: 'Detect risk-free bets across books' },
+              { icon: '🎯', title: 'Parlay Builder', desc: 'Build & analyze multi-leg parlays with EV' },
+              { icon: '🏆', title: 'Player Props', desc: 'Line analysis for player performance bets' },
+              { icon: '📋', title: 'Game Plan', desc: 'AI-personalized daily betting strategy' },
+            ].map((tool, i) => (
+              <div key={i} className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 hover:border-violet-500/30 transition-all group cursor-pointer" onClick={() => navigate('/auth')}>
+                <div className="text-2xl mb-2">{tool.icon}</div>
+                <h3 className="text-sm font-bold text-white mb-1 group-hover:text-violet-400 transition-colors">{tool.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{tool.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">P/L Tracker</h3>
+                  <p className="text-xs text-slate-400">Visual performance over time</p>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm">Track cumulative profit/loss, win rate, ROI, and AI accuracy. See how your bets perform with interactive charts.</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">Leaderboard</h3>
+                  <p className="text-xs text-slate-400">Compete with top bettors</p>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm">See how you stack up against other users. Top performers ranked by win rate with anonymized profiles.</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-slate-500">BetrSlip</span>
-            <span className="text-xs text-slate-600">Made for Winners</span>
+      {/* Accuracy Section - NEW */}
+      <section className="py-16 bg-gradient-to-r from-emerald-950/20 to-teal-950/20 border-y border-emerald-500/20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-6">
+            <Target className="w-4 h-4 text-emerald-400" />
+            <span className="text-emerald-400 text-sm font-semibold">Transparency Built In</span>
           </div>
-          <div className="flex items-center gap-6 text-xs text-slate-600">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Responsible Gambling</span>
-            <span>Terms</span>
-            <span>Privacy</span>
+          <h2 className="text-3xl font-black text-white mb-4">
+            Track Results. Verify Accuracy.
+          </h2>
+          <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
+            Mark your bets as Won, Lost, or Push after games. See our AI's real accuracy rate 
+            and track your personal performance over time. No hidden stats—full transparency.
+          </p>
+          <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-emerald-500/30">
+              <p className="text-3xl font-black text-emerald-400 mb-1">✓</p>
+              <p className="text-slate-400 text-sm">Won</p>
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-red-500/30">
+              <p className="text-3xl font-black text-red-400 mb-1">✗</p>
+              <p className="text-slate-400 text-sm">Lost</p>
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-500/30">
+              <p className="text-3xl font-black text-slate-400 mb-1">−</p>
+              <p className="text-slate-400 text-sm">Push</p>
+            </div>
           </div>
         </div>
-      </footer>
+      </section>
 
-      {/* Ticker animation keyframe */}
-      <style>{`
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
+      {/* Footer */}
+      <footer className="bg-slate-950 py-8 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-slate-400 text-sm mb-2">© 2025 BetrSlip. AI Bet Slip Companion.</p>
+          <p className="text-slate-500 text-xs">
+            Analyze smarter. Track results. Bet with confidence.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
