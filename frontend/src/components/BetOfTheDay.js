@@ -159,6 +159,12 @@ const BetOfTheDay = () => {
                 <span className="text-sm font-bold text-amber-400">+{pick.edge}%</span>
                 <span className="text-[10px] text-slate-500 ml-1">edge</span>
               </div>
+              {pick.fading_public && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-red-400" />
+                  <span className="text-[10px] font-bold text-red-400 uppercase">Fading Public</span>
+                </div>
+              )}
             </div>
 
             {/* Game time + book */}
