@@ -578,6 +578,27 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
                     odds_str = f"+{price}" if price > 0 else str(price)
                     books_agreeing = len(prices)
 
+                    # "Fading the public" detection
+                    # If our pick is on the underdog side (positive odds for h2h)
+                    # or the less popular side of spread/total, we're fading public money
+                    fading_public = False
+                    fade_reason = ""
+                    if key == 'h2h' and price > 0:
+                        fading_public = True
+                        fade_reason = f"Underdog pick — public is heavy on the favorite"
+                    elif key == 'h2h' and price < -200:
+                        # Heavy favorite with big edge = books disagree, sharp value
+                        pass
+                    elif key == 'spreads' and point and float(point) > 0:
+                        fading_public = True
+                        fade_reason = f"Taking the points — fading the popular spread side"
+                    elif key == 'totals' and name == 'Under':
+                        fading_public = True
+                        fade_reason = f"Under play — public typically bets overs"
+                    elif edge > 5:
+                        fading_public = True
+                        fade_reason = f"Large {edge}% edge suggests sharp money disagrees with public"
+
                     # Confidence score: 0-100 based on edge, books agreeing, and winning probability
                     conf_edge = min(edge * 5, 40)  # Max 40 points from edge
                     conf_books = min(books_agreeing * 5, 30)  # Max 30 points from book agreement
@@ -586,6 +607,8 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
 
                     # Build reasoning based on data
                     reasons = []
+                    if fading_public:
+                        reasons.append(fade_reason)
                     if edge > 4:
                         reasons.append(f"Significant {edge}% edge over market consensus")
                     elif edge > 2.5:
@@ -608,6 +631,8 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
                         "winning_probability": winning_prob,
                         "confidence_score": confidence_score,
                         "books_compared": books_agreeing,
+                        "fading_public": fading_public,
+                        "fade_reason": fade_reason,
                         "game_time": _format_time(commence),
                         "reasons": reasons
                     })
