@@ -94,7 +94,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         
         if user.get('is_banned'):
             raise HTTPException(status_code=403, detail="Account suspended")
-        
+
+        # Update last_active for online status tracking (fire-and-forget)
+        try:
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": {"last_active": datetime.now(timezone.utc).isoformat()}}
+            )
+        except Exception:
+            pass
+
         return {"user_id": user_id, "email": email, "user": user}
         
     except jwt.ExpiredSignatureError:
