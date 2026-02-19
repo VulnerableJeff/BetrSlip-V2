@@ -257,6 +257,7 @@ def is_admin(email: str) -> bool:
 async def get_all_users(db, skip: int = 0, limit: int = 50) -> List[dict]:
     """Get all users with their stats for admin dashboard"""
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).skip(skip).limit(limit).to_list(limit)
+    now = datetime.now(timezone.utc)
     
     result = []
     for user in users:
@@ -265,7 +266,17 @@ async def get_all_users(db, skip: int = 0, limit: int = 50) -> List[dict]:
         
         # Get subscription status
         subscription = await db.subscriptions.find_one({"user_id": user['id']}, {"_id": 0})
-        
+
+        # Determine online status (active within last 5 minutes)
+        is_online = False
+        last_active = user.get('last_active')
+        if last_active:
+            try:
+                la_time = datetime.fromisoformat(last_active.replace('Z', '+00:00'))
+                is_online = (now - la_time).total_seconds() < 300
+            except (ValueError, TypeError):
+                pass
+
         result.append({
             "id": user['id'],
             "email": user['email'],
@@ -277,6 +288,8 @@ async def get_all_users(db, skip: int = 0, limit: int = 50) -> List[dict]:
             "is_subscribed": subscription.get('subscription_status') == 'active' if subscription else False,
             "subscription_status": subscription.get('subscription_status') if subscription else None,
             "last_login": user.get('last_login'),
+            "last_active": last_active,
+            "is_online": is_online,
             "device_fingerprints": user.get('device_fingerprints', []),
             "ip_addresses": user.get('ip_addresses', [])
         })
