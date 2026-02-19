@@ -74,7 +74,7 @@ async def signup(request: SignupRequest):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest):
+async def login(request: LoginRequest, req: Request):
     """Login user"""
     user = await db.users.find_one({"email": request.email}, {"_id": 0})
     
@@ -88,7 +88,18 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=403, detail="Account suspended")
     
     token = create_access_token({"sub": user["id"], "email": user["email"]})
-    
+
+    # Track IP + last login
+    client_ip = req.headers.get("x-forwarded-for", req.headers.get("x-real-ip", req.client.host if req.client else "unknown"))
+    if client_ip and "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    update_ops = {
+        "$set": {"last_login": now_iso, "last_active": now_iso},
+        "$addToSet": {"ip_addresses": client_ip}
+    }
+    await db.users.update_one({"id": user["id"]}, update_ops)
+
     return {
         "token": token,
         "user": {
