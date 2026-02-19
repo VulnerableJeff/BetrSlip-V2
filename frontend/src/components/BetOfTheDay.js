@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
-import { Flame, TrendingUp, Clock, Shield, ChevronDown, ChevronUp, Share2 } from 'lucide-react';
+import { Flame, TrendingUp, Clock, Shield, ChevronDown, ChevronUp, Share2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { BACKEND_URL } from '@/config/api';
