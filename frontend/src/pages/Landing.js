@@ -676,61 +676,50 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Pro Tools Section - NEW */}
-      <section className="py-20 border-t border-slate-800/50">
+      {/* NEW: Bet of the Day + What's New */}
+      <section className="py-16 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 px-4 py-2 rounded-full mb-4">
               <Crown className="w-4 h-4 text-violet-400" />
-              <span className="text-violet-400 text-sm font-semibold">Pro Tools</span>
+              <span className="text-violet-400 text-sm font-semibold">New in v2.1</span>
             </div>
-            <h2 className="text-3xl font-black text-white mb-4">Edge-Finding Arsenal</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Professional-grade tools to find value, build parlays, and outsmart the books
+            <h2 className="text-3xl font-black text-white mb-3">More Ways to Win</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto text-sm">
+              Beyond bet slip analysis — our AI now scans live odds daily to find the best plays for you.
             </p>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { icon: '💬', title: 'AI Chat', desc: 'Ask anything about games, odds, and strategy' },
-              { icon: '⚡', title: 'EV Scanner', desc: 'Find +EV opportunities across sportsbooks' },
-              { icon: '🛡️', title: 'Arb Scanner', desc: 'Detect risk-free bets across books' },
-              { icon: '🎯', title: 'Parlay Builder', desc: 'Build & analyze multi-leg parlays with EV' },
-              { icon: '🏆', title: 'Player Props', desc: 'Line analysis for player performance bets' },
-              { icon: '📋', title: 'Game Plan', desc: 'AI-personalized daily betting strategy' },
-            ].map((tool, i) => (
-              <div key={i} className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 hover:border-violet-500/30 transition-all group cursor-pointer" onClick={() => navigate('/auth')}>
-                <div className="text-2xl mb-2">{tool.icon}</div>
-                <h3 className="text-sm font-bold text-white mb-1 group-hover:text-violet-400 transition-colors">{tool.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">{tool.desc}</p>
-              </div>
-            ))}
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold">P/L Tracker</h3>
-                  <p className="text-xs text-slate-400">Visual performance over time</p>
-                </div>
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Bet of the Day */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-orange-500/30 transition-all">
+              <div className="flex items-center gap-2 mb-3">
+                <Flame className="w-5 h-5 text-orange-400" />
+                <span className="text-sm font-bold text-orange-400">Bet of the Day</span>
               </div>
-              <p className="text-slate-400 text-sm">Track cumulative profit/loss, win rate, ROI, and AI accuracy. See how your bets perform with interactive charts.</p>
+              <p className="text-white font-bold mb-2">Daily high-confidence pick with a 0-100 confidence score</p>
+              <p className="text-slate-400 text-sm">AI scans every game across NBA, NHL, NCAAB & NFL to find the single best play — with win probability and edge analysis.</p>
             </div>
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold">Leaderboard</h3>
-                  <p className="text-xs text-slate-400">Compete with top bettors</p>
-                </div>
+
+            {/* Value Bets */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm font-bold text-emerald-400">EV Scanner</span>
               </div>
-              <p className="text-slate-400 text-sm">See how you stack up against other users. Top performers ranked by win rate with anonymized profiles.</p>
+              <p className="text-white font-bold mb-2">Find bets where the odds are in your favor</p>
+              <p className="text-slate-400 text-sm">Compares odds across 10+ sportsbooks to find positive expected value opportunities you'd miss on your own.</p>
+            </div>
+
+            {/* Pick of the Week */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-amber-500/30 transition-all">
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <span className="text-sm font-bold text-amber-400">Pick of the Week</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-bold">PRO</span>
+              </div>
+              <p className="text-white font-bold mb-2">Track our W/L record, ROI & win streaks</p>
+              <p className="text-slate-400 text-sm">Full transparency on how our daily picks perform. Win rate, profit/loss, and current streak — all verified.</p>
             </div>
           </div>
         </div>
