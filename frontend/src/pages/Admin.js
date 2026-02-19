@@ -805,17 +805,27 @@ const Admin = () => {
                 {/* User Row */}
                 <div className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Avatar */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                      user.is_banned ? 'bg-red-500/30' : user.is_subscribed ? 'bg-emerald-500/30' : 'bg-slate-700'
-                    }`}>
-                      {user.email.charAt(0).toUpperCase()}
+                    {/* Avatar with online indicator */}
+                    <div className="relative">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                        user.is_banned ? 'bg-red-500/30' : user.is_subscribed ? 'bg-emerald-500/30' : 'bg-slate-700'
+                      }`}>
+                        {user.email.charAt(0).toUpperCase()}
+                      </div>
+                      {user.is_online && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-900" data-testid={`user-online-${user.id}`} />
+                      )}
                     </div>
                     
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-white font-medium truncate">{user.email}</p>
+                        {user.is_online && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                            ONLINE
+                          </span>
+                        )}
                         {user.is_subscribed && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs">
                             <Crown className="w-3 h-3" />
@@ -830,7 +840,7 @@ const Admin = () => {
                         )}
                       </div>
                       <p className="text-slate-500 text-xs mt-1">
-                        {user.analyses_count} analyses • ID: {user.id.slice(0, 8)}...
+                        {user.analyses_count} analyses • Last login: {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'} • ID: {user.id.slice(0, 8)}...
                       </p>
                     </div>
                   </div>
