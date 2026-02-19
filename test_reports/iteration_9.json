@@ -1,0 +1,97 @@
+{
+  "summary": "Landing Page Redesign & Admin Panel Updates - All features verified. Backend: 10/10 tests passed (100%). Frontend: All new landing page sections and admin panel features confirmed working via UI screenshots.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Landing page loads at '/' with data-testid='landing-page'",
+    "Hero section shows 'BEAT THE BOOKS WITH AI' headline (data-testid='hero-headline')",
+    "LIVE ODDS UPDATED badge pulsing (data-testid='live-badge')",
+    "Bet of the Day preview card in hero with confidence meter (85 score demo)",
+    "Features bento grid shows all 5 features: Bet of Day, Leaderboard, AI Parlays, EV Scanner, Share",
+    "Bet of Day feature card has 'Fading the Public' tag in feature list",
+    "Leaderboard/Pick of the Week shows PRO FEATURE badge with sample stats (4-1 W/L, +$340 ROI)",
+    "'Fading the Public' section displays with 3 sample fade picks (Celtics +3.5, Under 215.5, Avalanche ML - all WON)",
+    "Pricing section shows Free ($0) vs Pro ($5/mo) with feature lists",
+    "Pro tier includes 'Fading the Public Indicators' in feature list",
+    "Hero CTA navigates to /auth",
+    "Nav Login button navigates to /auth",
+    "Backend: /api/bet-of-the-day returns fading_public boolean and fade_reason string",
+    "Backend: /api/admin/users returns is_online, last_login, last_active, ip_addresses for each user",
+    "Backend: Login tracks IP and updates last_login timestamp",
+    "Backend: /api/weekly-leaderboard returns weekly picks with outcome tracking (Pro only)",
+    "Admin panel: User row shows ONLINE badge next to Pro users",
+    "Admin panel: Expanded user shows 5-column grid (Analyses, Status, Subscription, Last Login, IPs Tracked)",
+    "Admin panel: IP Addresses displayed in badge format (e.g., 104.198.214.223)",
+    "Dashboard: Bet of the Day component with confidence meter, odds, win prob, edge stats"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_landing_admin_features.py",
+    "/app/test_reports/pytest/pytest_landing_admin.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Landing page uses demo/sample data for Fading Public section and leaderboard preview - this is UI showcase data, not mocked API",
+    "BetOfTheDay.js correctly conditionally renders FADING PUBLIC badge when pick.fading_public is true",
+    "Backend analytics.py determines fading_public based on: underdog ML, taking points on spread, under plays, or large edge (>5%)",
+    "Admin.js expanded user view shows 5-column grid as requested with proper responsive layout",
+    "IP tracking works via auth.py login handler which stores client IP in $addToSet"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_landing_admin_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100% (all UI features verified via screenshots)"
+  },
+
+  "test_credentials": {
+    "admin_pro_user": "hundojeff@icloud.com / Boo-boo600$"
+  },
+
+  "seed_data_creation": "No new seed data created. Tests used existing admin user.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Landing page is brand new redesign - LandingOld.js backed up. New landing has: Hero with BEAT THE BOOKS WITH AI, features bento grid, Fading the Public section (UI demo data showing 3 WON picks), pricing cards (Free $0 vs Pro $5/mo), and all CTAs navigate to /auth. Admin panel now shows ONLINE badge, last login timestamp, and IP addresses in expanded 5-column grid. Backend /api/bet-of-the-day includes fading_public boolean field - currently returns false for Utah Utes ML pick (not an underdog). Weekly leaderboard still tracking 1 pick (Wichita St Shockers ML) with 1W-2L all-time record.",
+
+  "landing_page_sections_verified": [
+    "1. Sticky Nav with LOG IN and GET STARTED buttons",
+    "2. Hero: BEAT THE BOOKS WITH AI headline, LIVE ODDS UPDATED badge, demo Bet of Day card",
+    "3. Ticker bar with scrolling stats (FADING PUBLIC: 5-2 RECORD visible)",
+    "4. Features Bento Grid: Bet of Day (LIVE), Leaderboard/Pick of Week (PRO), AI Parlays, EV Scanner, Share",
+    "5. Fading the Public section: headline, description, 3 sample WON picks",
+    "6. How It Works: We Scan, We Score, You Win (3 steps)",
+    "7. Pricing: Free tier vs Pro tier with feature comparison",
+    "8. Final CTA: Stop Guessing. Start Winning.",
+    "9. Footer with BetrSlip branding"
+  ],
+
+  "admin_panel_features_verified": [
+    "User row: Avatar with green dot + ONLINE badge + Pro badge + last login timestamp",
+    "Expanded grid: Analyses (0), Status (Online), Subscription (Pro), Last Login (2/19/2026), IPs Tracked (1)",
+    "IP Addresses: Shown in badge format below grid",
+    "Action buttons: Revoke Pro, Reset Usage, Ban, Delete"
+  ],
+
+  "mocked_apis_note": {
+    "has_mocked_apis": false,
+    "note": "Landing page uses UI demo data for preview (not API mocks). All backend APIs return real data from The Odds API."
+  }
+}
