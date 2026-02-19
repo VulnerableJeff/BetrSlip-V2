@@ -585,16 +585,16 @@ async def get_bet_of_the_day(current_user: dict = Depends(get_current_user)):
                     fade_reason = ""
                     if key == 'h2h' and price > 0:
                         fading_public = True
-                        fade_reason = f"Underdog pick — public is heavy on the favorite"
+                        fade_reason = "Underdog pick — public is heavy on the favorite"
                     elif key == 'h2h' and price < -200:
                         # Heavy favorite with big edge = books disagree, sharp value
                         pass
                     elif key == 'spreads' and point and float(point) > 0:
                         fading_public = True
-                        fade_reason = f"Taking the points — fading the popular spread side"
+                        fade_reason = "Taking the points — fading the popular spread side"
                     elif key == 'totals' and name == 'Under':
                         fading_public = True
-                        fade_reason = f"Under play — public typically bets overs"
+                        fade_reason = "Under play — public typically bets overs"
                     elif edge > 5:
                         fading_public = True
                         fade_reason = f"Large {edge}% edge suggests sharp money disagrees with public"
