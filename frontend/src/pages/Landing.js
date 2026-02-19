@@ -728,7 +728,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="bg-slate-950 py-8 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-slate-400 text-sm mb-2">© 2025 BetrSlip. AI Bet Slip Companion.</p>
+          <p className="text-slate-400 text-sm mb-2">© 2026 BetrSlip. AI Bet Slip Companion.</p>
           <p className="text-slate-500 text-xs">
             Analyze smarter. Track results. Bet with confidence.
           </p>
