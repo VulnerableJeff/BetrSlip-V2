@@ -871,21 +871,27 @@ const Admin = () => {
                   <div className="px-4 pb-4 pt-0">
                     <div className="bg-slate-900/50 rounded-lg p-4 space-y-4">
                       {/* User Stats */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
                         <div>
                           <p className="text-slate-400 text-xs">Analyses</p>
                           <p className="text-white font-bold">{user.analyses_count}</p>
                         </div>
                         <div>
                           <p className="text-slate-400 text-xs">Status</p>
-                          <p className={`font-bold ${user.is_banned ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {user.is_banned ? 'Banned' : 'Active'}
+                          <p className={`font-bold ${user.is_online ? 'text-emerald-400' : user.is_banned ? 'text-red-400' : 'text-slate-400'}`}>
+                            {user.is_online ? 'Online' : user.is_banned ? 'Banned' : 'Offline'}
                           </p>
                         </div>
                         <div>
                           <p className="text-slate-400 text-xs">Subscription</p>
                           <p className={`font-bold ${user.is_subscribed ? 'text-emerald-400' : 'text-slate-400'}`}>
                             {user.is_subscribed ? 'Pro' : 'Free'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-xs">Last Login</p>
+                          <p className="text-white font-bold text-[11px]">
+                            {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
                           </p>
                         </div>
                         <div>
