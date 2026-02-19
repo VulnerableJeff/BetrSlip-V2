@@ -725,37 +725,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Accuracy Section - NEW */}
-      <section className="py-16 bg-gradient-to-r from-emerald-950/20 to-teal-950/20 border-y border-emerald-500/20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-full mb-6">
-            <Target className="w-4 h-4 text-emerald-400" />
-            <span className="text-emerald-400 text-sm font-semibold">Transparency Built In</span>
-          </div>
-          <h2 className="text-3xl font-black text-white mb-4">
-            Track Results. Verify Accuracy.
-          </h2>
-          <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
-            Mark your bets as Won, Lost, or Push after games. See our AI's real accuracy rate 
-            and track your personal performance over time. No hidden stats—full transparency.
-          </p>
-          <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
-            <div className="bg-slate-900/50 rounded-xl p-4 border border-emerald-500/30">
-              <p className="text-3xl font-black text-emerald-400 mb-1">✓</p>
-              <p className="text-slate-400 text-sm">Won</p>
-            </div>
-            <div className="bg-slate-900/50 rounded-xl p-4 border border-red-500/30">
-              <p className="text-3xl font-black text-red-400 mb-1">✗</p>
-              <p className="text-slate-400 text-sm">Lost</p>
-            </div>
-            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-500/30">
-              <p className="text-3xl font-black text-slate-400 mb-1">−</p>
-              <p className="text-slate-400 text-sm">Push</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-slate-950 py-8 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
