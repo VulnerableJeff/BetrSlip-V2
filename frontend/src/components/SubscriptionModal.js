@@ -256,7 +256,7 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
                 <Check className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
                 <p className="text-emerald-400 font-semibold mb-1">Request Submitted!</p>
                 <p className="text-slate-400 text-sm">
-                  Send $5 to <span className="text-white font-mono font-bold">$BetrSlip</span>
+                  Send $5.00 to <span className="text-white font-mono font-bold">$betrslip</span> on CashApp
                 </p>
                 <p className="text-slate-500 text-xs mt-2">
                   Include your email in the note. We'll activate your Pro within 24 hours.
@@ -265,13 +265,17 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
             ) : (
               <>
                 <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
-                  <p className="text-white font-semibold mb-2">Manual CashApp Payment</p>
-                  <p className="text-slate-400 text-sm mb-3">
-                    Send $5 to <span className="text-emerald-400 font-mono font-bold">$BetrSlip</span>
-                  </p>
-                  <p className="text-slate-500 text-xs">
-                    Include your email address in the payment note
-                  </p>
+                  <p className="text-white font-semibold mb-3">CashApp Payment</p>
+                  <div className="bg-slate-900/50 border border-emerald-500/20 rounded-lg p-3 mb-3">
+                    <p className="text-xs text-slate-400 mb-1">Send payment to:</p>
+                    <p className="text-emerald-400 font-mono font-bold text-lg">$betrslip</p>
+                  </div>
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-left space-y-2">
+                    <p className="text-amber-400 font-semibold text-xs uppercase tracking-wide">Instructions:</p>
+                    <p className="text-slate-300 text-sm">1. Open CashApp and send <span className="text-white font-bold">$5.00</span> to <span className="text-emerald-400 font-mono font-bold">$betrslip</span></p>
+                    <p className="text-slate-300 text-sm">2. In the payment note, include your <span className="text-white font-bold">email address</span></p>
+                    <p className="text-slate-300 text-sm">3. Tap the button below to notify us</p>
+                  </div>
                 </div>
                 <Button
                   onClick={handleCashAppRequest}
@@ -280,7 +284,7 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
                   data-testid="cashapp-request-btn"
                 >
                   <MessageSquare className="w-5 h-5 mr-2" />
-                  {loading ? 'Submitting...' : 'I Sent Payment - Activate Pro'}
+                  {loading ? 'Submitting...' : "I've Sent $5.00 - Activate Pro"}
                 </Button>
               </>
             )}
