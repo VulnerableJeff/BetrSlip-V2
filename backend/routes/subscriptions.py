@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def _get_stripe_key():
     """Read STRIPE_API_KEY at runtime, not import time."""
     return os.environ.get('STRIPE_API_KEY', '')
-SUBSCRIPTION_PRICE = 500  # $5.00 in cents
+SUBSCRIPTION_PRICE = 5.00  # $5.00 in USD
 
 
 class CreateCheckoutRequest(BaseModel):
