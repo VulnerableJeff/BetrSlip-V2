@@ -1051,7 +1051,6 @@ async def delayed_startup_tasks():
         ]
         duplicates = await db.bot_pick_history.aggregate(pipeline).to_list(100)
         for dup in duplicates:
-            keep_id = dup['ids'][0]
             remove_ids = dup['ids'][1:]
             await db.bot_pick_history.delete_many({"id": {"$in": remove_ids}})
             if remove_ids:
