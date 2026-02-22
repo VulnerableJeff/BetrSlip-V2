@@ -637,11 +637,24 @@ const Dashboard = ({ onLogout }) => {
                               <p className="text-white text-xs sm:text-sm font-semibold">
                                 {bet.description}
                               </p>
-                              {bet.individual_probability && (
-                                <span className={`text-xs font-bold ${getWinColor(bet.individual_probability)}`}>
-                                  {bet.individual_probability}%
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {bet.leg_grade && (
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    bet.leg_grade === 'A' ? 'bg-emerald-500/20 text-emerald-400' :
+                                    bet.leg_grade === 'B' ? 'bg-green-500/20 text-green-400' :
+                                    bet.leg_grade === 'C' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    bet.leg_grade === 'D' ? 'bg-orange-500/20 text-orange-400' :
+                                    'bg-red-500/20 text-red-400'
+                                  }`}>
+                                    {bet.leg_grade}
+                                  </span>
+                                )}
+                                {bet.individual_probability && (
+                                  <span className={`text-xs font-bold ${getWinColor(bet.individual_probability)}`}>
+                                    {bet.individual_probability}%
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             {bet.odds && (
                               <p className="text-slate-400 text-xs mb-1">Odds: {bet.odds}</p>
@@ -652,6 +665,24 @@ const Dashboard = ({ onLogout }) => {
                           </div>
                         ))}
                       </div>
+
+                      {/* Strongest / Weakest Leg */}
+                      {(result.strongest_leg || result.weakest_leg) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                          {result.strongest_leg && (
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded p-3">
+                              <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wide mb-1">Strongest Leg</p>
+                              <p className="text-xs text-slate-300">{result.strongest_leg}</p>
+                            </div>
+                          )}
+                          {result.weakest_leg && (
+                            <div className="bg-red-500/5 border border-red-500/20 rounded p-3">
+                              <p className="text-[10px] text-red-400 font-bold uppercase tracking-wide mb-1">Weakest Leg</p>
+                              <p className="text-xs text-slate-300">{result.weakest_leg}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
