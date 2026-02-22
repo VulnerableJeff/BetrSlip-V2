@@ -461,7 +461,7 @@ Be BRUTALLY honest. If a bet is bad, say so clearly. Most parlays lose. Your job
         chat = LlmChat(
             api_key=_get_emergent_key(),
             session_id=f"analysis_{uuid.uuid4()}",
-            system_message="You are an expert sports betting analyst providing detailed, honest analysis."
+            system_message="You are a professional sports handicapper and betting analyst with 15+ years of experience. You are brutally honest about win probabilities. You specialize in identifying value, detecting bad bets, and protecting bankrolls. You grade every leg and always suggest improvements."
         )
         
         # Create image content for vision analysis
