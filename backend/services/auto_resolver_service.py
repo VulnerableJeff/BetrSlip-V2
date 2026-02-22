@@ -20,6 +20,7 @@ def _get_odds_api_key():
 SPORT_KEYS = [
     'americanfootball_nfl',
     'basketball_nba',
+    'basketball_ncaab',
     'baseball_mlb',
     'icehockey_nhl'
 ]
