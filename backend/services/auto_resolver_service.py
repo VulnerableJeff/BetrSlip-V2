@@ -226,9 +226,9 @@ class AutoResolverService:
         return None
     
     async def resolve_picks(self) -> Dict:
-        """Automatically resolve pending pick outcomes"""
+        """Automatically resolve pending pick outcomes from daily_picks AND bot_pick_history"""
         try:
-            # Get pending picks
+            # Get pending picks from daily_picks
             pending_picks = await self.db.daily_picks.find({
                 "$or": [
                     {"outcome": {"$exists": False}},
@@ -236,8 +236,17 @@ class AutoResolverService:
                     {"outcome": "pending"}
                 ]
             }, {"_id": 0}).to_list(100)
-            
-            if not pending_picks:
+
+            # Also get pending picks from bot_pick_history (Bet of the Day)
+            pending_bot_picks = await self.db.bot_pick_history.find({
+                "$or": [
+                    {"outcome": {"$exists": False}},
+                    {"outcome": None}
+                ]
+            }, {"_id": 0}).to_list(50)
+
+            all_pending = len(pending_picks) + len(pending_bot_picks)
+            if all_pending == 0:
                 return {"message": "No pending picks to resolve", "resolved": 0}
             
             # Fetch completed game scores
@@ -248,6 +257,7 @@ class AutoResolverService:
             resolved_count = 0
             resolved_picks = []
             
+            # Resolve daily_picks
             for pick in pending_picks:
                 matching_game = self.match_pick_to_game(pick, completed_games)
                 
@@ -278,7 +288,47 @@ class AutoResolverService:
                                 "outcome": outcome,
                                 "game": f"{matching_game.get('away_team')} @ {matching_game.get('home_team')}"
                             })
-                            logger.info(f"Auto-resolved '{pick.get('title')}' as {outcome}")
+                            logger.info(f"Auto-resolved daily_pick '{pick.get('title')}' as {outcome}")
+
+            # Resolve bot_pick_history (Bet of the Day picks)
+            for pick in pending_bot_picks:
+                # Build a compatible pick object for matching
+                game_str = pick.get('game', '')
+                pick_name = pick.get('pick', '')
+
+                # Try to match game
+                matching_game = None
+                for game in completed_games:
+                    if not game.get('completed'):
+                        continue
+                    home = game.get('home_team', '')
+                    away = game.get('away_team', '')
+                    if (home in game_str or away in game_str or
+                        home in pick_name or away in pick_name):
+                        matching_game = game
+                        break
+
+                if matching_game:
+                    pick_details = self.parse_pick_details(pick_name)
+
+                    if pick_details:
+                        outcome = self.determine_outcome(pick_details, matching_game)
+
+                        if outcome:
+                            await self.db.bot_pick_history.update_one(
+                                {"id": pick['id']},
+                                {"$set": {
+                                    "outcome": outcome,
+                                    "outcome_updated_at": datetime.now(timezone.utc).isoformat()
+                                }}
+                            )
+                            resolved_count += 1
+                            resolved_picks.append({
+                                "title": pick_name,
+                                "outcome": outcome,
+                                "source": "bet_of_day"
+                            })
+                            logger.info(f"Auto-resolved bot_pick '{pick_name}' as {outcome}")
             
             return {
                 "message": f"Auto-resolved {resolved_count} picks",
