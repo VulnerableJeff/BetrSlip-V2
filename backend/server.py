@@ -382,17 +382,39 @@ async def analyze_bet_slip(
     base64_image = base64.b64encode(contents).decode('utf-8')
     
     # AI Analysis prompt - comprehensive for full data
-    analysis_prompt = """You are an elite sports betting analyst with deep knowledge of statistics, team dynamics, and betting markets. Analyze this bet slip image thoroughly.
+    analysis_prompt = """You are an elite sports betting analyst and handicapper. Your job is to give HONEST, DATA-DRIVEN analysis that helps bettors make profitable decisions.
 
 EXTRACT AND ANALYZE:
-1. All bets visible (teams, spreads, totals, moneylines, odds)
-2. Calculate realistic win probabilities (most single bets: 45-55%, parlays much lower)
+1. All bets visible (teams, spreads, totals, moneylines, props, odds)
+2. Calculate REALISTIC win probabilities using implied odds + your edge assessment
 3. Identify the sport(s) involved
-4. Assess risk factors and positive factors
+4. For PARLAYS: analyze leg correlation (do legs help or hurt each other?)
+
+PROBABILITY GUIDELINES (be honest, not optimistic):
+- Single ML favorite (-200 to -300): 60-72%
+- Single ML underdog (+150 to +250): 28-38%
+- Single spread bet: 45-55% (most are close to 50%)
+- Over/Under: 48-54%
+- 2-leg parlay: multiply individual probs (typically 20-35%)
+- 3-leg parlay: typically 10-20%
+- 4+ leg parlay: typically under 10%
+- Player props: 40-55% depending on market
+
+EDGE ANALYSIS:
+- Compare the bet's implied probability (from odds) vs your estimated true probability
+- If true prob > implied prob = POSITIVE EV (+EV) = BET
+- If true prob < implied prob = NEGATIVE EV (-EV) = PASS
+- Most bets at sportsbooks are -EV by 3-5%. Only recommend if you see genuine edge.
+
+FOR PARLAYS SPECIFICALLY:
+- Check if legs are correlated (e.g., same game over + favorite ML = correlated)
+- Correlated parlays are WORSE value (books price them knowing the correlation)
+- Always suggest which legs are strongest and which to remove
+- Calculate what the parlay would look like without the weakest leg
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
-    "sport": "NBA/NFL/MLB/NHL/etc",
+    "sport": "NBA/NFL/MLB/NHL/NCAAB/etc",
     "bet_type": "parlay/straight/teaser",
     "total_odds": "+450",
     "potential_payout": "$50 to win $225",
@@ -403,34 +425,37 @@ RESPOND IN THIS EXACT JSON FORMAT:
             "bet_type": "spread",
             "win_probability": 48,
             "ev_percent": -4.5,
-            "reasoning": "Lakers struggling on road, Celtics 8-2 at home"
+            "leg_grade": "B",
+            "reasoning": "Lakers struggling on road, Celtics 8-2 at home. Line slightly off."
         }
     ],
-    "overall_probability": 35,
+    "overall_probability": 22,
     "risk_level": "High",
     "kelly_fraction": 0.01,
     "recommendation": "PASS",
     "risk_factors": [
         "Parlay requires all legs to hit",
-        "Lakers on back-to-back",
-        "Historical ATS record unfavorable"
+        "Correlated legs reduce true value"
     ],
     "positive_factors": [
-        "Good line value on spread",
-        "Home team advantage"
+        "Strong home team in leg 2",
+        "Good line value on spread"
     ],
     "improvements": [
-        "Consider betting Lakers ML instead of spread",
-        "Remove the riskiest leg to improve odds"
+        "Remove weakest leg (Leg 3) to go from +450 to +180 with much better hit rate",
+        "Consider taking Lakers ML instead of -5.5 spread",
+        "Bet legs 1 and 2 as singles for better long-term profit"
     ],
+    "strongest_leg": "Leg 2 - Celtics ML has the best edge",
+    "weakest_leg": "Leg 3 - Prop bet is a coin flip with bad juice",
     "parlay_vs_straight": {
         "parlay_ev": -15.2,
         "straight_ev": -3.4,
-        "recommendation": "Bet legs separately for better EV"
+        "recommendation": "Bet the 2 strongest legs as singles. Your bankroll will thank you."
     }
 }
 
-Be realistic - most parlays have <30% win probability. Single bets rarely exceed 60%. Always identify specific risk factors."""
+Be BRUTALLY honest. If a bet is bad, say so clearly. Most parlays lose. Your job is to protect the bettor's bankroll while identifying genuine opportunities. Grade each leg A/B/C/D/F."""
 
     try:
         chat = LlmChat(
