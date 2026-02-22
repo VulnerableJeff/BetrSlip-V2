@@ -1017,6 +1017,23 @@ async def delayed_startup_tasks():
             logger.info(f"Admin account exists for {admin_email}")
     except Exception as e:
         logger.error(f"Failed to ensure admin account: {e}")
+
+    # STEP 0b: Clean up duplicate bot_pick_history entries (keep 1 per date)
+    try:
+        pipeline = [
+            {"$group": {"_id": "$date", "count": {"$sum": 1}, "ids": {"$push": "$id"}}},
+            {"$match": {"count": {"$gt": 1}}}
+        ]
+        duplicates = await db.bot_pick_history.aggregate(pipeline).to_list(100)
+        for dup in duplicates:
+            keep_id = dup['ids'][0]
+            remove_ids = dup['ids'][1:]
+            await db.bot_pick_history.delete_many({"id": {"$in": remove_ids}})
+            if remove_ids:
+                logger.info(f"Cleaned {len(remove_ids)} duplicate bot picks for date {dup['_id']}")
+    except Exception as e:
+        logger.warning(f"Bot pick dedup cleanup: {e}")
+
     
     # STEP 0b: Log API key status for debugging
     api_key = os.environ.get('ODDS_API_KEY', '')
