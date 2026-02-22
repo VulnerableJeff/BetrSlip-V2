@@ -725,17 +725,35 @@ async def get_weekly_leaderboard(current_user: dict = Depends(get_current_user))
     now = datetime.now(timezone.utc)
     seven_days_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d')
 
-    # Get this week's Bet of the Day picks
-    weekly_picks = await db.bot_pick_history.find(
+    # Get this week's Bet of the Day picks (deduplicate by date — 1 per day max)
+    raw_weekly = await db.bot_pick_history.find(
         {"source": "bet_of_day", "date": {"$gte": seven_days_ago}},
         {"_id": 0}
-    ).sort("date", -1).to_list(7)
+    ).sort("date", -1).to_list(20)
 
-    # Get all-time stats from bot_pick_history
-    all_picks = await db.bot_pick_history.find(
+    seen_dates = set()
+    weekly_picks = []
+    for p in raw_weekly:
+        d = p.get('date')
+        if d not in seen_dates:
+            seen_dates.add(d)
+            weekly_picks.append(p)
+        if len(weekly_picks) >= 7:
+            break
+
+    # Get all-time stats from bot_pick_history (deduplicated)
+    raw_all = await db.bot_pick_history.find(
         {"source": "bet_of_day"},
         {"_id": 0}
-    ).sort("date", -1).to_list(100)
+    ).sort("date", -1).to_list(200)
+
+    seen_all = set()
+    all_picks = []
+    for p in raw_all:
+        d = p.get('date')
+        if d not in seen_all:
+            seen_all.add(d)
+            all_picks.append(p)
 
     # Also include resolved daily_picks for broader stats
     resolved_daily = await db.daily_picks.find(
