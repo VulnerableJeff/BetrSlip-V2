@@ -18,7 +18,6 @@ import NotificationSettings from '@/components/NotificationSettings';
 import AIChatAssistant from '@/components/AIChatAssistant';
 import EVScanner from '@/components/EVScanner';
 import DailyBetCard from '@/components/DailyBetCard';
-import WeeklyLeaderboard from '@/components/WeeklyLeaderboard';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
