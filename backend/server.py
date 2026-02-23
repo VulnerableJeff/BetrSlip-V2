@@ -1058,6 +1058,27 @@ async def delayed_startup_tasks():
     except Exception as e:
         logger.warning(f"Bot pick dedup cleanup: {e}")
 
+    # STEP 0c: Auto-expire subscriptions older than 30 days
+    try:
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        expired = await db.subscriptions.find({
+            "subscription_status": "active",
+            "subscription_start": {"$lt": thirty_days_ago}
+        }).to_list(100)
+        for sub in expired:
+            # Skip admin user
+            user = await db.users.find_one({"id": sub['user_id']}, {"_id": 0, "email": 1})
+            if user and user.get('email') == os.environ.get('ADMIN_EMAIL', 'hundojeff@icloud.com'):
+                continue
+            await db.subscriptions.update_one(
+                {"user_id": sub['user_id']},
+                {"$set": {"subscription_status": "expired", "expired_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            logger.info(f"Auto-expired subscription for user {sub['user_id']} (started: {sub.get('subscription_start')})")
+    except Exception as e:
+        logger.warning(f"Subscription expiry check: {e}")
+
+
     
     # STEP 0b: Log API key status for debugging
     api_key = os.environ.get('ODDS_API_KEY', '')
