@@ -6,47 +6,36 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Shadcn UI
 - **Backend**: FastAPI + MongoDB
-- **External APIs**: The Odds API (20K tier), WeatherAPI, SportsRC API
+- **External APIs**: The Odds API (20K tier)
 - **Auth**: JWT-based with admin auto-creation on startup
 
-## What's Been Implemented (as of Feb 19, 2026)
+## What's Been Implemented
 
-### Landing Page (Redesigned)
-- Hero section: "BEAT THE BOOKS WITH AI" with mock Bet of the Day card
-- Live ticker bar with scrolling stats
-- Features bento grid: Bet of the Day, Pick of the Week, AI Parlays, EV Scanner, Share
-- "Fading the Public" showcase section
-- Pricing: Free ($0) vs Pro ($5/mo)
-- Final CTA section
-- Old landing backed up as `LandingOld.js`
+### Core Features
+- **Bet slip screenshot upload + AI analysis** (main selling point) — enhanced with leg grades (A-F), strongest/weakest leg indicators, parlay correlation detection
+- **Bet of the Day** — Hero spotlight with confidence meter, win probability, Fading the Public indicator
+- **AI Parlay Picks** — 2-leg AI-optimized parlays
+- **Best Value Bets (EV Scanner)** — Cross-sportsbook value detection
+- **Today's Best Bets** — Top 3 +EV picks with winning probability
+- **Today's Top Picks** — AI daily picks with Share/Copy
 
-### Dashboard Features
-- **Bet of the Day** — Confidence meter, win prob, edge, Fading the Public badge, share
-- **Upload Betting Slip** + Analysis Results
-- **Today's Top Picks** — Share/Copy buttons (moved below upload)
-- **AI Parlay Picks** + **Best Value Bets** (side by side)
-- **Today's Best Bets** + **Pick of the Week** leaderboard (side by side)
-- **USA Sports Hub**, AI Chat, Referral, Notifications
+### Security & Anti-Abuse
+- **Email verification on signup** — Confirm email field, disposable domain blocking (24+ temp email providers blocked on both frontend + backend)
+- **Password min 6 chars** — enforced on both sides
+- **Pro subscription auto-expiry** — Checks on startup, expires active subs >30 days old (skips admin)
 
-### Admin Panel Enhancements
-- Online/offline status (green dot + ONLINE badge, 5-min activity window)
-- Last login timestamp
-- IP address tracking (via login)
-- 5-column expanded stats grid
+### Admin Panel
+- Online/offline status, last login, IP tracking
+- User management (ban/unban, subscription control)
+- CashApp payment approval workflow
 
-### Backend Features
-- Fading the Public detection (underdog ML, taking points, unders, large edge)
-- Auto-save Bet of the Day to `bot_pick_history` for leaderboard tracking
-- Cache TTL extended to 60min, Bet of Day daily cache
-- Warmup skip for fresh cache (saves API quota)
-- Low-quota warning logging
-- Last_active updated on every authenticated request
+### Payments
+- **Stripe**: $5.00/mo (was incorrectly $500 — fixed)
+- **CashApp**: Manual flow with instructions to send $5.00 to $betrslip
 
-### Key Endpoints
-- `/api/bet-of-the-day` — Highest-confidence pick with fading_public indicator
-- `/api/weekly-leaderboard` — Pro-only: W/L, ROI, streaks
-- `/api/daily-bet-card` — Top 3 picks with winning_probability
-- `/api/admin/users` — User list with is_online, last_login, ip_addresses
+### Removed Features
+- Pick of the Week leaderboard (broken auto-resolver on production)
+- Line Movers, Build Your Own Parlay, Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P&L Tracker, Game Plan
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
