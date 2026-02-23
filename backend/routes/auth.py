@@ -79,13 +79,13 @@ async def signup(request: SignupRequest):
     })
     
     # Create token
-    token = create_access_token({"sub": user_id, "email": request.email})
+    token = create_access_token({"sub": user_id, "email": email})
     
     return {
         "token": token,
         "user": {
             "id": user_id,
-            "email": request.email,
+            "email": email,
             "created_at": user["created_at"]
         }
     }
