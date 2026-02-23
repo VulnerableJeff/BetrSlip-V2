@@ -1,0 +1,82 @@
+{
+  "summary": "Email verification & Pick of Week removal features tested - ALL PASS. Backend: 12/12 tests passed (disposable emails blocked, password validation works, login works). Frontend: All new signup features working (Confirm Email field, match/mismatch messages, disposable email client-side blocking). WeeklyLeaderboard successfully removed from Dashboard.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: mailinator.com signup blocked with 400 + 'disposable' message",
+    "Backend: yopmail.com signup blocked with 400 + 'disposable' message",
+    "Backend: tempmail.com signup blocked with 400",
+    "Backend: guerrillamail.com signup blocked with 400",
+    "Backend: 10minutemail.com signup blocked with 400",
+    "Backend: 3-char password rejected with 400 + 'at least 6 characters'",
+    "Backend: 5-char password rejected with 400",
+    "Backend: 6-char password accepted (valid)",
+    "Backend: Admin login successful (hundojeff@icloud.com)",
+    "Backend: Invalid password returns 401",
+    "Backend: Non-existent email returns 401",
+    "Backend: /api/health returns healthy status",
+    "Frontend: Login mode shows only Email + Password (no Confirm Email)",
+    "Frontend: Signup mode shows Email, Confirm Email, Password fields",
+    "Frontend: 'Emails do not match' error shown when emails differ (red text)",
+    "Frontend: 'Emails match' confirmation shown when emails match (green text)",
+    "Frontend: Disposable email (mailinator.com) shows client-side error before submit",
+    "Frontend: Login with admin credentials navigates to /dashboard",
+    "Frontend: Dashboard loads without WeeklyLeaderboard component",
+    "Frontend: Dashboard shows Upload Betting Slip, Analysis Results, Today's Top Picks",
+    "Frontend: Logout redirects away from dashboard"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_auth_email_validation.py",
+    "/app/test_reports/pytest/pytest_auth_validation.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Auth.js correctly implements BLOCKED_DOMAINS list matching backend's BLOCKED_EMAIL_DOMAINS",
+    "Confirm Email field only renders in signup mode (!isLogin)",
+    "Email validation runs on change (handleEmailChange) with 3+ chars for immediate feedback",
+    "Submit button disabled when emailError exists or emails don't match in signup mode",
+    "WeeklyLeaderboard.js file still exists but is no longer imported/used in Dashboard.js",
+    "Backend auth.py auto-expire subscriptions run on startup (delayed_startup_tasks) - subscriptions older than 30 days are set to 'expired', admin user is excluded"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_auth_email_validation.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+
+  "test_credentials": {
+    "admin_user": "hundojeff@icloud.com / Boo-boo600$"
+  },
+
+  "seed_data_creation": "No new seed data created.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 3 requested features implemented and verified: 1) Pick of Week/WeeklyLeaderboard removed from Dashboard.js (file exists but not imported), 2) Signup has Confirm Email field with match/mismatch validation + disposable domain blocking on both frontend and backend, 3) Subscription auto-expiry runs on server startup (server.py delayed_startup_tasks) for subscriptions >30 days old, admin user excluded. No mocked APIs.",
+
+  "subscription_auto_expiry_note": "The auto-expiry runs in server.py on startup. It queries subscriptions with status='active' and subscription_start older than 30 days, sets status to 'expired'. Admin user (hundojeff@icloud.com) is excluded from expiry.",
+
+  "mocked_apis_note": {
+    "has_mocked_apis": false,
+    "note": "All APIs are real - no mocked endpoints"
+  }
+}
