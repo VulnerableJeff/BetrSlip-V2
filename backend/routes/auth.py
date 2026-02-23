@@ -61,10 +61,10 @@ async def signup(request: SignupRequest):
     user_id = str(uuid.uuid4())
     user = {
         "id": user_id,
-        "email": request.email,
+        "email": email,
         "password_hash": get_password_hash(request.password),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "is_admin": request.email == ADMIN_EMAIL,
+        "is_admin": email == ADMIN_EMAIL,
         "is_banned": False
     }
     
