@@ -31,11 +31,29 @@ class TokenResponse(BaseModel):
     user: dict
 
 
+BLOCKED_EMAIL_DOMAINS = {
+    'tempmail.com','throwaway.email','guerrillamail.com','mailinator.com',
+    'yopmail.com','10minutemail.com','trashmail.com','fakeinbox.com',
+    'sharklasers.com','guerrillamailblock.com','grr.la','dispostable.com',
+    'maildrop.cc','temp-mail.org','emailondeck.com','getnada.com',
+    'mohmal.com','tempail.com','burnermail.io','tempmailo.com',
+    'minutemail.com','emailfake.com','crazymailing.com','armyspy.com',
+}
+
 @router.post("/signup", response_model=TokenResponse)
 async def signup(request: SignupRequest):
     """Register a new user"""
+    email = request.email.strip().lower()
+    domain = email.split('@')[-1] if '@' in email else ''
+
+    if domain in BLOCKED_EMAIL_DOMAINS:
+        raise HTTPException(status_code=400, detail="Temporary/disposable emails are not allowed. Please use a real email address.")
+
+    if len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
     # Check if user already exists
-    existing_user = await db.users.find_one({"email": request.email})
+    existing_user = await db.users.find_one({"email": email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
