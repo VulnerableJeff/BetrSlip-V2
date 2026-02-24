@@ -31,7 +31,7 @@ from routes.deps import db, client, get_current_user, get_admin_user, security
 from routes import auth, subscriptions, picks, streams, usa_sports, bankroll, analytics
 from routes import referrals, notifications, admin_analytics
 from routes import chat, performance, parlay_builder
-from routes import pro_tools
+from routes import pro_tools, support
 
 # Import services
 from services.smart_picks_service import SmartPicksService
@@ -1190,6 +1190,7 @@ app.include_router(chat.router, prefix="/api")
 app.include_router(performance.router, prefix="/api")
 app.include_router(parlay_builder.router, prefix="/api")
 app.include_router(pro_tools.router, prefix="/api")
+app.include_router(support.router, prefix="/api")
 
 # Include main API router
 app.include_router(api_router)

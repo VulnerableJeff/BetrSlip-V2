@@ -15,7 +15,7 @@ import ParlayOptimizer from '@/components/ParlayOptimizer';
 import BestValueFinder from '@/components/BestValueFinder';
 import ReferralProgram from '@/components/ReferralProgram';
 import NotificationSettings from '@/components/NotificationSettings';
-import AIChatAssistant from '@/components/AIChatAssistant';
+import SupportContact from '@/components/SupportContact';
 import EVScanner from '@/components/EVScanner';
 import DailyBetCard from '@/components/DailyBetCard';
 
@@ -923,8 +923,8 @@ const Dashboard = ({ onLogout }) => {
           <NotificationSettings />
         </div>
 
-        {/* AI Chat Assistant - Floating */}
-        <AIChatAssistant />
+        {/* Support Contact - Floating */}
+        <SupportContact />
 
       </main>
     </div>
