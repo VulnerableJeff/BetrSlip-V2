@@ -63,7 +63,7 @@ const SupportContact = () => {
       <button
         onClick={() => setIsOpen(true)}
         data-testid="support-contact-btn"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full shadow-lg shadow-violet-500/30 flex items-center justify-center hover:scale-110 transition-all duration-200 group"
+        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full shadow-lg shadow-violet-500/30 flex items-center justify-center hover:scale-110 transition-all duration-200 group"
       >
         <Headphones className="w-6 h-6 text-white" />
         <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-slate-900 animate-pulse" />
