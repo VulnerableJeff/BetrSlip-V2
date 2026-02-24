@@ -764,47 +764,47 @@ const Admin = () => {
       {/* Top Bets Stats */}
       {activeTab === 'topbets' && topBetsStats && (
         <div className="max-w-7xl mx-auto mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="glass border-emerald-500/30 p-4">
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Total Top Bets</p>
-                <p className="text-2xl font-bold text-white">{topBetsStats.total_top_bets}</p>
+                <p className="text-2xl font-black text-white">{topBetsStats.total_top_bets}</p>
               </div>
             </div>
           </Card>
-          <Card className="glass border-yellow-500/30 p-4">
+          <Card className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border-yellow-500/20 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
                 <Flame className="w-5 h-5 text-yellow-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Elite (80%+)</p>
-                <p className="text-2xl font-bold text-yellow-400">{topBetsStats.elite_bets_80_plus}</p>
+                <p className="text-2xl font-black text-yellow-400">{topBetsStats.elite_bets_80_plus || 0}</p>
               </div>
             </div>
           </Card>
-          <Card className="glass border-violet-500/30 p-4">
+          <Card className="bg-gradient-to-br from-violet-500/10 to-violet-600/5 border-violet-500/20 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
                 <Star className="w-5 h-5 text-violet-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Strong (70-79%)</p>
-                <p className="text-2xl font-bold text-violet-400">{topBetsStats.strong_bets_70_79}</p>
+                <p className="text-2xl font-black text-violet-400">{topBetsStats.strong_bets_70_79 || 0}</p>
               </div>
             </div>
           </Card>
-          <Card className="glass border-blue-500/30 p-4">
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Avg Probability</p>
-                <p className="text-2xl font-bold text-blue-400">{topBetsStats.average_probability}%</p>
+                <p className="text-2xl font-black text-blue-400">{topBetsStats.average_probability}%</p>
               </div>
             </div>
           </Card>
