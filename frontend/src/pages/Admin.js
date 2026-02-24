@@ -695,6 +695,21 @@ const Admin = () => {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'support'
+                ? 'bg-orange-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Headphones className="w-4 h-4" />
+            Support {supportUnread > 0 && (
+              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {supportUnread}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
