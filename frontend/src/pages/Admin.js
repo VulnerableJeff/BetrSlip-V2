@@ -601,62 +601,62 @@ const Admin = () => {
       {/* Stats Cards */}
       {stats && (
         <div className="max-w-7xl mx-auto mb-8 grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="glass border-slate-800 p-4">
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Total Users</p>
-                <p className="text-2xl font-bold text-white">{stats.total_users}</p>
+                <p className="text-2xl font-black text-white">{stats.total_users}</p>
               </div>
             </div>
           </Card>
           
-          <Card className="glass border-slate-800 p-4">
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
                 <Crown className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Pro Users</p>
-                <p className="text-2xl font-bold text-white">{stats.active_subscribers}</p>
+                <p className="text-2xl font-black text-emerald-400">{stats.active_subscribers}</p>
               </div>
             </div>
           </Card>
           
-          <Card className="glass border-slate-800 p-4">
+          <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-red-500/15 flex items-center justify-center">
                 <Ban className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Banned</p>
-                <p className="text-2xl font-bold text-white">{stats.banned_users}</p>
+                <p className="text-2xl font-black text-white">{stats.banned_users}</p>
               </div>
             </div>
           </Card>
           
-          <Card className="glass border-slate-800 p-4">
+          <Card className="bg-gradient-to-br from-violet-500/10 to-violet-600/5 border-violet-500/20 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-violet-500/15 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-violet-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Analyses</p>
-                <p className="text-2xl font-bold text-white">{stats.total_analyses}</p>
+                <p className="text-2xl font-black text-white">{stats.total_analyses}</p>
               </div>
             </div>
           </Card>
 
-          <Card className="glass border-slate-800 p-4">
+          <Card className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border-yellow-500/20 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/15 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-yellow-400" />
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Revenue</p>
-                <p className="text-2xl font-bold text-white">${(stats.active_subscribers * 5).toFixed(0)}/mo</p>
+                <p className="text-2xl font-black text-yellow-400">${(stats.active_subscribers * 5).toFixed(0)}/mo</p>
               </div>
             </div>
           </Card>
