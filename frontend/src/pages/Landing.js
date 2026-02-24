@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity } from 'lucide-react';
+import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity, Star } from 'lucide-react';
 
 import { BACKEND_URL } from '@/config/api';
 
@@ -60,11 +60,15 @@ const Landing = () => {
               <Users className="w-4 h-4" />
               <span>{publicStats.total_users?.toLocaleString() || '0'} users</span>
             </div>
+            <div className="flex items-center gap-2 text-yellow-400">
+              <Crown className="w-4 h-4" />
+              <span className="font-semibold">{publicStats.pro_users || 0} Pro members</span>
+            </div>
             <div className="hidden sm:flex items-center gap-2 text-slate-400">
               <Activity className="w-4 h-4" />
               <span>{publicStats.total_analyses?.toLocaleString() || '0'} bets analyzed</span>
             </div>
-            <div className="flex items-center gap-2 text-violet-400">
+            <div className="hidden md:flex items-center gap-2 text-violet-400">
               <Target className="w-4 h-4" />
               <span>{publicStats.ai_accuracy || '67.5'}% AI accuracy</span>
             </div>
