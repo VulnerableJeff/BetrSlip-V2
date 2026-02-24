@@ -19,6 +19,18 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 - **Today's Best Bets** — Top 3 +EV picks with winning probability
 - **Today's Top Picks** — AI daily picks with Share/Copy
 
+### Support System (NEW - Feb 24, 2026)
+- **Floating support button** (headphones icon, bottom-right) replaces old AI chat assistant
+- **In-app contact form** — Users submit subject + message, stored in MongoDB
+- **My Messages tab** — Users can view status of their messages (Pending/Seen/Replied)
+- **Admin Support tab** — View all messages, mark as read, reply, delete
+- **Unread badge** — Shows unread count on admin Support tab
+
+### Landing Page
+- **Pro members count** displayed in top activity bar with crown icon (NEW - Feb 24, 2026)
+- Live activity banner showing analyzing count, total users, bets analyzed, AI accuracy
+- How It Works section, Pro Feature showcase, Verified Results section
+
 ### Security & Anti-Abuse
 - **Email verification on signup** — Confirm email field, disposable domain blocking (24+ temp email providers blocked on both frontend + backend)
 - **Password min 6 chars** — enforced on both sides
@@ -28,6 +40,7 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 - Online/offline status, last login, IP tracking
 - User management (ban/unban, subscription control)
 - CashApp payment approval workflow
+- **Support Messages management** (NEW - Feb 24, 2026)
 
 ### Payments
 - **Stripe**: $5.00/mo (was incorrectly $500 — fixed)
@@ -35,10 +48,25 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 
 ### Removed Features
 - Pick of the Week leaderboard (broken auto-resolver on production)
+- AI Chat Assistant (replaced with support contact form)
+- WeeklyLeaderboard.js (deleted - unused)
 - Line Movers, Build Your Own Parlay, Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P&L Tracker, Game Plan
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
 
 ## Prioritized Backlog
-- No pending tasks currently defined
+
+### P0 (Next Up)
+- None currently
+
+### P1 (Future - User Mentioned)
+- **Tiered subscription system**: Tier 1 ($5), Tier 2 ($10), Tier 3 ($20)
+- **Usage limits per tier** — Cap bet slip analyses per week per tier to protect API quota
+- **Feature differentiation per tier** — Different access levels for value bets, AI picks, parlay analysis
+
+### P2 (Future - Nice to Have)
+- Usage tracking & rate limiting infrastructure per user
+- Admin dashboard revenue/usage analytics enhancement
+- Custom branding for share cards per tier
+- Priority support queue for higher tiers
