@@ -72,8 +72,8 @@ const SupportContact = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] sm:w-[420px] flex flex-col transition-all duration-200">
-      <Card className="flex flex-col bg-slate-900 border-slate-700 shadow-2xl shadow-violet-500/10 overflow-hidden max-h-[520px]">
+    <div className="fixed bottom-16 right-3 left-3 sm:left-auto sm:bottom-6 sm:right-6 z-50 sm:w-[400px] flex flex-col transition-all duration-200">
+      <Card className="flex flex-col bg-slate-900 border-slate-700 shadow-2xl shadow-violet-500/10 overflow-hidden max-h-[70vh] sm:max-h-[520px]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-600/20 to-purple-600/20 border-b border-slate-800">
           <div className="flex items-center gap-2">
