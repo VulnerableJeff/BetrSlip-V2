@@ -442,6 +442,47 @@ const Admin = () => {
     }
   };
 
+  // Support Message Functions
+  const handleMarkRead = async (messageId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${BACKEND_URL}/api/admin/support-messages/${messageId}/read`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Marked as read');
+      fetchData();
+    } catch (error) {
+      toast.error('Error marking message');
+    }
+  };
+
+  const handleReplyMessage = async (messageId) => {
+    if (!replyText.trim()) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/support-messages/${messageId}/reply`,
+        { reply: replyText.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Reply sent');
+      setReplyText('');
+      setReplyingTo(null);
+      fetchData();
+    } catch (error) {
+      toast.error('Error sending reply');
+    }
+  };
+
+  const handleDeleteSupportMessage = async (messageId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/admin/support-messages/${messageId}`, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Message deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Error deleting message');
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
