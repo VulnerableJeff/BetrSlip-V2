@@ -1248,15 +1248,8 @@ const Admin = () => {
                   )}
                 </div>
               ))}
-
-              {topBets.length === 0 && (
-                <div className="p-12 text-center">
-                  <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-400">No high-percentage bets stored yet</p>
-                  <p className="text-slate-500 text-sm mt-1">Bets with 60%+ win probability will appear here</p>
-                </div>
-              )}
             </div>
+            )}
           </Card>
         </div>
       )}
