@@ -23,6 +23,10 @@ const Admin = () => {
   const [picksPerformance, setPicksPerformance] = useState(null);
   const [cashAppRequests, setCashAppRequests] = useState([]);
   const [liveStreams, setLiveStreams] = useState([]);
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [supportUnread, setSupportUnread] = useState(0);
+  const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -84,7 +88,8 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/daily-picks`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/picks-performance`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/cashapp-requests`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/live-streams`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/live-streams`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/support-messages`, { headers })
       ]);
 
       // Check if any request got 403 (not admin)
@@ -104,6 +109,10 @@ const Admin = () => {
       if (results[5].status === 'fulfilled') setPicksPerformance(results[5].value.data);
       if (results[6].status === 'fulfilled') setCashAppRequests(results[6].value.data.requests || []);
       if (results[7].status === 'fulfilled') setLiveStreams(results[7].value.data.streams || []);
+      if (results[8].status === 'fulfilled') {
+        setSupportMessages(results[8].value.data.messages || []);
+        setSupportUnread(results[8].value.data.unread_count || 0);
+      }
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
