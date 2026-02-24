@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   BarChart3, Users, DollarSign, TrendingUp, Activity, 
   PieChart, Target, RefreshCw, ArrowUpRight, ArrowDownRight,
-  Calendar, Clock, Trophy, Zap
+  Crown, Zap, Trophy, Eye, UserPlus, CreditCard
 } from 'lucide-react';
 
 import { BACKEND_URL } from '@/config/api';
@@ -19,7 +19,6 @@ const AdminAnalytics = () => {
   const [funnel, setFunnel] = useState([]);
   const [picksPerformance, setPicksPerformance] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
 
   const token = localStorage.getItem('betrslip_token');
   const headers = { Authorization: `Bearer ${token}` };
@@ -42,11 +41,11 @@ const AdminAnalytics = () => {
       ]);
 
       setOverview(overviewRes.data);
-      setUserGrowth(growthRes.data.data);
-      setAnalysesTrend(trendsRes.data.data);
-      setTopUsers(usersRes.data.users);
-      setSportBreakdown(sportsRes.data.breakdown);
-      setFunnel(funnelRes.data.funnel);
+      setUserGrowth(growthRes.data.data || []);
+      setAnalysesTrend(trendsRes.data.data || []);
+      setTopUsers(usersRes.data.users || []);
+      setSportBreakdown(sportsRes.data.breakdown || []);
+      setFunnel(funnelRes.data.funnel || []);
       setPicksPerformance(picksRes.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -55,376 +54,351 @@ const AdminAnalytics = () => {
     }
   };
 
-  const StatCard = ({ title, value, subValue, icon: Icon, color, trend }) => (
-    <Card className="bg-slate-900/50 border-slate-800">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-xs font-medium">{title}</p>
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            {subValue && <p className="text-slate-500 text-xs mt-1">{subValue}</p>}
-          </div>
-          <div className={`w-12 h-12 rounded-xl ${color.replace('text-', 'bg-')}/20 flex items-center justify-center`}>
-            <Icon className={`w-6 h-6 ${color}`} />
-          </div>
-        </div>
-        {trend !== undefined && (
-          <div className={`flex items-center gap-1 mt-2 text-xs ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            <span>{Math.abs(trend)}% vs last period</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const SimpleBarChart = ({ data, dataKey, color }) => {
-    const max = Math.max(...data.map(d => d[dataKey] || 0), 1);
+  const MiniBarChart = ({ data, dataKey, color, height = 100 }) => {
+    const values = data.map(d => d[dataKey] || 0);
+    const max = Math.max(...values, 1);
+    const recent = data.slice(-21);
+    
     return (
-      <div className="flex items-end gap-1 h-32">
-        {data.slice(-14).map((item, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center">
-            <div 
-              className={`w-full ${color} rounded-t`}
-              style={{ height: `${(item[dataKey] / max) * 100}%`, minHeight: item[dataKey] > 0 ? '4px' : '0' }}
-            />
-            {i % 3 === 0 && (
-              <span className="text-[8px] text-slate-500 mt-1 truncate w-full text-center">
-                {item.date?.slice(5)}
-              </span>
-            )}
-          </div>
-        ))}
+      <div className="flex items-end gap-[3px]" style={{ height }}>
+        {recent.map((item, i) => {
+          const val = item[dataKey] || 0;
+          const h = (val / max) * 100;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+              <div 
+                className={`w-full rounded-sm ${color} transition-all duration-200 group-hover:opacity-80`}
+                style={{ height: `${Math.max(h, val > 0 ? 4 : 0)}%` }}
+              />
+              {/* Tooltip */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 border border-slate-700">
+                {item.date?.slice(5)}: {val}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
+  const funnelColors = [
+    'from-blue-500 to-blue-400',
+    'from-violet-500 to-violet-400',
+    'from-amber-500 to-amber-400',
+    'from-emerald-500 to-emerald-400',
+  ];
+
+  const funnelIcons = [UserPlus, Eye, Activity, CreditCard];
+
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-slate-800 rounded-xl" />
+              <div key={i} className="h-28 bg-slate-800/60 rounded-xl" />
             ))}
           </div>
-          <div className="h-64 bg-slate-800 rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-56 bg-slate-800/60 rounded-xl" />
+            <div className="h-56 bg-slate-800/60 rounded-xl" />
+          </div>
         </div>
       </div>
     );
   }
 
+  if (!overview) {
+    return (
+      <div className="text-center py-12">
+        <BarChart3 className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+        <p className="text-slate-400">No analytics data available</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
-          <p className="text-slate-400 text-sm">Real-time business metrics</p>
-        </div>
-        <Button 
-          onClick={fetchAllData} 
-          variant="outline" 
-          size="sm"
-          className="border-slate-700 text-slate-300"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+    <div className="space-y-6" data-testid="admin-analytics">
+      {/* Key Metrics Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Total Users */}
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 overflow-hidden">
+          <CardContent className="p-4 relative">
+            <div className="absolute top-3 right-3 w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-400" />
+            </div>
+            <p className="text-slate-400 text-xs font-medium mb-1">Total Users</p>
+            <p className="text-3xl font-black text-white">{overview.users.total}</p>
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-emerald-400 text-xs font-semibold flex items-center gap-0.5">
+                <ArrowUpRight className="w-3 h-3" />
+                +{overview.users.this_week}
+              </span>
+              <span className="text-slate-500 text-xs">this week</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pro Subscribers */}
+        <Card className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border-yellow-500/20 overflow-hidden">
+          <CardContent className="p-4 relative">
+            <div className="absolute top-3 right-3 w-10 h-10 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+              <Crown className="w-5 h-5 text-yellow-400" />
+            </div>
+            <p className="text-slate-400 text-xs font-medium mb-1">Pro Members</p>
+            <p className="text-3xl font-black text-yellow-400">{overview.subscriptions.active}</p>
+            <div className="mt-2">
+              <span className="text-yellow-400/80 text-xs font-semibold">{overview.subscriptions.conversion_rate}% conversion</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* MRR */}
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 overflow-hidden">
+          <CardContent className="p-4 relative">
+            <div className="absolute top-3 right-3 w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-emerald-400" />
+            </div>
+            <p className="text-slate-400 text-xs font-medium mb-1">Monthly Revenue</p>
+            <p className="text-3xl font-black text-emerald-400">${overview.revenue.mrr}</p>
+            <div className="mt-2">
+              <span className="text-slate-500 text-xs">{overview.revenue.total_transactions} transactions</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Accuracy */}
+        <Card className="bg-gradient-to-br from-violet-500/10 to-violet-600/5 border-violet-500/20 overflow-hidden">
+          <CardContent className="p-4 relative">
+            <div className="absolute top-3 right-3 w-10 h-10 rounded-lg bg-violet-500/15 flex items-center justify-center">
+              <Target className="w-5 h-5 text-violet-400" />
+            </div>
+            <p className="text-slate-400 text-xs font-medium mb-1">AI Accuracy</p>
+            <p className="text-3xl font-black text-violet-400">{overview.ai_performance.accuracy}%</p>
+            <div className="mt-2">
+              <span className="text-slate-500 text-xs">Record: {overview.ai_performance.picks_record}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-slate-800 pb-2">
-        {['overview', 'users', 'picks', 'revenue'].map((tab) => (
-          <Button
-            key={tab}
-            variant={activeTab === tab ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab(tab)}
-            className={activeTab === tab ? 'bg-violet-600' : 'text-slate-400'}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </Button>
-        ))}
-      </div>
+      {/* Charts + Funnel Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* User Growth Chart */}
+        <Card className="bg-slate-900/60 border-slate-800 lg:col-span-1">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-400" />
+              User Signups
+              <span className="text-slate-500 text-xs font-normal ml-auto">30d</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {userGrowth.length > 0 ? (
+              <MiniBarChart data={userGrowth} dataKey="users" color="bg-blue-500" />
+            ) : (
+              <div className="h-[100px] flex items-center justify-center text-slate-600 text-xs">No data</div>
+            )}
+          </CardContent>
+        </Card>
 
-      {activeTab === 'overview' && overview && (
-        <>
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Total Users"
-              value={overview.users.total}
-              subValue={`+${overview.users.this_week} this week`}
-              icon={Users}
-              color="text-blue-400"
-            />
-            <StatCard
-              title="Pro Subscribers"
-              value={overview.subscriptions.active}
-              subValue={`${overview.subscriptions.conversion_rate}% conversion`}
-              icon={Crown}
-              color="text-yellow-400"
-            />
-            <StatCard
-              title="Monthly Revenue"
-              value={`$${overview.revenue.mrr}`}
-              subValue={`${overview.revenue.total_transactions} transactions`}
-              icon={DollarSign}
-              color="text-emerald-400"
-            />
-            <StatCard
-              title="AI Accuracy"
-              value={`${overview.ai_performance.accuracy}%`}
-              subValue={`Picks: ${overview.ai_performance.picks_record}`}
-              icon={Target}
-              color="text-violet-400"
-            />
-          </div>
+        {/* Analyses Trend Chart */}
+        <Card className="bg-slate-900/60 border-slate-800 lg:col-span-1">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              Bet Analyses
+              <span className="text-slate-500 text-xs font-normal ml-auto">30d</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {analysesTrend.length > 0 ? (
+              <MiniBarChart data={analysesTrend} dataKey="analyses" color="bg-emerald-500" />
+            ) : (
+              <div className="h-[100px] flex items-center justify-center text-slate-600 text-xs">No data</div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* User Growth Chart */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-400" />
-                  User Growth (30 days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimpleBarChart data={userGrowth} dataKey="users" color="bg-blue-500" />
-              </CardContent>
-            </Card>
-
-            {/* Analyses Trend Chart */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-emerald-400" />
-                  Analyses Trend (30 days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimpleBarChart data={analysesTrend} dataKey="analyses" color="bg-emerald-500" />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Conversion Funnel */}
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <PieChart className="w-5 h-5 text-violet-400" />
-                Conversion Funnel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {funnel.map((stage, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-32 text-sm text-slate-300">{stage.stage}</div>
-                    <div className="flex-1 bg-slate-800 rounded-full h-6 overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-violet-600 to-violet-400 rounded-full flex items-center justify-end pr-2"
-                        style={{ width: `${stage.percentage}%` }}
-                      >
-                        <span className="text-xs font-bold text-white">{stage.count}</span>
-                      </div>
+        {/* Conversion Funnel */}
+        <Card className="bg-slate-900/60 border-slate-800 lg:col-span-1">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-violet-400" />
+              Conversion Funnel
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="space-y-2">
+              {funnel.map((stage, i) => {
+                const FunnelIcon = funnelIcons[i] || Activity;
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${funnelColors[i] || 'from-slate-500 to-slate-400'} flex items-center justify-center flex-shrink-0`}>
+                      <FunnelIcon className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <div className="w-16 text-right text-sm text-slate-400">{stage.percentage}%</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {activeTab === 'users' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Top Users */}
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-400" />
-                Most Active Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {topUsers.map((user, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'
-                      }`}>
-                        {i + 1}
-                      </span>
-                      <div>
-                        <p className="text-sm text-white">{user.email}</p>
-                        <p className="text-xs text-slate-500">{user.analyses_count} analyses</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs text-slate-300 truncate">{stage.stage}</span>
+                        <span className="text-xs text-white font-bold ml-2">{stage.count}</span>
                       </div>
-                    </div>
-                    {user.is_pro && (
-                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">PRO</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sport Breakdown */}
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-emerald-400" />
-                Analyses by Sport
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {sportBreakdown.slice(0, 8).map((sport, i) => {
-                  const total = sportBreakdown.reduce((sum, s) => sum + s.count, 0);
-                  const percentage = total > 0 ? Math.round((sport.count / total) * 100) : 0;
-                  return (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-16 text-sm text-slate-300">{sport.sport}</div>
-                      <div className="flex-1 bg-slate-800 rounded-full h-4 overflow-hidden">
+                      <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                         <div 
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${percentage}%` }}
+                          className={`h-full rounded-full bg-gradient-to-r ${funnelColors[i] || 'from-slate-500 to-slate-400'}`}
+                          style={{ width: `${Math.max(stage.percentage, 2)}%` }}
                         />
                       </div>
-                      <div className="w-12 text-right text-sm text-slate-400">{sport.count}</div>
+                    </div>
+                    <span className="text-[10px] text-slate-500 w-8 text-right flex-shrink-0">{stage.percentage}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Row: Top Users + Sports + Picks Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Top Users */}
+        <Card className="bg-slate-900/60 border-slate-800">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-400" />
+              Most Active Users
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="space-y-1.5">
+              {topUsers.length > 0 ? topUsers.slice(0, 8).map((user, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                    i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                    i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                    i === 2 ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-slate-800 text-slate-500'
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white truncate">{user.email}</p>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">{user.analyses_count}</span>
+                  {user.is_pro && (
+                    <Crown className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+                  )}
+                </div>
+              )) : (
+                <p className="text-slate-600 text-xs text-center py-4">No user activity yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sport Breakdown */}
+        <Card className="bg-slate-900/60 border-slate-800">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              Analyses by Sport
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {sportBreakdown.length > 0 ? (
+              <div className="space-y-2">
+                {sportBreakdown.slice(0, 6).map((sport, i) => {
+                  const total = sportBreakdown.reduce((sum, s) => sum + s.count, 0);
+                  const pct = total > 0 ? Math.round((sport.count / total) * 100) : 0;
+                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-yellow-500', 'bg-red-500', 'bg-orange-500'];
+                  return (
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-slate-300">{sport.sport}</span>
+                        <span className="text-xs text-slate-400 font-mono">{sport.count} ({pct}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className={`h-full rounded-full ${colors[i % colors.length]}`} style={{ width: `${Math.max(pct, 2)}%` }} />
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            ) : (
+              <p className="text-slate-600 text-xs text-center py-4">No sport data yet</p>
+            )}
+          </CardContent>
+        </Card>
 
-      {activeTab === 'picks' && picksPerformance && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Performance by Sport */}
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-400" />
-                Picks Performance by Sport
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+        {/* Picks Performance */}
+        <Card className="bg-slate-900/60 border-slate-800">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-white flex items-center gap-2">
+              <Zap className="w-4 h-4 text-violet-400" />
+              Picks Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {picksPerformance?.by_sport?.length > 0 ? (
+              <div className="space-y-2">
                 {picksPerformance.by_sport.map((sport, i) => (
-                  <div key={i} className="p-3 bg-slate-800/50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">{sport.sport}</span>
-                      <span className={`text-sm font-bold ${sport.win_rate >= 55 ? 'text-emerald-400' : 'text-slate-400'}`}>
-                        {sport.win_rate}%
-                      </span>
+                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/30">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white font-medium">{sport.sport}</p>
+                      <p className="text-[10px] text-slate-500">{sport.won}W - {sport.lost}L ({sport.total} total)</p>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-emerald-400">{sport.won}W</span>
-                      <span className="text-slate-500">-</span>
-                      <span className="text-red-400">{sport.lost}L</span>
-                      <span className="text-slate-500 ml-auto">({sport.total} total)</span>
-                    </div>
+                    <span className={`text-sm font-black ${
+                      sport.win_rate >= 60 ? 'text-emerald-400' :
+                      sport.win_rate >= 50 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {sport.win_rate}%
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <p className="text-slate-600 text-xs text-center py-4">No picks resolved yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Performance by Confidence */}
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-violet-400" />
-                Win Rate by Confidence Level
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {picksPerformance.by_confidence.map((conf, i) => (
-                  <div key={i} className="p-3 bg-slate-800/50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">Confidence {conf.confidence_range}</span>
-                      <span className={`text-sm font-bold ${conf.win_rate >= 55 ? 'text-emerald-400' : 'text-slate-400'}`}>
-                        {conf.win_rate}%
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      {conf.won}/{conf.total} picks won
-                    </div>
-                  </div>
-                ))}
+      {/* Revenue Insights */}
+      <Card className="bg-slate-900/60 border-slate-800">
+        <CardHeader className="pb-2 px-4 pt-4">
+          <CardTitle className="text-sm text-white flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+            Revenue Insights
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
+                <p className="text-emerald-400 text-xs font-bold">Current MRR</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === 'revenue' && overview && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard
-              title="Monthly Recurring Revenue"
-              value={`$${overview.revenue.mrr}`}
-              icon={DollarSign}
-              color="text-emerald-400"
-            />
-            <StatCard
-              title="Active Subscriptions"
-              value={overview.subscriptions.active}
-              icon={Users}
-              color="text-blue-400"
-            />
-            <StatCard
-              title="Conversion Rate"
-              value={`${overview.subscriptions.conversion_rate}%`}
-              icon={TrendingUp}
-              color="text-violet-400"
-            />
+              <p className="text-white text-xl font-black">${overview.revenue.mrr}/mo</p>
+              <p className="text-slate-500 text-xs mt-1">
+                {overview.subscriptions.active} Pro × $5/month
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
+                <p className="text-blue-400 text-xs font-bold">Growth Potential</p>
+              </div>
+              <p className="text-white text-xl font-black">
+                ${(overview.users.total - overview.subscriptions.active) * 5}/mo
+              </p>
+              <p className="text-slate-500 text-xs mt-1">
+                {overview.users.total - overview.subscriptions.active} free users could convert
+              </p>
+            </div>
           </div>
-
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-lg text-white">Revenue Insights</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                  <p className="text-emerald-400 font-medium mb-1">💰 Revenue Summary</p>
-                  <p className="text-slate-300 text-sm">
-                    {overview.subscriptions.active} Pro subscribers × $5/month = ${overview.revenue.mrr} MRR
-                  </p>
-                </div>
-                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <p className="text-blue-400 font-medium mb-1">📈 Growth Potential</p>
-                  <p className="text-slate-300 text-sm">
-                    {overview.users.total - overview.subscriptions.active} free users could convert to {' '}
-                    ${(overview.users.total - overview.subscriptions.active) * 5}/month potential
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
-
-// Crown icon component since it might not be imported
-const Crown = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M2 17l3-7 4 4 3-9 3 9 4-4 3 7H2z" />
-    <path d="M2 17h20v4H2z" />
-  </svg>
-);
 
 export default AdminAnalytics;
