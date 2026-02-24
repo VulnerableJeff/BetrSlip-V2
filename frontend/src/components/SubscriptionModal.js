@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CreditCard, Check, X, Sparkles, Shield, DollarSign, MessageSquare } from 'lucide-react';
+import { CreditCard, Check, X, Sparkles, Shield, ExternalLink } from 'lucide-react';
 
 import { BACKEND_URL } from '@/config/api';
-const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID;
 
 const SubscriptionModal = ({ isOpen, onClose, usage }) => {
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('stripe'); // 'stripe', 'paypal', 'cashapp'
+  const [paymentMethod, setPaymentMethod] = useState('stripe');
   const [cashAppRequested, setCashAppRequested] = useState(false);
 
   if (!isOpen) return null;
@@ -25,37 +23,10 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
         { origin_url: window.location.origin },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Redirect to Stripe checkout
       window.location.href = response.data.url;
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error creating checkout');
       setLoading(false);
-    }
-  };
-
-  const handlePayPalApprove = async (data, actions) => {
-    try {
-      const token = localStorage.getItem('token');
-      // Capture the PayPal order
-      const details = await actions.order.capture();
-      
-      // Record the payment on our backend
-      await axios.post(
-        `${BACKEND_URL}/api/subscription/paypal-confirm`,
-        { 
-          order_id: data.orderID,
-          payer_email: details.payer?.email_address,
-          amount: details.purchase_units?.[0]?.amount?.value
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      toast.success('Payment successful! Welcome to Pro!');
-      window.location.reload();
-    } catch (error) {
-      console.error('PayPal capture error:', error);
-      toast.error('Payment failed. Please try again.');
     }
   };
 
@@ -68,7 +39,6 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
       setCashAppRequested(true);
       toast.success('CashApp request submitted!');
     } catch (error) {
@@ -149,9 +119,10 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
         {/* Payment Method Selection */}
         <div className="mb-4">
           <p className="text-slate-400 text-xs mb-3 text-center">Choose payment method</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setPaymentMethod('stripe')}
+              data-testid="payment-method-stripe"
               className={`p-3 rounded-lg border-2 transition-all ${
                 paymentMethod === 'stripe' 
                   ? 'border-violet-500 bg-violet-500/10' 
@@ -159,34 +130,26 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
               }`}
             >
               <CreditCard className={`w-5 h-5 mx-auto mb-1 ${paymentMethod === 'stripe' ? 'text-violet-400' : 'text-slate-400'}`} />
-              <p className={`text-xs ${paymentMethod === 'stripe' ? 'text-violet-400' : 'text-slate-400'}`}>Card</p>
-            </button>
-            <button
-              onClick={() => setPaymentMethod('paypal')}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                paymentMethod === 'paypal' 
-                  ? 'border-blue-500 bg-blue-500/10' 
-                  : 'border-slate-700 hover:border-slate-600'
-              }`}
-            >
-              <DollarSign className={`w-5 h-5 mx-auto mb-1 ${paymentMethod === 'paypal' ? 'text-blue-400' : 'text-slate-400'}`} />
-              <p className={`text-xs ${paymentMethod === 'paypal' ? 'text-blue-400' : 'text-slate-400'}`}>PayPal</p>
+              <p className={`text-xs font-semibold ${paymentMethod === 'stripe' ? 'text-violet-400' : 'text-slate-400'}`}>Card</p>
             </button>
             <button
               onClick={() => setPaymentMethod('cashapp')}
+              data-testid="payment-method-cashapp"
               className={`p-3 rounded-lg border-2 transition-all ${
                 paymentMethod === 'cashapp' 
                   ? 'border-emerald-500 bg-emerald-500/10' 
                   : 'border-slate-700 hover:border-slate-600'
               }`}
             >
-              <MessageSquare className={`w-5 h-5 mx-auto mb-1 ${paymentMethod === 'cashapp' ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <p className={`text-xs ${paymentMethod === 'cashapp' ? 'text-emerald-400' : 'text-slate-400'}`}>CashApp</p>
+              <div className={`w-5 h-5 mx-auto mb-1 rounded flex items-center justify-center text-xs font-black ${
+                paymentMethod === 'cashapp' ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-slate-300'
+              }`}>$</div>
+              <p className={`text-xs font-semibold ${paymentMethod === 'cashapp' ? 'text-emerald-400' : 'text-slate-400'}`}>CashApp</p>
             </button>
           </div>
         </div>
 
-        {/* Payment CTAs */}
+        {/* Stripe Payment */}
         {paymentMethod === 'stripe' && (
           <>
             <Button
@@ -204,51 +167,7 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
           </>
         )}
 
-        {paymentMethod === 'paypal' && (
-          <div className="space-y-3">
-            {PAYPAL_CLIENT_ID ? (
-              <PayPalScriptProvider options={{ 
-                clientId: PAYPAL_CLIENT_ID,
-                currency: "USD"
-              }}>
-                <PayPalButtons
-                  style={{ layout: "vertical", color: "blue", shape: "rect" }}
-                  createOrder={(data, actions) => {
-                    return actions.order.create({
-                      purchase_units: [{
-                        amount: {
-                          value: "5.00",
-                          currency_code: "USD"
-                        },
-                        description: "BetrSlip Pro Subscription - 1 Month"
-                      }]
-                    });
-                  }}
-                  onApprove={handlePayPalApprove}
-                  onError={(err) => {
-                    console.error('PayPal error:', err);
-                    toast.error('PayPal payment failed');
-                  }}
-                />
-              </PayPalScriptProvider>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-slate-400 text-sm mb-3">PayPal coming soon!</p>
-                <Button
-                  onClick={() => setPaymentMethod('stripe')}
-                  variant="outline"
-                  className="border-slate-600"
-                >
-                  Use Card Instead
-                </Button>
-              </div>
-            )}
-            <p className="text-center text-slate-500 text-xs">
-              One-time $5 payment via PayPal
-            </p>
-          </div>
-        )}
-
+        {/* CashApp Payment */}
         {paymentMethod === 'cashapp' && (
           <div className="space-y-4">
             {cashAppRequested ? (
@@ -256,7 +175,7 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
                 <Check className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
                 <p className="text-emerald-400 font-semibold mb-1">Request Submitted!</p>
                 <p className="text-slate-400 text-sm">
-                  Send $5.00 to <span className="text-white font-mono font-bold">$betrslip</span> on CashApp
+                  Send $5.00 to <span className="text-white font-mono font-bold">$BetrSlip</span> on CashApp
                 </p>
                 <p className="text-slate-500 text-xs mt-2">
                   Include your email in the note. We'll activate your Pro within 24 hours.
@@ -264,17 +183,40 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
               </div>
             ) : (
               <>
-                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
-                  <p className="text-white font-semibold mb-3">CashApp Payment</p>
-                  <div className="bg-slate-900/50 border border-emerald-500/20 rounded-lg p-3 mb-3">
-                    <p className="text-xs text-slate-400 mb-1">Send payment to:</p>
-                    <p className="text-emerald-400 font-mono font-bold text-lg">$betrslip</p>
+                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                  {/* QR Code */}
+                  <div className="flex justify-center mb-3">
+                    <div className="bg-white rounded-xl p-2 w-40 h-40">
+                      <img 
+                        src="/cashapp-qr.png" 
+                        alt="CashApp QR Code - $BetrSlip"
+                        className="w-full h-full object-contain"
+                        data-testid="cashapp-qr-code"
+                      />
+                    </div>
                   </div>
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-left space-y-2">
-                    <p className="text-amber-400 font-semibold text-xs uppercase tracking-wide">Instructions:</p>
-                    <p className="text-slate-300 text-sm">1. Open CashApp and send <span className="text-white font-bold">$5.00</span> to <span className="text-emerald-400 font-mono font-bold">$betrslip</span></p>
-                    <p className="text-slate-300 text-sm">2. In the payment note, include your <span className="text-white font-bold">email address</span></p>
-                    <p className="text-slate-300 text-sm">3. Tap the button below to notify us</p>
+                  
+                  {/* CashApp Tag */}
+                  <div className="text-center mb-3">
+                    <p className="text-xs text-slate-400 mb-1">Scan QR or send to:</p>
+                    <a
+                      href="https://cash.app/$BetrSlip"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/30 rounded-lg px-4 py-2 hover:bg-emerald-500/25 transition-colors"
+                      data-testid="cashapp-link"
+                    >
+                      <span className="text-emerald-400 font-mono font-black text-lg">$BetrSlip</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-emerald-400/60" />
+                    </a>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-left space-y-1.5">
+                    <p className="text-amber-400 font-semibold text-xs uppercase tracking-wide">Steps:</p>
+                    <p className="text-slate-300 text-xs">1. Open CashApp & send <span className="text-white font-bold">$5.00</span> to <span className="text-emerald-400 font-mono font-bold">$BetrSlip</span></p>
+                    <p className="text-slate-300 text-xs">2. Include your <span className="text-white font-bold">email</span> in the payment note</p>
+                    <p className="text-slate-300 text-xs">3. Tap the button below to notify us</p>
                   </div>
                 </div>
                 <Button
@@ -283,7 +225,6 @@ const SubscriptionModal = ({ isOpen, onClose, usage }) => {
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-6"
                   data-testid="cashapp-request-btn"
                 >
-                  <MessageSquare className="w-5 h-5 mr-2" />
                   {loading ? 'Submitting...' : "I've Sent $5.00 - Activate Pro"}
                 </Button>
               </>
