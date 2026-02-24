@@ -931,17 +931,88 @@ async def admin_reject_cashapp(request_id: str, admin_user: dict = Depends(get_a
 # Top Bets Admin
 @api_router.get("/admin/top-bets")
 async def admin_get_top_bets(limit: int = 50, admin_user: dict = Depends(get_admin_user)):
-    top_bets = await db.top_bets.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
-    return {"top_bets": top_bets}
+    top_bets_raw = await db.top_bets.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Enrich old-format entries with missing fields
+    enriched = []
+    for bet in top_bets_raw:
+        # If old format, extract from analysis_summary
+        summary = bet.get("analysis_summary", {})
+        
+        if not bet.get("user_email"):
+            user = await db.users.find_one({"id": bet.get("user_id")}, {"_id": 0, "email": 1})
+            bet["user_email"] = user.get("email", "Unknown") if user else "Unknown"
+        
+        if not bet.get("confidence_score"):
+            prob = bet.get("win_probability", 50)
+            bet["confidence_score"] = min(10, max(1, int(prob / 10)))
+        
+        if bet.get("expected_value") is None:
+            bets_data = summary.get("bets", [])
+            ev_vals = [b.get("ev_percent", 0) for b in bets_data if b.get("ev_percent") is not None]
+            bet["expected_value"] = sum(ev_vals) / len(ev_vals) if ev_vals else 0
+        
+        if bet.get("kelly_percentage") is None:
+            bet["kelly_percentage"] = summary.get("kelly_fraction", 0) * 100
+        
+        if not bet.get("recommendation"):
+            prob = bet.get("win_probability", 50)
+            ev = bet.get("expected_value", 0)
+            if prob >= 65 and ev >= 0:
+                bet["recommendation"] = "STRONG BET"
+            elif prob >= 55:
+                bet["recommendation"] = "BET"
+            elif prob >= 45:
+                bet["recommendation"] = "SMALL/SKIP"
+            else:
+                bet["recommendation"] = "PASS"
+        
+        if not bet.get("bet_details"):
+            bets_data = summary.get("bets", [])
+            descs = [b.get("description", "") for b in bets_data if b.get("description")]
+            bet["bet_details"] = " | ".join(descs[:3]) if descs else summary.get("sport", "Bet Slip")
+        
+        if not bet.get("individual_bets"):
+            bets_data = summary.get("bets", [])
+            bet["individual_bets"] = [
+                {
+                    "description": b.get("description", ""),
+                    "individual_probability": b.get("win_probability", 50),
+                    "odds": b.get("odds", ""),
+                }
+                for b in bets_data[:6]
+            ]
+        
+        if not bet.get("positive_factors"):
+            bet["positive_factors"] = summary.get("positive_factors", [])[:5]
+        if not bet.get("risk_factors"):
+            bet["risk_factors"] = summary.get("risk_factors", [])[:5]
+        if not bet.get("sport"):
+            bet["sport"] = summary.get("sport", "Unknown")
+        
+        # Remove the heavy analysis_summary from response
+        bet.pop("analysis_summary", None)
+        enriched.append(bet)
+    
+    return {"top_bets": enriched}
 
 @api_router.get("/admin/top-bets/stats")
 async def admin_get_top_bets_stats(admin_user: dict = Depends(get_admin_user)):
     total = await db.top_bets.count_documents({})
+    elite = await db.top_bets.count_documents({"win_probability": {"$gte": 80}})
+    strong = await db.top_bets.count_documents({"win_probability": {"$gte": 70, "$lt": 80}})
+    good = await db.top_bets.count_documents({"win_probability": {"$gte": 60, "$lt": 70}})
     avg_pipeline = [{"$group": {"_id": None, "avg_prob": {"$avg": "$win_probability"}}}]
     avg_result = await db.top_bets.aggregate(avg_pipeline).to_list(1)
     avg_prob = round(avg_result[0]['avg_prob'], 1) if avg_result else 0
     
-    return {"total_top_bets": total, "average_probability": avg_prob}
+    return {
+        "total_top_bets": total,
+        "elite_bets_80_plus": elite,
+        "strong_bets_70_79": strong,
+        "good_bets_60_69": good,
+        "average_probability": avg_prob
+    }
 
 
 # ===== STRIPE WEBHOOK =====
