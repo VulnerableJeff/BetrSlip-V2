@@ -545,13 +545,38 @@ Be BRUTALLY honest. If a bet is bad, say so clearly. Most parlays lose. Your job
     )
     
     # Check if high probability - add to top bets
-    if overall_prob >= 70:
+    if overall_prob >= 60:
+        # Get user email for admin display
+        bet_user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+        bet_user_email = bet_user.get("email", "Unknown") if bet_user else "Unknown"
+        
+        # Build a descriptive summary from individual bets
+        bet_descriptions = [b.get('description', '') for b in bets if b.get('description')]
+        bet_details = " | ".join(bet_descriptions[:3]) if bet_descriptions else analysis_data.get('sport', 'Bet Slip')
+        
         await db.top_bets.insert_one({
             "id": str(uuid.uuid4()),
             "analysis_id": analysis_id,
             "user_id": user_id,
+            "user_email": bet_user_email,
             "win_probability": overall_prob,
-            "analysis_summary": analysis_data,
+            "confidence_score": min(10, max(1, int(overall_prob / 10))),
+            "expected_value": ev_percent,
+            "kelly_percentage": kelly_fraction * 100,
+            "recommendation": recommendation,
+            "sport": analysis_data.get('sport', 'Unknown'),
+            "bet_type": analysis_data.get('bet_type', 'parlay'),
+            "bet_details": bet_details,
+            "individual_bets": [
+                {
+                    "description": b.get('description', ''),
+                    "individual_probability": b.get('win_probability', 50),
+                    "odds": b.get('odds', ''),
+                }
+                for b in bets[:6]
+            ],
+            "positive_factors": analysis_data.get('positive_factors', [])[:5],
+            "risk_factors": analysis_data.get('risk_factors', [])[:5],
             "created_at": datetime.now(timezone.utc).isoformat()
         })
     
