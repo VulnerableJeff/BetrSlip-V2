@@ -6,67 +6,52 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Shadcn UI
 - **Backend**: FastAPI + MongoDB
-- **External APIs**: The Odds API (20K tier)
+- **External APIs**: The Odds API (20K tier), OpenAI, Stripe
 - **Auth**: JWT-based with admin auto-creation on startup
 
 ## What's Been Implemented
 
 ### Core Features
-- **Bet slip screenshot upload + AI analysis** (main selling point) — enhanced with leg grades (A-F), strongest/weakest leg indicators, parlay correlation detection
-- **Bet of the Day** — Hero spotlight with confidence meter, win probability, Fading the Public indicator
-- **AI Parlay Picks** — 2-leg AI-optimized parlays
-- **Best Value Bets (EV Scanner)** — Cross-sportsbook value detection
-- **Today's Best Bets** — Top 3 +EV picks with winning probability
-- **Today's Top Picks** — AI daily picks with Share/Copy
+- Bet slip screenshot upload + AI analysis (main feature) with leg grades, EV, Kelly
+- Bet of the Day hero spotlight with confidence meter
+- AI Parlay Picks, Best Value Bets (EV Scanner), Today's Top Picks
+- Share/Copy functionality for picks
 
-### Support System (NEW - Feb 24, 2026)
-- **Floating support button** (headphones icon, bottom-right) replaces old AI chat assistant
-- **In-app contact form** — Users submit subject + message, stored in MongoDB
-- **My Messages tab** — Users can view status of their messages (Pending/Seen/Replied)
-- **Admin Support tab** — View all messages, mark as read, reply, delete
-- **Unread badge** — Shows unread count on admin Support tab
+### Support System (Feb 24, 2026)
+- Floating support button (headphones icon, bottom-right) — mobile-responsive
+- In-app contact form with subject + message
+- My Messages tab for users (Pending/Seen/Replied status)
+- Admin Support tab with Read/Reply/Delete actions and unread badge
 
 ### Landing Page
-- **Pro members count** displayed in top activity bar with crown icon (NEW - Feb 24, 2026)
-- Live activity banner showing analyzing count, total users, bets analyzed, AI accuracy
-- How It Works section, Pro Feature showcase, Verified Results section
+- Pro members count in top activity bar (Feb 24, 2026)
+- Live stats: analyzing count, total users, bets analyzed, AI accuracy
 
-### Security & Anti-Abuse
-- **Email verification on signup** — Confirm email field, disposable domain blocking (24+ temp email providers blocked on both frontend + backend)
-- **Password min 6 chars** — enforced on both sides
-- **Pro subscription auto-expiry** — Checks on startup, expires active subs >30 days old (skips admin)
+### Admin Dashboard — POLISHED (Feb 24, 2026)
+- **Gradient stat cards**: Total Users, Pro Users, Banned, Analyses, Revenue
+- **Analytics tab**: Key metrics (Users, MRR, AI Accuracy), User Signups chart (30d), Bet Analyses trend, Conversion Funnel with 4 stages, Most Active Users, Analyses by Sport, Picks Performance by sport, Revenue Insights (MRR + Growth Potential)
+- **Top Bets tab**: Stats cards (Total, Elite 80%+, Strong 70-79%, Avg Probability), enriched bet cards with user email, confidence, EV, Kelly, recommendation, bet details
+- **Users tab**: Search, filter, IP tracking, online status, subscription management
+- **Support tab**: Message management with reply functionality
+- **Other tabs**: Daily Picks, Live Streams, CashApp payments
 
-### Admin Panel
-- Online/offline status, last login, IP tracking
-- User management (ban/unban, subscription control)
-- CashApp payment approval workflow
-- **Support Messages management** (NEW - Feb 24, 2026)
-
-### Payments
-- **Stripe**: $5.00/mo (was incorrectly $500 — fixed)
-- **CashApp**: Manual flow with instructions to send $5.00 to $betrslip
-
-### Removed Features
-- Pick of the Week leaderboard (broken auto-resolver on production)
-- AI Chat Assistant (replaced with support contact form)
-- WeeklyLeaderboard.js (deleted - unused)
-- Line Movers, Build Your Own Parlay, Odds Comparison, Arbitrage Scanner, Player Props, Leaderboard, P&L Tracker, Game Plan
+### Security & Subscriptions
+- Email verification on signup (confirm email + disposable domain blocking)
+- Auto-expiry of Pro subscriptions (background task)
+- Stripe ($5/mo) + CashApp payment flows
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
 
 ## Prioritized Backlog
 
-### P0 (Next Up)
-- None currently
-
-### P1 (Future - User Mentioned)
+### P1 (Future — User Mentioned)
 - **Tiered subscription system**: Tier 1 ($5), Tier 2 ($10), Tier 3 ($20)
-- **Usage limits per tier** — Cap bet slip analyses per week per tier to protect API quota
-- **Feature differentiation per tier** — Different access levels for value bets, AI picks, parlay analysis
+- **Usage limits per tier**: Cap bet slip analyses per week
+- **Feature differentiation**: Different access levels per tier
 
-### P2 (Future - Nice to Have)
-- Usage tracking & rate limiting infrastructure per user
-- Admin dashboard revenue/usage analytics enhancement
+### P2 (Nice to Have)
+- Usage tracking infrastructure per user
+- Rate limiting per tier
+- Referral reward system
 - Custom branding for share cards per tier
-- Priority support queue for higher tiers
