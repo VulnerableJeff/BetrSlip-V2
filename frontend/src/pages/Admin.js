@@ -1793,6 +1793,129 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Support Messages Tab */}
+      {activeTab === 'support' && (
+        <div className="max-w-4xl mx-auto">
+          <Card className="glass border-orange-500/30 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                  <Headphones className="w-6 h-6 text-orange-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white" data-testid="support-messages-title">Support Messages</h2>
+                  <p className="text-slate-400 text-sm">
+                    {supportUnread > 0 ? `${supportUnread} unread` : 'All caught up'} &bull; {supportMessages.length} total
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {supportMessages.length === 0 ? (
+              <div className="text-center py-12">
+                <Mail className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400">No support messages yet</p>
+                <p className="text-slate-500 text-sm mt-1">Messages from users will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {supportMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    data-testid={`support-msg-${msg.id}`}
+                    className={`border rounded-xl p-4 transition-all ${
+                      msg.status === 'unread'
+                        ? 'bg-orange-950/20 border-orange-500/40'
+                        : msg.status === 'replied'
+                        ? 'bg-emerald-950/10 border-emerald-500/20'
+                        : 'bg-slate-800/50 border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-white font-semibold text-sm">{msg.subject}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            msg.status === 'unread' ? 'bg-orange-500/20 text-orange-400' :
+                            msg.status === 'replied' ? 'bg-emerald-500/20 text-emerald-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {msg.status === 'unread' ? 'NEW' : msg.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-violet-400 text-xs font-medium">{msg.email}</p>
+                        <p className="text-slate-300 text-sm mt-2">{msg.message}</p>
+                        {msg.admin_reply && (
+                          <div className="mt-3 pt-3 border-t border-slate-700">
+                            <p className="text-emerald-400 text-xs font-semibold mb-1">Your Reply:</p>
+                            <p className="text-slate-300 text-sm">{msg.admin_reply}</p>
+                          </div>
+                        )}
+                        <p className="text-slate-600 text-xs mt-2">
+                          {new Date(msg.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {msg.status === 'unread' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleMarkRead(msg.id)}
+                            className="text-blue-400 hover:text-blue-300 text-xs"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            Read
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setReplyingTo(replyingTo === msg.id ? null : msg.id)}
+                          className="text-emerald-400 hover:text-emerald-300 text-xs"
+                        >
+                          <Reply className="w-3 h-3 mr-1" />
+                          Reply
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteSupportMessage(msg.id)}
+                          className="text-red-400 hover:text-red-300 text-xs"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Reply Input */}
+                    {replyingTo === msg.id && (
+                      <div className="mt-3 pt-3 border-t border-slate-700 flex gap-2">
+                        <input
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your reply..."
+                          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-violet-500"
+                          onKeyDown={(e) => e.key === 'Enter' && handleReplyMessage(msg.id)}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleReplyMessage(msg.id)}
+                          disabled={!replyText.trim()}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                        >
+                          Send
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
       {/* CashApp Tab Content */}
       {activeTab === 'cashapp' && (
         <div className="max-w-4xl mx-auto">
