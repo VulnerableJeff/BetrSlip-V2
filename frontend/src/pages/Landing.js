@@ -296,17 +296,9 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* CTA */}
+          {/* Secondary CTA */}
           <div className="text-center">
-            <Button
-              data-testid="get-started-btn"
-              size="lg"
-              className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold text-lg px-12 py-7 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-violet-500/25"
-              onClick={() => navigate('/auth')}
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              Start Analysis
-            </Button>
+            <p className="text-slate-500 text-sm mb-3">Join {publicStats?.total_users || 260}+ bettors making smarter plays</p>
           </div>
         </div>
       </section>
