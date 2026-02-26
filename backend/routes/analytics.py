@@ -39,13 +39,12 @@ async def _fetch_odds(sport_key: str, markets: str = 'h2h,spreads,totals'):
 
 
 def _format_time(iso_str):
-    """Format ISO time to readable ET"""
+    """Format ISO time to readable US Eastern Time"""
     try:
+        from zoneinfo import ZoneInfo
         dt = datetime.fromisoformat(iso_str.replace('Z', '+00:00'))
-        # Convert to ET (UTC-5)
-        from datetime import timedelta
-        et = dt - timedelta(hours=5)
-        return et.strftime('%a %I:%M %p ET')
+        et = dt.astimezone(ZoneInfo("America/New_York"))
+        return et.strftime('%a %I:%M %p ET').lstrip('0')
     except Exception:
         return "TBD"
 
