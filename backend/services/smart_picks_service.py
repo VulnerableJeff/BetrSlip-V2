@@ -458,8 +458,10 @@ IMPORTANT RULES:
             
             # Parse commence time
             try:
+                from zoneinfo import ZoneInfo
                 dt = datetime.fromisoformat(commence.replace('Z', '+00:00'))
-                time_str = dt.strftime('%A %I:%M %p ET')
+                et = dt.astimezone(ZoneInfo("America/New_York"))
+                time_str = et.strftime('%A %I:%M %p ET')
             except:
                 time_str = commence
             
