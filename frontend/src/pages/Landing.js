@@ -108,7 +108,7 @@ const Landing = () => {
           </div>
 
           {/* Main Headline */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1
               className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-6 tracking-tight"
               data-testid="hero-title"
@@ -119,14 +119,37 @@ const Landing = () => {
               </span>
             </h1>
             <p
-              className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto mb-4"
+              className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto mb-8"
               data-testid="hero-description"
             >
               Upload your bet slip screenshot. Get AI-powered win probability with real-time 
               injury reports, weather data, and team stats. Track your results and see our accuracy.
             </p>
+
+            {/* CTA Buttons - Above the fold */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8" data-testid="hero-cta">
+              <Button
+                data-testid="hero-start-btn"
+                size="lg"
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-bold text-lg px-10 py-7 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-violet-500/25"
+                onClick={() => navigate('/auth')}
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Start Free — 5 Analyses
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 font-bold text-lg px-8 py-7 rounded-xl transition-all duration-200"
+                onClick={() => navigate('/auth')}
+              >
+                <Crown className="w-5 h-5 mr-2" />
+                Go Pro — $5/mo
+              </Button>
+            </div>
+
             {/* Supported Sportsbooks */}
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 mt-6">
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
               <span className="text-slate-500 text-sm">Works with:</span>
               <div className="flex flex-wrap justify-center gap-3">
                 <span className="px-4 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white font-semibold text-sm hover:border-violet-500/50 transition-colors">DraftKings</span>
