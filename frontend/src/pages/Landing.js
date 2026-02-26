@@ -70,7 +70,7 @@ const Landing = () => {
             </div>
             <div className="hidden md:flex items-center gap-2 text-violet-400">
               <Target className="w-4 h-4" />
-              <span>{publicStats.ai_accuracy || '67.5'}% AI accuracy</span>
+              <span>{performance?.win_rate ? `${performance.win_rate}% verified win rate` : `${publicStats.ai_accuracy || '67.5'}% AI accuracy`}</span>
             </div>
           </div>
         </div>
