@@ -17,28 +17,37 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 - AI Parlay Picks, Best Value Bets (EV Scanner), Today's Top Picks
 - Share/Copy functionality for picks
 
+### Landing Page — REDESIGNED (Feb 26, 2026)
+- **Two CTA buttons above the fold**: "Start Free — 5 Analyses" + "Go Pro — $5/mo"
+- **Winning demo card**: Shows 72.4% STRONG BET with +12.8% EV (replaces old 28.5% losing example)
+- **Verified win rate** in top bar (replaces raw AI accuracy)
+- **Pro members count** with crown icon in activity banner
+- How It Works, Pro Features, Verified Results, Why BetrSlip sections
+
+### Auth Page — REDESIGNED (Feb 26, 2026)
+- **Two-column layout**: Social proof + features on left, login form on right
+- **Live stats display**: Users, Pro Members, Analyses count from API
+- **Feature highlights**: Upload Any Bet Slip, Real-Time Data, Daily AI Picks, 5 Free Analyses
+- **Trust badge**: "Free to start • No credit card required"
+- BetrSlip logo links back to landing page
+- Email verification (confirm email + disposable domain blocking)
+
 ### Support System (Feb 24, 2026)
 - Floating support button (headphones icon, bottom-right) — mobile-responsive
 - In-app contact form with subject + message
-- My Messages tab for users (Pending/Seen/Replied status)
+- My Messages tab (Pending/Seen/Replied status)
 - Admin Support tab with Read/Reply/Delete actions and unread badge
 
-### Landing Page
-- Pro members count in top activity bar (Feb 24, 2026)
-- Live stats: analyzing count, total users, bets analyzed, AI accuracy
-
 ### Admin Dashboard — POLISHED (Feb 24, 2026)
-- **Gradient stat cards**: Total Users, Pro Users, Banned, Analyses, Revenue
-- **Analytics tab**: Key metrics (Users, MRR, AI Accuracy), User Signups chart (30d), Bet Analyses trend, Conversion Funnel with 4 stages, Most Active Users, Analyses by Sport, Picks Performance by sport, Revenue Insights (MRR + Growth Potential)
-- **Top Bets tab**: Stats cards (Total, Elite 80%+, Strong 70-79%, Avg Probability), enriched bet cards with user email, confidence, EV, Kelly, recommendation, bet details
-- **Users tab**: Search, filter, IP tracking, online status, subscription management
-- **Support tab**: Message management with reply functionality
-- **Other tabs**: Daily Picks, Live Streams, CashApp payments
+- Gradient stat cards, Analytics tab with charts & funnel, Top Bets with enriched data
+- Users tab with search/filter/IP/online status, Support Messages, CashApp, Live Streams
+
+### Payments
+- **Stripe**: $5.00/mo (PayPal removed Feb 24, 2026)
+- **CashApp**: QR code for $BetrSlip + direct link (https://cash.app/$BetrSlip)
 
 ### Security & Subscriptions
-- Email verification on signup (confirm email + disposable domain blocking)
-- Auto-expiry of Pro subscriptions (background task)
-- Stripe ($5/mo) + CashApp payment flows
+- Email verification, disposable domain blocking, auto-expiry of Pro subscriptions
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
@@ -49,9 +58,10 @@ Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI 
 - **Tiered subscription system**: Tier 1 ($5), Tier 2 ($10), Tier 3 ($20)
 - **Usage limits per tier**: Cap bet slip analyses per week
 - **Feature differentiation**: Different access levels per tier
+- **Referral system**: Free week of Pro for each conversion
 
 ### P2 (Nice to Have)
+- Push notifications / Email alerts for Bet of the Day
 - Usage tracking infrastructure per user
 - Rate limiting per tier
-- Referral reward system
 - Custom branding for share cards per tier
