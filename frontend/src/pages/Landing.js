@@ -177,26 +177,26 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* Preview Card */}
+          {/* Preview Card - WINNING Example */}
           <div className="max-w-3xl mx-auto mb-12">
-            <div className="glass border-2 border-violet-500/20 rounded-2xl p-6 sm:p-8 glow-purple">
+            <div className="glass border-2 border-emerald-500/20 rounded-2xl p-6 sm:p-8 glow-purple">
               {/* Analysis Header */}
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-2 mb-4">
-                  <span className="text-xs text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/30">
+                  <span className="text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
                     AI Analysis Complete
                   </span>
                 </div>
                 <div className="bg-slate-900/50 rounded-xl p-6 mb-4">
                   <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Win Probability</p>
-                  <p className="text-5xl sm:text-6xl font-black text-yellow-400">28.5%</p>
-                  <p className="text-slate-400 text-xs mt-2">Confidence: 7/10</p>
+                  <p className="text-5xl sm:text-6xl font-black text-emerald-400">72.4%</p>
+                  <p className="text-slate-400 text-xs mt-2">Confidence: 9/10</p>
                 </div>
-                <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-yellow-500/10 border border-yellow-500/50">
-                  <span className="font-bold text-yellow-400">SMALL/SKIP</span>
+                <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/50">
+                  <span className="font-bold text-emerald-400">STRONG BET</span>
                 </div>
                 <p className="text-slate-400 text-sm mt-3">
-                  EV: <span className="text-red-400 font-semibold">-8.2%</span> • Kelly: <span className="text-violet-400 font-semibold">0%</span>
+                  EV: <span className="text-emerald-400 font-semibold">+12.8%</span> • Kelly: <span className="text-violet-400 font-semibold">18%</span>
                 </p>
               </div>
 
@@ -209,15 +209,15 @@ const Landing = () => {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Injuries</p>
-                    <p className="text-emerald-400 font-bold text-sm">2 Key OUT</p>
+                    <p className="text-emerald-400 font-bold text-sm">All Clear</p>
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Weather</p>
-                    <p className="text-yellow-400 font-bold text-sm">❄️ 20°F</p>
+                    <p className="text-emerald-400 font-bold text-sm">Indoor</p>
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Form</p>
-                    <p className="text-emerald-400 font-bold text-sm">WWWLW</p>
+                    <p className="text-emerald-400 font-bold text-sm">WWWWL</p>
                   </div>
                 </div>
               </div>
@@ -231,16 +231,16 @@ const Landing = () => {
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Parlay EV</p>
-                    <p className="text-xl font-bold text-red-400">-8.2%</p>
+                    <p className="text-xl font-bold text-emerald-400">+12.8%</p>
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Straight Bets EV</p>
-                    <p className="text-xl font-bold text-yellow-400">-2.1%</p>
+                    <p className="text-xl font-bold text-emerald-400">+8.3%</p>
                   </div>
                 </div>
                 <div className="bg-slate-900/50 rounded px-3 py-2 text-center">
-                  <p className="text-violet-300 text-sm font-semibold">💡 Bet individually</p>
-                  <p className="text-slate-400 text-xs mt-1">Better value: 6.1% EV difference</p>
+                  <p className="text-emerald-300 text-sm font-semibold">Parlay has higher upside here</p>
+                  <p className="text-slate-400 text-xs mt-1">+4.5% EV advantage with correlated legs</p>
                 </div>
               </div>
               
@@ -248,48 +248,48 @@ const Landing = () => {
               <div className="space-y-2">
                 <h3 className="text-white font-bold text-sm mb-3">Individual Bet Breakdown</h3>
                 
-                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
+                <div className="border-l-2 border-emerald-500/50 pl-4 py-2 bg-slate-900/30 rounded-r">
                   <div className="flex items-start justify-between mb-1">
-                    <p className="text-white font-semibold text-xs">Chiefs -1H Moneyline</p>
-                    <span className="text-emerald-400 font-bold text-xs">61%</span>
-                  </div>
-                  <p className="text-slate-400 text-xs mb-1">odds -140</p>
-                  <p className="text-slate-300 text-xs">Strong home performance, favorable matchup</p>
-                </div>
-
-                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
-                  <div className="flex items-start justify-between mb-1">
-                    <p className="text-white font-semibold text-xs">Travis Kelce Over 5.5 Receptions</p>
-                    <span className="text-yellow-400 font-bold text-xs">58%</span>
-                  </div>
-                  <p className="text-slate-400 text-xs mb-1">odds -115</p>
-                  <p className="text-slate-300 text-xs">Consistent target share but tough defense</p>
-                </div>
-
-                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
-                  <div className="flex items-start justify-between mb-1">
-                    <p className="text-white font-semibold text-xs">Steelers +7.5 (Spread)</p>
-                    <span className="text-yellow-400 font-bold text-xs">55%</span>
+                    <p className="text-white font-semibold text-xs">Celtics -6.5 vs Hornets</p>
+                    <span className="text-emerald-400 font-bold text-xs">78%</span>
                   </div>
                   <p className="text-slate-400 text-xs mb-1">odds -110</p>
-                  <p className="text-slate-300 text-xs">Road underdog, recent form concerns</p>
+                  <p className="text-slate-300 text-xs">Elite home record, Hornets 2-8 last 10 road</p>
+                </div>
+
+                <div className="border-l-2 border-emerald-500/50 pl-4 py-2 bg-slate-900/30 rounded-r">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white font-semibold text-xs">Jayson Tatum Over 26.5 Points</p>
+                    <span className="text-emerald-400 font-bold text-xs">71%</span>
+                  </div>
+                  <p className="text-slate-400 text-xs mb-1">odds -115</p>
+                  <p className="text-slate-300 text-xs">Averaging 29.2 PPG last 10, Hornets allow 4th most PPG</p>
+                </div>
+
+                <div className="border-l-2 border-violet-500/30 pl-4 py-2 bg-slate-900/30 rounded-r">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white font-semibold text-xs">Over 224.5 Total Points</p>
+                    <span className="text-yellow-400 font-bold text-xs">65%</span>
+                  </div>
+                  <p className="text-slate-400 text-xs mb-1">odds -108</p>
+                  <p className="text-slate-300 text-xs">Fast pace matchup, both teams averaging 230+ combined</p>
                 </div>
               </div>
 
-              {/* Risk Factors */}
-              <div className="mt-4 bg-red-950/20 border border-red-900/30 rounded-lg p-3">
-                <h3 className="text-red-400 font-bold text-xs mb-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Risk Factors
+              {/* Positive Factors */}
+              <div className="mt-4 bg-emerald-950/20 border border-emerald-900/30 rounded-lg p-3">
+                <h3 className="text-emerald-400 font-bold text-xs mb-2 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Why This Hits
                 </h3>
                 <ul className="space-y-1">
                   <li className="flex items-start gap-1 text-xs text-slate-300">
-                    <span className="text-red-400">•</span>
-                    <span>3-leg parlay significantly reduces win probability</span>
+                    <span className="text-emerald-400">+</span>
+                    <span>Strong leg correlation — Celtics blowout = Tatum scoring + high total</span>
                   </li>
                   <li className="flex items-start gap-1 text-xs text-slate-300">
-                    <span className="text-red-400">•</span>
-                    <span>Negative expected value - house edge too high</span>
+                    <span className="text-emerald-400">+</span>
+                    <span>Positive expected value across all legs</span>
                   </li>
                 </ul>
               </div>
