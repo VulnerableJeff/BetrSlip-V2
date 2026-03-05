@@ -1,67 +1,68 @@
 # BetrSlip - Product Requirements Document
 
 ## Original Problem Statement
-Sports betting analytics platform ("BetrSlip") — a full-stack React + FastAPI + MongoDB app that provides AI-powered betting slip analysis, live odds scanning, and value betting tools using The Odds API.
+Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app with AI-powered bet slip analysis, live odds, and value betting tools.
 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Shadcn UI
 - **Backend**: FastAPI + MongoDB
 - **External APIs**: The Odds API (20K tier), OpenAI, Stripe
-- **Auth**: JWT-based with admin auto-creation on startup
+- **Auth**: JWT-based with admin auto-creation
 
 ## What's Been Implemented
 
 ### Core Features
-- Bet slip screenshot upload + AI analysis (main feature) with leg grades, EV, Kelly
+- Bet slip screenshot upload + AI analysis with leg grades, EV, Kelly
 - Bet of the Day hero spotlight with confidence meter
 - AI Parlay Picks, Best Value Bets (EV Scanner), Today's Top Picks
-- Share/Copy functionality for picks
+- Share/Copy functionality
 
-### Landing Page — REDESIGNED (Feb 26, 2026)
-- **Two CTA buttons above the fold**: "Start Free — 5 Analyses" + "Go Pro — $5/mo"
-- **Winning demo card**: Shows 72.4% STRONG BET with +12.8% EV (replaces old 28.5% losing example)
-- **Verified win rate** in top bar (replaces raw AI accuracy)
-- **Pro members count** with crown icon in activity banner
-- How It Works, Pro Features, Verified Results, Why BetrSlip sections
+### Bug Fixes (Mar 5, 2026)
+- **Admin users limit** — Increased from 100 to 500, now shows all users
+- **Free trial reset** — Added `/api/admin/users/{id}/reset-usage` endpoint for admin to fix user accounts
+- **Signup robustness** — Changed `insert_one` to `update_one(upsert=True)` for user_usage to prevent orphaned records
+- **Timezone fix** — All game times now properly convert to US Eastern using `ZoneInfo("America/New_York")` (EST/EDT auto-handled)
 
-### Auth Page — REDESIGNED (Feb 26, 2026)
-- **Two-column layout**: Social proof + features on left, login form on right
-- **Live stats display**: Users, Pro Members, Analyses count from API
-- **Feature highlights**: Upload Any Bet Slip, Real-Time Data, Daily AI Picks, 5 Free Analyses
-- **Trust badge**: "Free to start • No credit card required"
-- BetrSlip logo links back to landing page
-- Email verification (confirm email + disposable domain blocking)
+### AI Accuracy Improvements (Mar 5, 2026)
+- **Enhanced bet slip analysis prompt** — Added CLV analysis, SGP correlation warnings, stricter probability calibration (heavy favorites capped at 72-78%, spreads 45-55%), realistic parlay caps (3-leg never >25%)
+- **Improved daily picks prompt** — Added 10-point intelligence ranking (CLV > Form > Rest > Home/Away), strict edge criteria (min 3%), max probability cap 68%, back-to-back fade strategy, sport avoidance from poor record
+
+### Growth Features (Mar 5, 2026)
+- **Usage bar for free users** — Shows progress dots (5 total), remaining count, and contextual upgrade button (changes to red urgent when 0 left)
+- **Post-analysis conversion prompt** — After each analysis, free users see "X free analyses left" with Go Pro button
+- **Always-visible usage state** — Free users always see their status, not just when ≤2 remaining
+
+### Landing Page (Feb 26, 2026)
+- Two CTA buttons above fold ("Start Free" + "Go Pro")
+- Winning demo card (72.4% STRONG BET replaces 28.5% losing example)
+- Verified win rate in top bar, Pro members count
+
+### Auth Page (Feb 26, 2026)
+- Two-column layout with social proof + features + live stats
+- Email verification with disposable domain blocking
 
 ### Support System (Feb 24, 2026)
-- Floating support button (headphones icon, bottom-right) — mobile-responsive
-- In-app contact form with subject + message
-- My Messages tab (Pending/Seen/Replied status)
-- Admin Support tab with Read/Reply/Delete actions and unread badge
+- Floating support button, in-app contact form, admin reply system
 
-### Admin Dashboard — POLISHED (Feb 24, 2026)
-- Gradient stat cards, Analytics tab with charts & funnel, Top Bets with enriched data
-- Users tab with search/filter/IP/online status, Support Messages, CashApp, Live Streams
+### Admin Dashboard (Feb 24, 2026)
+- Gradient stat cards, Analytics with charts, enriched Top Bets
+- Support Messages tab, user IP/activity tracking
+- **Reset Usage button per user** (Mar 5, 2026)
 
 ### Payments
-- **Stripe**: $5.00/mo (PayPal removed Feb 24, 2026)
-- **CashApp**: QR code for $BetrSlip + direct link (https://cash.app/$BetrSlip)
-
-### Security & Subscriptions
-- Email verification, disposable domain blocking, auto-expiry of Pro subscriptions
+- Stripe ($5/mo), CashApp QR code for $BetrSlip (PayPal removed)
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
 
 ## Prioritized Backlog
 
-### P1 (Future — User Mentioned)
-- **Tiered subscription system**: Tier 1 ($5), Tier 2 ($10), Tier 3 ($20)
-- **Usage limits per tier**: Cap bet slip analyses per week
-- **Feature differentiation**: Different access levels per tier
-- **Referral system**: Free week of Pro for each conversion
+### P1 (User Mentioned)
+- Tiered subscriptions: $5/$10/$20
+- Usage limits per tier
+- Referral system
 
 ### P2 (Nice to Have)
-- Push notifications / Email alerts for Bet of the Day
-- Usage tracking infrastructure per user
-- Rate limiting per tier
-- Custom branding for share cards per tier
+- Push notifications for daily picks
+- Email alerts for Bet of the Day
+- Custom share card branding per tier
