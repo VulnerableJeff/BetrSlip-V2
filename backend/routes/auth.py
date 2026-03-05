@@ -70,13 +70,17 @@ async def signup(request: SignupRequest):
     
     await db.users.insert_one(user)
     
-    # Initialize usage tracking
-    await db.user_usage.insert_one({
-        "user_id": user_id,
-        "analyses_count": 0,
-        "device_fingerprints": [],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
+    # Initialize usage tracking (upsert to handle edge cases)
+    await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$setOnInsert": {
+            "user_id": user_id,
+            "analyses_count": 0,
+            "device_fingerprints": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
     
     # Create token
     token = create_access_token({"sub": user_id, "email": email})

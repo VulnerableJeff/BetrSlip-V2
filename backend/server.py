@@ -382,7 +382,7 @@ async def analyze_bet_slip(
     base64_image = base64.b64encode(contents).decode('utf-8')
     
     # AI Analysis prompt - comprehensive for full data
-    analysis_prompt = """You are an elite sports betting analyst and handicapper. Your job is to give HONEST, DATA-DRIVEN analysis that helps bettors make profitable decisions.
+    analysis_prompt = """You are an elite sports betting analyst and handicapper with 20+ years of experience. Your job is to give HONEST, DATA-DRIVEN analysis that protects bettors' bankrolls.
 
 EXTRACT AND ANALYZE:
 1. All bets visible (teams, spreads, totals, moneylines, props, odds)
@@ -390,27 +390,36 @@ EXTRACT AND ANALYZE:
 3. Identify the sport(s) involved
 4. For PARLAYS: analyze leg correlation (do legs help or hurt each other?)
 
-PROBABILITY GUIDELINES (be honest, not optimistic):
-- Single ML favorite (-200 to -300): 60-72%
+PROBABILITY GUIDELINES (be CONSERVATIVE and honest):
+- Single ML heavy favorite (-300+): 72-78% (but juice eats profit)
+- Single ML favorite (-150 to -250): 58-68%
 - Single ML underdog (+150 to +250): 28-38%
-- Single spread bet: 45-55% (most are close to 50%)
-- Over/Under: 48-54%
-- 2-leg parlay: multiply individual probs (typically 20-35%)
-- 3-leg parlay: typically 10-20%
+- Single spread bet: 45-55% (the market is efficient, most are near 50%)
+- Over/Under: 48-54% (totals are the sharpest market)
+- 2-leg parlay: multiply individual probs (typically 25-35%)
+- 3-leg parlay: typically 12-22%
 - 4+ leg parlay: typically under 10%
 - Player props: 40-55% depending on market
+- Same-game parlays: legs are NOT independent, reduce by 5-15% from naive multiplication
+
+CLOSING LINE VALUE (CLV) - THE MOST IMPORTANT FACTOR:
+- The closing line is the most accurate predictor of outcomes
+- If the bettor got better odds than the current market, that's +CLV (good sign)
+- If the bettor got worse odds, that's -CLV (bad sign)
+- Bettors who consistently beat the closing line are long-term winners
 
 EDGE ANALYSIS:
 - Compare the bet's implied probability (from odds) vs your estimated true probability
 - If true prob > implied prob = POSITIVE EV (+EV) = BET
 - If true prob < implied prob = NEGATIVE EV (-EV) = PASS
 - Most bets at sportsbooks are -EV by 3-5%. Only recommend if you see genuine edge.
+- IMPORTANT: Don't inflate probabilities to make bets look good. Honesty saves bankrolls.
 
 FOR PARLAYS SPECIFICALLY:
 - Check if legs are correlated (e.g., same game over + favorite ML = correlated)
-- Correlated parlays are WORSE value (books price them knowing the correlation)
+- Same-game parlays have HIDDEN correlation that reduces true odds
 - Always suggest which legs are strongest and which to remove
-- Calculate what the parlay would look like without the weakest leg
+- A 3-leg parlay should almost never exceed 25% probability
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
@@ -454,6 +463,12 @@ RESPOND IN THIS EXACT JSON FORMAT:
         "recommendation": "Bet the 2 strongest legs as singles. Your bankroll will thank you."
     }
 }
+
+RECOMMENDATION THRESHOLDS:
+- "STRONG BET": overall_probability >= 62% AND ev_percent > +5%
+- "BET": overall_probability >= 55% AND ev_percent > 0%
+- "SMALL/SKIP": overall_probability 45-55% OR ev_percent between -5% and 0%
+- "PASS": overall_probability < 45% OR ev_percent < -5%
 
 Be BRUTALLY honest. If a bet is bad, say so clearly. Most parlays lose. Your job is to protect the bettor's bankroll while identifying genuine opportunities. Grade each leg A/B/C/D/F."""
 
@@ -833,7 +848,7 @@ async def admin_get_stats(admin_user: dict = Depends(get_admin_user)):
 @api_router.get("/admin/users")
 async def admin_get_users(
     skip: int = 0,
-    limit: int = 50,
+    limit: int = 500,
     admin_user: dict = Depends(get_admin_user)
 ):
     users = await get_all_users(db, skip, limit)
@@ -902,6 +917,19 @@ async def admin_revoke_subscription(user_id: str, admin_user: dict = Depends(get
     if result.modified_count > 0:
         return {"message": "Subscription revoked"}
     raise HTTPException(status_code=404, detail="No subscription found")
+
+
+@api_router.post("/admin/users/{user_id}/reset-usage")
+async def admin_reset_usage(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Reset a user's analysis count to 0 (fix free trial issues)"""
+    await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$set": {"analyses_count": 0}},
+        upsert=True
+    )
+    logger.info(f"Admin reset usage for user {user_id}")
+    return {"message": "Usage reset to 0 — user now has 5 free analyses"}
+
 
 # CashApp Admin
 @api_router.get("/admin/cashapp-requests")

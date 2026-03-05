@@ -82,7 +82,7 @@ const Admin = () => {
       // Fetch all data with individual error handling
       const results = await Promise.allSettled([
         axios.get(`${BACKEND_URL}/api/admin/stats`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/users?limit=100`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/users?limit=500`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/top-bets?limit=50`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/top-bets/stats`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/daily-picks`, { headers }),

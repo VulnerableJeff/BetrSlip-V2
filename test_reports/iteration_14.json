@@ -1,0 +1,85 @@
+{
+  "summary": "Iteration 14 - Bug fixes for user limit and free trial issues. All tests PASSED. Backend: Admin users endpoint accepts limit=500 (increased from 100), reset-usage endpoint resets analysis count to 0 with proper message, /api/usage returns analyses_remaining, free_limit, and is_subscribed fields. Frontend: Admin panel Users tab loads all users, expanded user view shows Reset Usage button (confirmed clickable with 'Usage reset successfully' toast), Dashboard shows usage banner with progress dots for free users (5/5 free, 'X of 5 free analyses remaining'), Pro badge shows for subscribed users, upgrade button in banner works.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: POST /api/auth/login returns valid token for admin user",
+    "Backend: GET /api/admin/users?limit=500 accepts limit parameter (no 100 cap)",
+    "Backend: GET /api/admin/users returns all users (5 users in test environment)",
+    "Backend: POST /api/admin/users/{id}/reset-usage returns 200 with message 'Usage reset to 0 — user now has 5 free analyses'",
+    "Backend: Reset-usage endpoint requires admin authentication (returns 401/403 without token)",
+    "Backend: GET /api/usage returns analyses_remaining field",
+    "Backend: GET /api/usage returns free_limit = 5",
+    "Backend: GET /api/usage returns is_subscribed field (true for admin, null/false for free users)",
+    "Backend: GET /api/usage returns can_analyze field",
+    "Backend: GET /api/admin/user/{id} returns user details with usage and subscription info",
+    "Frontend: Admin Dashboard loads with all users visible in Users tab",
+    "Frontend: Admin Users tab shows 'All (5)' filter with correct count",
+    "Frontend: Admin expanded user view shows Reset Usage button",
+    "Frontend: Admin Reset Usage button is clickable and calls correct endpoint",
+    "Frontend: Admin Reset Usage shows 'Usage reset successfully' toast on success",
+    "Frontend: Dashboard shows Pro badge in header for subscribed admin user",
+    "Frontend: Dashboard does NOT show usage banner for Pro subscribers (correct)",
+    "Frontend: Dashboard shows '5/5 free' badge in header for free users",
+    "Frontend: Dashboard shows usage banner with 5 progress dots for free users",
+    "Frontend: Dashboard shows 'X of 5 free analyses remaining' text",
+    "Frontend: Dashboard shows 'Go Pro — Unlimited' upgrade button in usage banner"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_user_reset_usage.py",
+    "/app/test_reports/pytest/pytest_user_reset_usage.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Admin users endpoint properly accepts limit=500 parameter (line 851-852 in server.py)",
+    "Reset-usage endpoint properly resets analyses_count to 0 with upsert (lines 922-931 in server.py)",
+    "/api/usage endpoint returns all required fields including analyses_remaining calculated correctly",
+    "Dashboard usage banner conditional rendering works correctly (shows for !is_subscribed)",
+    "Progress dots visualization correctly shows usage count (filled dots = used, empty = remaining)"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_user_reset_usage.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "admin_user": "hundojeff@icloud.com / Boo-boo600$",
+    "test_free_user": "test_free_user_iter14@test.com / TestPass123!"
+  },
+
+  "seed_data_creation": "Created test_free_user_iter14@test.com to verify free user usage banner behavior",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Bug fixes verified: 1) Admin users endpoint now accepts limit=500 (increased from 100), 2) Reset-usage endpoint works correctly at POST /api/admin/users/{id}/reset-usage, 3) /api/usage returns analyses_remaining, free_limit, is_subscribed fields, 4) Dashboard shows usage banner with progress dots for free users only, 5) Pro badge shows for subscribed users. Environment now has 5 users (1 Pro admin, 4 free users). AI prompt improvements not testable without actual bet slip analysis.",
+
+  "mocked_apis_note": {
+    "has_mocked_apis": false,
+    "note": "All APIs use real backend - no mocking"
+  },
+
+  "features_not_testable": [
+    "AI analysis prompt improvements - requires actual bet slip upload and analysis (takes 3-5 minutes)",
+    "Smart picks prompt improvements - would require generating new picks"
+  ]
+}

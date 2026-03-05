@@ -265,22 +265,31 @@ const Dashboard = ({ onLogout }) => {
       </header>
 
       {/* Usage Banner for Free Users */}
-      {usage && !usage.is_subscribed && usage.analyses_remaining <= 2 && (
-        <div className="bg-gradient-to-r from-violet-950/50 to-purple-950/50 border-b border-violet-500/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      {usage && !usage.is_subscribed && (
+        <div className={`border-b ${usage.analyses_remaining <= 0 ? 'bg-gradient-to-r from-red-950/50 to-orange-950/50 border-red-500/30' : usage.analyses_remaining <= 2 ? 'bg-gradient-to-r from-violet-950/50 to-purple-950/50 border-violet-500/30' : 'bg-slate-900/50 border-slate-800'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
             <div className="flex items-center justify-between">
-              <p className="text-violet-200 text-sm">
-                {usage.analyses_remaining === 0 
-                  ? "You've used all free analyses!"
-                  : `⚡ ${usage.analyses_remaining} free ${usage.analyses_remaining === 1 ? 'analysis' : 'analyses'} remaining`
-                }
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  {[...Array(usage.free_limit || 5)].map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i < (usage.free_limit - usage.analyses_remaining) ? 'bg-violet-500' : 'bg-slate-700'}`} />
+                  ))}
+                </div>
+                <p className="text-sm">
+                  {usage.analyses_remaining === 0 
+                    ? <span className="text-red-300 font-semibold">All 5 free analyses used</span>
+                    : <span className="text-slate-300"><span className="text-white font-bold">{usage.analyses_remaining}</span> of {usage.free_limit} free analyses remaining</span>
+                  }
+                </p>
+              </div>
               <Button
                 size="sm"
                 onClick={() => setShowSubscriptionModal(true)}
-                className="bg-violet-500 hover:bg-violet-600 text-white text-xs"
+                className={`text-xs ${usage.analyses_remaining <= 0 ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700' : 'bg-slate-800 text-violet-400 hover:bg-violet-500/20 border border-violet-500/30'}`}
+                data-testid="usage-upgrade-btn"
               >
-                Upgrade to Pro - $5/mo
+                <Crown className="w-3 h-3 mr-1" />
+                {usage.analyses_remaining <= 0 ? 'Upgrade — $5/mo' : 'Go Pro — Unlimited'}
               </Button>
             </div>
           </div>
@@ -881,6 +890,32 @@ const Dashboard = ({ onLogout }) => {
                 <div className="mt-6 pt-6 border-t border-slate-800">
                   <ShareButton resultRef={resultRef} result={result} />
                 </div>
+
+                {/* Post-Analysis Conversion Prompt */}
+                {usage && !usage.is_subscribed && (
+                  <div className="mt-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-xl p-4" data-testid="post-analysis-upsell">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-white font-semibold text-sm mb-1">
+                          {usage.analyses_remaining <= 0 
+                            ? "That was your last free analysis!" 
+                            : `${usage.analyses_remaining} free ${usage.analyses_remaining === 1 ? 'analysis' : 'analyses'} left`}
+                        </p>
+                        <p className="text-slate-400 text-xs">
+                          Pro members get unlimited analyses + daily AI picks for $5/mo
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowSubscriptionModal(true)}
+                        className="bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold whitespace-nowrap"
+                      >
+                        <Crown className="w-3.5 h-3.5 mr-1" />
+                        Go Pro
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             ) : !analyzing ? (
               <Card className="glass border-slate-800 p-8" data-testid="empty-results-card">
