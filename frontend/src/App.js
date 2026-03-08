@@ -7,6 +7,7 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Admin from './pages/Admin';
+import PublicResults from './pages/PublicResults';
 import { SubscriptionSuccess, SubscriptionCancel } from './pages/Subscription';
 import '@/App.css';
 
@@ -157,6 +158,7 @@ function App() {
               )
             }
           />
+          <Route path="/results" element={<PublicResults />} />
         </Routes>
       </BrowserRouter>
     </div>

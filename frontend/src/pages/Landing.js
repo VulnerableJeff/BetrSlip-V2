@@ -628,14 +628,26 @@ const Landing = () => {
               <p className="text-slate-400 mb-4">
                 Stop losing money on fake "expert" picks. Try our AI-powered analysis.
               </p>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-emerald-500/25"
-                onClick={() => navigate('/auth')}
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Start Winning - 5 Free Analyses
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-lg px-8 py-6 rounded-xl hover:scale-105 transition-all duration-200 shadow-xl shadow-emerald-500/25"
+                  onClick={() => navigate('/auth')}
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Start Winning - 5 Free Analyses
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800 px-6 py-6 rounded-xl"
+                  onClick={() => navigate('/results')}
+                  data-testid="view-all-results-btn"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  View All Results
+                </Button>
+              </div>
             </div>
           </div>
         </section>

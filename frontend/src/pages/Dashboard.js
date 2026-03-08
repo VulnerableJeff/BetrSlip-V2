@@ -18,6 +18,8 @@ import NotificationSettings from '@/components/NotificationSettings';
 import SupportContact from '@/components/SupportContact';
 import EVScanner from '@/components/EVScanner';
 import DailyBetCard from '@/components/DailyBetCard';
+import WinStreakBanner from '@/components/WinStreakBanner';
+import FreeTrialExtension from '@/components/FreeTrialExtension';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
@@ -295,6 +297,9 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {/* Win Streak Banner */}
+      <WinStreakBanner />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -916,6 +921,11 @@ const Dashboard = ({ onLogout }) => {
                     </div>
                   </div>
                 )}
+
+                {/* Free Trial Extension Offer */}
+                <div className="mt-3">
+                  <FreeTrialExtension usage={usage} onExtended={() => window.location.reload()} />
+                </div>
               </Card>
             ) : !analyzing ? (
               <Card className="glass border-slate-800 p-8" data-testid="empty-results-card">

@@ -119,14 +119,37 @@ async def get_usage_compat(current_user: dict = Depends(get_current_user)):
     
     is_subscribed = subscription and subscription.get('subscription_status') == 'active'
     analyses_count = usage.get('analyses_count', 0) if usage else 0
+    free_limit = FREE_ANALYSIS_LIMIT
     
     return {
         "analyses_used": analyses_count,
-        "analyses_remaining": max(0, 5 - analyses_count) if not is_subscribed else 999,
-        "free_limit": 5,
+        "analyses_remaining": max(0, free_limit - analyses_count) if not is_subscribed else 999,
+        "free_limit": free_limit,
         "is_subscribed": is_subscribed,
-        "can_analyze": is_subscribed or analyses_count < 5
+        "can_analyze": is_subscribed or analyses_count < free_limit
     }
+
+
+@api_router.post("/usage/extend")
+async def extend_free_trial(current_user: dict = Depends(get_current_user)):
+    """Grant 3 bonus analyses for sharing (one-time only)"""
+    user_id = current_user['user_id']
+    
+    usage = await db.user_usage.find_one({"user_id": user_id})
+    if usage and usage.get("share_extension_used"):
+        raise HTTPException(status_code=400, detail="Share extension already used")
+    
+    # Reduce the analyses_count by 3 (effectively giving 3 more free)
+    current_count = usage.get('analyses_count', 0) if usage else 0
+    new_count = max(0, current_count - 3)
+    
+    await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$set": {"analyses_count": new_count, "share_extension_used": True}},
+        upsert=True
+    )
+    
+    return {"message": "3 bonus analyses unlocked!", "analyses_remaining": max(0, FREE_ANALYSIS_LIMIT - new_count)}
 
 
 # ===== LIVE GAMES STREAMING =====

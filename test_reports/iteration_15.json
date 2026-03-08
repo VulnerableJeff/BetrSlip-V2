@@ -1,0 +1,90 @@
+{
+  "summary": "Iteration 15 - New Features Testing PASSED. All new features working correctly: 1) Public Results page at /results displays 'Verified AI Pick Results' with stat cards (Wins=19, Losses=20, Win Rate=48.7%, Streak=2 lost), Overall Record bar, Recent Picks list with WIN/LOSS outcomes, and CTAs linking to /auth. 2) GET /api/picks-performance is public (no auth required), returns won, lost, win_rate, current_streak, streak_type, recent_picks. 3) POST /api/usage/extend requires auth and returns 400 if share extension already used. 4) Landing page has 'View All Results' button that navigates to /results. 5) Dashboard WinStreakBanner not rendered (correct - requires streak >= 3 and streak_type === 'won', current is 2 lost). 6) Dashboard FreeTrialExtension not visible for new free users (correct - shows only when analyses_remaining <= 1). 7) Free user dashboard shows usage bar with progress dots, '5 of 5 free analyses remaining', and upgrade CTAs.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: GET /api/picks-performance returns 200 without authentication (public endpoint)",
+    "Backend: GET /api/picks-performance returns won, lost, win_rate fields",
+    "Backend: GET /api/picks-performance returns current_streak and streak_type",
+    "Backend: GET /api/picks-performance returns recent_picks array with outcomes",
+    "Backend: POST /api/usage/extend requires authentication (returns 401/403 without token)",
+    "Backend: POST /api/usage/extend returns 400 when share extension already used",
+    "Backend: GET /api/health returns 200",
+    "Backend: GET /api/public-stats returns total_users, total_analyses (public)",
+    "Backend: POST /api/auth/login returns token for valid credentials",
+    "Frontend: /results page loads with title 'Verified AI Pick Results'",
+    "Frontend: /results page shows stat cards - Wins (19), Losses (20), Win Rate (48.7%), Streak (2)",
+    "Frontend: /results page shows Overall Record bar with 19W - 20L visualization",
+    "Frontend: /results page shows Recent Picks list with WIN/LOSS outcomes",
+    "Frontend: /results page has 'Try Free' CTA button (data-testid='results-signup-btn')",
+    "Frontend: /results page has 'Get These Picks Daily' CTA button (data-testid='results-cta-btn')",
+    "Frontend: Landing page has 'View All Results' button (data-testid='view-all-results-btn')",
+    "Frontend: 'View All Results' button navigates to /results",
+    "Frontend: Dashboard loads for admin (Pro) user with Pro badge",
+    "Frontend: Dashboard WinStreakBanner not rendered when streak < 3 or streak_type !== 'won' (correct)",
+    "Frontend: Dashboard shows usage banner with progress dots for free users",
+    "Frontend: Dashboard shows '5 of 5 free analyses remaining' for new free user",
+    "Frontend: Dashboard shows '5/5 free' badge for free users",
+    "Frontend: Dashboard shows 'Go Pro — Unlimited' upgrade button",
+    "Frontend: Dashboard FreeTrialExtension not visible when analyses_remaining > 1 (correct)",
+    "Frontend: Login flow works for admin and free users"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_new_features_v2.py",
+    "/app/test_reports/pytest/pytest_new_features_v2.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "PublicResults.js correctly fetches from /api/picks-performance (public, no auth)",
+    "WinStreakBanner.js correctly shows only when current_streak >= 3 AND streak_type === 'won'",
+    "FreeTrialExtension.js correctly shows only when analyses_remaining <= 1 AND !is_subscribed",
+    "POST /api/usage/extend correctly tracks share_extension_used flag and returns 400 on duplicate",
+    "Landing.js has 'View All Results' button with data-testid='view-all-results-btn' linking to /results",
+    "App.js correctly routes /results to PublicResults component (no auth required)"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_new_features_v2.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (10/10 pytest tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "admin_user": "hundojeff@icloud.com / Boo-boo600$",
+    "test_free_user": "test_free_iter15@test.com / TestPass123!"
+  },
+
+  "seed_data_creation": "Created test_free_iter15@test.com to verify free user dashboard behavior",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "New features verified in iteration 15: 1) Public Results page at /results shows AI pick stats (19W-20L-48.7%, streak=2 lost), 2) GET /api/picks-performance is public endpoint returning won/lost/win_rate/current_streak/streak_type/recent_picks, 3) POST /api/usage/extend grants 3 bonus analyses one-time (returns 400 on second use), 4) Landing page has 'View All Results' button linking to /results, 5) WinStreakBanner only shows when streak >= 3 and won (not visible currently since streak is 2 lost), 6) FreeTrialExtension only shows when analyses_remaining <= 1 (not visible for new users with 5 remaining). Environment has 6 users total (1 Pro admin, 5 free users including test_free_iter15@test.com).",
+
+  "mocked_apis_note": {
+    "has_mocked_apis": false,
+    "note": "All APIs use real backend - no mocking"
+  },
+
+  "features_not_fully_testable": [
+    "WinStreakBanner visibility - requires streak >= 3 wins (current is 2 lost), would need admin to manually resolve picks as 'won' to trigger",
+    "FreeTrialExtension visibility - requires user with <= 1 analyses remaining, would need to consume 4+ analyses first"
+  ]
+}
