@@ -53,12 +53,17 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 
 ### Monthly Usage Limit & Credit System (Mar 10, 2026)
 - **Pro users capped at 100 analyses/month** — Dashboard shows "X/100 analyses this month" with progress bar
-- **Buy Credits feature** — "+25 Credits — $3" button appears when ≤20 analyses remaining
+- **Buy Credits feature** — "+25 Credits — $3" button appears when ≤20 remaining OR when limit hit (pulsing red button)
 - **Bonus credits tracking** — Purchased credits stored in `bonus_credits` field, persist until used
-- **Admin "Add Credits" button** — Admin can manually grant +25 credits to any user
+- **Admin "Add Credits" button** — Quick +25 button visible directly in user row (no expand needed)
 - **Monthly reset** — `monthly_used` and `current_month` reset automatically each calendar month
-- **Usage tracking fields**: `monthly_used`, `monthly_limit`, `bonus_credits`, `analyses_remaining`, `current_month`
-- **Testing**: 100% pass rate on backend (13 tests) and frontend (all UI tests)
+
+### System Announcements (Mar 10, 2026)
+- **Admin can send announcements** to all users, Pro only, or Free only
+- **Display modes**: Banner (top of dashboard) or Modal popup (on login)
+- **Dismissible** — Users can dismiss announcements, tracked per user
+- **Types**: Info (purple), Warning (amber), Success (green)
+- **Admin Announcements tab** — View, create, and delete announcements
 
 ### Referral System — Pre-existing
 - Already built with referral codes and tracking
@@ -76,3 +81,4 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - User testimonials/ratings system
 - Bet tracker / P&L dashboard for users
 - Custom share card branding per tier
+- Credit purchase history for users
