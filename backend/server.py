@@ -258,7 +258,7 @@ async def cashapp_credit_request(current_user: dict = Depends(get_current_user))
         "user_id": user_id,
         "email": user.get("email", "") if user else "",
         "subject": "Credit Pack Purchase — CashApp",
-        "message": f"User requested 25 credit pack ($3) via CashApp. Please verify payment and add credits.",
+        "message": "User requested 25 credit pack ($3) via CashApp. Please verify payment and add credits.",
         "status": "unread",
         "type": "credit_purchase",
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -281,6 +281,91 @@ async def admin_add_credits(user_id: str, request: Request, admin_user: dict = D
         upsert=True
     )
     return {"message": f"Added {credits} bonus credits to user"}
+
+
+# ===== SYSTEM ANNOUNCEMENTS =====
+class AnnouncementCreate(BaseModel):
+    message: str
+    type: str = "info"  # info, warning, success
+    target: str = "all"  # all, pro, free
+    dismissible: bool = True
+    show_modal: bool = False
+
+@api_router.get("/announcements")
+async def get_announcements(current_user: dict = Depends(get_current_user)):
+    """Get active announcements for current user"""
+    user_id = current_user['user_id']
+    
+    # Get user's subscription status
+    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    is_subscribed = subscription and subscription.get('subscription_status') == 'active'
+    
+    # Get active announcements
+    announcements = await db.announcements.find(
+        {"is_active": True},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(10)
+    
+    # Filter by target audience
+    user_type = "pro" if is_subscribed else "free"
+    filtered = []
+    for ann in announcements:
+        target = ann.get("target", "all")
+        if target == "all" or target == user_type:
+            # Check if user dismissed this announcement
+            dismissed = await db.announcement_dismissals.find_one({
+                "user_id": user_id,
+                "announcement_id": ann.get("id")
+            })
+            if not dismissed:
+                filtered.append(ann)
+    
+    return {"announcements": filtered}
+
+@api_router.post("/announcements/{announcement_id}/dismiss")
+async def dismiss_announcement(announcement_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark announcement as dismissed for user"""
+    user_id = current_user['user_id']
+    
+    await db.announcement_dismissals.update_one(
+        {"user_id": user_id, "announcement_id": announcement_id},
+        {"$set": {"dismissed_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Announcement dismissed"}
+
+@api_router.post("/admin/announcements")
+async def create_announcement(announcement: AnnouncementCreate, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Create system announcement"""
+    ann_id = str(uuid.uuid4())
+    
+    await db.announcements.insert_one({
+        "id": ann_id,
+        "message": announcement.message,
+        "type": announcement.type,
+        "target": announcement.target,
+        "dismissible": announcement.dismissible,
+        "show_modal": announcement.show_modal,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"id": ann_id, "message": "Announcement created"}
+
+@api_router.get("/admin/announcements")
+async def get_all_announcements(admin_user: dict = Depends(get_admin_user)):
+    """Admin: Get all announcements"""
+    announcements = await db.announcements.find({}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"announcements": announcements}
+
+@api_router.delete("/admin/announcements/{announcement_id}")
+async def delete_announcement(announcement_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Delete/deactivate announcement"""
+    await db.announcements.update_one(
+        {"id": announcement_id},
+        {"$set": {"is_active": False}}
+    )
+    return {"message": "Announcement deactivated"}
 
 
 # ===== LIVE GAMES STREAMING =====

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Users, Ban, CheckCircle, BarChart3, DollarSign, Shield, ArrowLeft, RefreshCw,
   Search, Eye, Gift, Trash2, Download, Crown, Clock, Activity,
-  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2, MessageSquare, PieChart, Headphones, Mail, Reply
+  ChevronDown, ChevronUp, X, TrendingUp, Flame, Star, Zap, Trophy, Plus, Edit, Target, Sparkles, Loader2, MessageSquare, PieChart, Headphones, Mail, Reply, Megaphone, Send
 } from 'lucide-react';
 import AdminAnalytics from '@/components/AdminAnalytics';
 
@@ -43,6 +43,17 @@ const Admin = () => {
   const [expandedBet, setExpandedBet] = useState(null);
   const [generatingPicks, setGeneratingPicks] = useState(false);
   const [autoResolving, setAutoResolving] = useState(false);
+  
+  // Announcements State
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({
+    message: '',
+    type: 'info',
+    target: 'pro',
+    dismissible: true,
+    show_modal: false
+  });
   
   // Stream Form State
   const [streamForm, setStreamForm] = useState({
@@ -89,7 +100,8 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/picks-performance`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/cashapp-requests`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/live-streams`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/support-messages`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/support-messages`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/announcements`, { headers })
       ]);
 
       // Check if any request got 403 (not admin)
@@ -113,6 +125,7 @@ const Admin = () => {
         setSupportMessages(results[8].value.data.messages || []);
         setSupportUnread(results[8].value.data.unread_count || 0);
       }
+      if (results[9].status === 'fulfilled') setAnnouncements(results[9].value.data.announcements || []);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
@@ -498,6 +511,39 @@ const Admin = () => {
     }
   };
 
+  // Announcement Functions
+  const handleCreateAnnouncement = async () => {
+    if (!announcementForm.message.trim()) {
+      toast.error('Please enter an announcement message');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/announcements`,
+        announcementForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Announcement created and sent!');
+      setShowAnnouncementModal(false);
+      setAnnouncementForm({ message: '', type: 'info', target: 'pro', dismissible: true, show_modal: false });
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error creating announcement');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (annId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/admin/announcements/${annId}`, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Announcement deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Error deleting announcement');
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
@@ -766,6 +812,17 @@ const Admin = () => {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('announcements')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'announcements'
+                ? 'bg-pink-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Megaphone className="w-4 h-4" />
+            Announcements
+          </button>
         </div>
       </div>
 
@@ -927,6 +984,22 @@ const Admin = () => {
 
                   {/* Quick Actions */}
                   <div className="flex items-center gap-2">
+                    {/* Quick Add Credits Button - Visible for Pro users */}
+                    {user.is_subscribed && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddCredits(user.id, 25);
+                        }}
+                        className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 text-xs"
+                        data-testid={`quick-add-credits-${user.id}`}
+                      >
+                        <Zap className="w-3 h-3 mr-1" />
+                        +25
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -2195,6 +2268,174 @@ const Admin = () => {
                 </Button>
                 <Button onClick={handleAddStream} className="flex-1 bg-red-500 hover:bg-red-600">
                   Add Stream
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Announcements Tab */}
+      {activeTab === 'announcements' && (
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-slate-900/60 border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-pink-500/20">
+                  <Megaphone className="w-5 h-5 text-pink-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">System Announcements</h2>
+                  <p className="text-slate-500 text-xs">Send messages to all users or specific groups</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowAnnouncementModal(true)}
+                className="bg-pink-500 hover:bg-pink-600"
+                data-testid="new-announcement-btn"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Announcement
+              </Button>
+            </div>
+
+            {/* Active Announcements */}
+            <div className="divide-y divide-slate-800/50">
+              {announcements.filter(a => a.is_active).length === 0 ? (
+                <div className="p-12 text-center">
+                  <Megaphone className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                  <p className="text-slate-400">No active announcements</p>
+                  <p className="text-slate-600 text-sm mt-1">Create one to notify your users</p>
+                </div>
+              ) : (
+                announcements.filter(a => a.is_active).map(ann => (
+                  <div key={ann.id} className="p-4 hover:bg-slate-800/20 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            ann.type === 'warning' ? 'bg-amber-500/20 text-amber-400' :
+                            ann.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
+                            'bg-violet-500/20 text-violet-400'
+                          }`}>
+                            {ann.type.toUpperCase()}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${
+                            ann.target === 'pro' ? 'bg-emerald-500/20 text-emerald-400' :
+                            ann.target === 'free' ? 'bg-slate-700 text-slate-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {ann.target === 'all' ? 'All Users' : ann.target === 'pro' ? 'Pro Only' : 'Free Only'}
+                          </span>
+                          {ann.show_modal && (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-pink-500/20 text-pink-400">
+                              Modal
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-white">{ann.message}</p>
+                        <p className="text-slate-500 text-xs mt-2">
+                          Created: {new Date(ann.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteAnnouncement(ann.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* New Announcement Modal */}
+      {showAnnouncementModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <Card className="bg-slate-900 border-slate-700 p-6 w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-pink-400" />
+                New Announcement
+              </h3>
+              <button onClick={() => setShowAnnouncementModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-slate-400 text-sm block mb-1">Message</label>
+                <textarea
+                  value={announcementForm.message}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, message: e.target.value })}
+                  placeholder="We're upgrading our systems to serve you better! Contact support if you need help."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white h-24 resize-none"
+                  data-testid="announcement-message-input"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 text-sm block mb-1">Type</label>
+                  <select
+                    value={announcementForm.type}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, type: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="info">Info (Purple)</option>
+                    <option value="warning">Warning (Amber)</option>
+                    <option value="success">Success (Green)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 text-sm block mb-1">Target</label>
+                  <select
+                    value={announcementForm.target}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, target: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="pro">Pro Members Only</option>
+                    <option value="free">Free Users Only</option>
+                    <option value="all">All Users</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.show_modal}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, show_modal: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-800"
+                  />
+                  Show as popup modal
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.dismissible}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, dismissible: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-800"
+                  />
+                  Allow dismiss
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button onClick={() => setShowAnnouncementModal(false)} variant="outline" className="flex-1 border-slate-600">
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateAnnouncement} className="flex-1 bg-pink-500 hover:bg-pink-600">
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Announcement
                 </Button>
               </div>
             </div>

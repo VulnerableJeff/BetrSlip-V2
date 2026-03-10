@@ -20,6 +20,7 @@ import EVScanner from '@/components/EVScanner';
 import DailyBetCard from '@/components/DailyBetCard';
 import WinStreakBanner from '@/components/WinStreakBanner';
 import FreeTrialExtension from '@/components/FreeTrialExtension';
+import SystemAnnouncement from '@/components/SystemAnnouncement';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
@@ -266,6 +267,9 @@ const Dashboard = ({ onLogout }) => {
         </div>
       </header>
 
+      {/* System Announcements */}
+      <SystemAnnouncement />
+
       {/* Usage Banner for Free Users */}
       {usage && !usage.is_subscribed && (
         <div className={`border-b ${usage.analyses_remaining <= 0 ? 'bg-gradient-to-r from-red-950/50 to-orange-950/50 border-red-500/30' : usage.analyses_remaining <= 2 ? 'bg-gradient-to-r from-violet-950/50 to-purple-950/50 border-violet-500/30' : 'bg-slate-900/50 border-slate-800'}`}>
@@ -300,28 +304,37 @@ const Dashboard = ({ onLogout }) => {
 
       {/* Monthly Usage Banner for Pro Users */}
       {usage && usage.is_subscribed && (
-        <div className={`border-b ${usage.analyses_remaining <= 10 ? 'bg-gradient-to-r from-amber-950/40 to-orange-950/40 border-amber-500/30' : 'bg-slate-900/30 border-slate-800/50'}`}>
+        <div className={`border-b ${usage.analyses_remaining <= 0 ? 'bg-gradient-to-r from-red-950/50 to-orange-950/50 border-red-500/30' : usage.analyses_remaining <= 10 ? 'bg-gradient-to-r from-amber-950/40 to-orange-950/40 border-amber-500/30' : 'bg-slate-900/30 border-slate-800/50'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Crown className="w-4 h-4 text-yellow-400" />
                 <p className="text-sm text-slate-300">
-                  <span className="text-white font-bold">{usage.analyses_remaining}</span>
-                  <span className="text-slate-500">/{usage.monthly_limit + (usage.bonus_credits || 0)}</span>
-                  <span className="text-slate-400 ml-1">analyses this month</span>
-                  {usage.bonus_credits > 0 && (
-                    <span className="text-amber-400 text-xs ml-2">(+{usage.bonus_credits} bonus)</span>
+                  {usage.analyses_remaining <= 0 ? (
+                    <span className="text-red-300 font-semibold">Monthly limit reached! Buy more credits to continue.</span>
+                  ) : (
+                    <>
+                      <span className="text-white font-bold">{usage.analyses_remaining}</span>
+                      <span className="text-slate-500">/{usage.monthly_limit + (usage.bonus_credits || 0)}</span>
+                      <span className="text-slate-400 ml-1">analyses this month</span>
+                      {usage.bonus_credits > 0 && (
+                        <span className="text-amber-400 text-xs ml-2">(+{usage.bonus_credits} bonus)</span>
+                      )}
+                    </>
                   )}
                 </p>
-                {/* Mini progress bar */}
-                <div className="hidden sm:block w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all ${usage.analyses_remaining <= 10 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${Math.max(2, (usage.analyses_remaining / (usage.monthly_limit + (usage.bonus_credits || 0))) * 100)}%` }}
-                  />
-                </div>
+                {/* Mini progress bar - hide when limit reached */}
+                {usage.analyses_remaining > 0 && (
+                  <div className="hidden sm:block w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${usage.analyses_remaining <= 10 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.max(2, (usage.analyses_remaining / (usage.monthly_limit + (usage.bonus_credits || 0))) * 100)}%` }}
+                    />
+                  </div>
+                )}
               </div>
-              {usage.analyses_remaining <= 20 && (
+              {/* Always show Buy Credits button when <=20 remaining OR when limit hit */}
+              {(usage.analyses_remaining <= 20 || usage.analyses_remaining <= 0) && (
                 <Button
                   size="sm"
                   onClick={async () => {
@@ -336,7 +349,9 @@ const Dashboard = ({ onLogout }) => {
                       toast.error(err.response?.data?.detail || 'Error purchasing credits');
                     }
                   }}
-                  className="text-xs bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-bold"
+                  className={`text-xs font-bold ${usage.analyses_remaining <= 0 
+                    ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white animate-pulse' 
+                    : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black'}`}
                   data-testid="buy-credits-btn"
                 >
                   +25 Credits — $3
