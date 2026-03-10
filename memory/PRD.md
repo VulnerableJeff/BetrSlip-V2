@@ -49,7 +49,16 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - Support Messages tab, Reset Usage per user
 
 ### Payments
-- Stripe ($5/mo), CashApp QR ($BetrSlip), PayPal removed
+- Stripe ($5/mo subscription), CashApp QR ($BetrSlip), PayPal removed
+
+### Monthly Usage Limit & Credit System (Mar 10, 2026)
+- **Pro users capped at 100 analyses/month** — Dashboard shows "X/100 analyses this month" with progress bar
+- **Buy Credits feature** — "+25 Credits — $3" button appears when ≤20 analyses remaining
+- **Bonus credits tracking** — Purchased credits stored in `bonus_credits` field, persist until used
+- **Admin "Add Credits" button** — Admin can manually grant +25 credits to any user
+- **Monthly reset** — `monthly_used` and `current_month` reset automatically each calendar month
+- **Usage tracking fields**: `monthly_used`, `monthly_limit`, `bonus_credits`, `analyses_remaining`, `current_month`
+- **Testing**: 100% pass rate on backend (13 tests) and frontend (all UI tests)
 
 ### Referral System — Pre-existing
 - Already built with referral codes and tracking
@@ -60,8 +69,7 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 ## Prioritized Backlog
 
 ### P1 (User Mentioned)
-- Tiered subscriptions: $5/$10/$20
-- Usage limits per tier
+- Tiered subscriptions: $5/$10/$20 (postponed by user)
 - Daily pick email notifications
 
 ### P2 (Nice to Have)
