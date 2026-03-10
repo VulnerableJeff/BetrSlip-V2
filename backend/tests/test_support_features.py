@@ -7,7 +7,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://betr-login-restore.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://credit-system-51.preview.emergentagent.com').rstrip('/')
 
 # Admin credentials from env
 ADMIN_EMAIL = 'hundojeff@icloud.com'

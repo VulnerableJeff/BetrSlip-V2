@@ -110,23 +110,78 @@ api_router.include_router(picks.router)
 
 # ===== BACKWARDS COMPATIBLE ROUTES =====
 # These redirect old endpoints to new structure
+PRO_MONTHLY_LIMIT = 100
+CREDIT_PACK_AMOUNT = 25
+CREDIT_PACK_PRICE = 300  # $3.00 in cents
+
+
+async def is_admin(user_id: str, database) -> bool:
+    """Check if user is admin"""
+    user = await database.users.find_one({"id": user_id}, {"_id": 0, "is_admin": 1})
+    return user.get("is_admin", False) if user else False
+
+
+def _get_current_month():
+    """Get current month string for usage tracking"""
+    return datetime.now(timezone.utc).strftime('%Y-%m')
+
+
+async def _get_usage_with_monthly_reset(user_id: str):
+    """Get user usage, auto-resetting monthly count if month changed"""
+    usage = await db.user_usage.find_one({"user_id": user_id})
+    current_month = _get_current_month()
+    
+    if not usage:
+        usage = {
+            "user_id": user_id,
+            "analyses_count": 0,
+            "monthly_analyses_count": 0,
+            "current_month": current_month,
+            "bonus_credits": 0,
+        }
+        await db.user_usage.insert_one(usage)
+    elif usage.get("current_month") != current_month:
+        # New month — reset monthly counter
+        await db.user_usage.update_one(
+            {"user_id": user_id},
+            {"$set": {"monthly_analyses_count": 0, "current_month": current_month}}
+        )
+        usage["monthly_analyses_count"] = 0
+        usage["current_month"] = current_month
+    
+    return usage
+
+
 @api_router.get("/usage")
 async def get_usage_compat(current_user: dict = Depends(get_current_user)):
-    """Backwards compatible usage endpoint"""
+    """Usage endpoint with monthly tracking"""
     user_id = current_user['user_id']
-    usage = await db.user_usage.find_one({"user_id": user_id}, {"_id": 0})
+    usage = await _get_usage_with_monthly_reset(user_id)
     subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
     
     is_subscribed = subscription and subscription.get('subscription_status') == 'active'
-    analyses_count = usage.get('analyses_count', 0) if usage else 0
-    free_limit = FREE_ANALYSIS_LIMIT
+    analyses_count = usage.get('analyses_count', 0)
+    monthly_count = usage.get('monthly_analyses_count', 0)
+    bonus_credits = usage.get('bonus_credits', 0)
+    
+    if is_subscribed:
+        effective_limit = PRO_MONTHLY_LIMIT + bonus_credits
+        remaining = max(0, effective_limit - monthly_count)
+        can_analyze = monthly_count < effective_limit
+    else:
+        remaining = max(0, FREE_ANALYSIS_LIMIT - analyses_count)
+        can_analyze = analyses_count < FREE_ANALYSIS_LIMIT
     
     return {
         "analyses_used": analyses_count,
-        "analyses_remaining": max(0, free_limit - analyses_count) if not is_subscribed else 999,
-        "free_limit": free_limit,
+        "monthly_used": monthly_count,
+        "monthly_limit": PRO_MONTHLY_LIMIT if is_subscribed else FREE_ANALYSIS_LIMIT,
+        "bonus_credits": bonus_credits,
+        "analyses_remaining": remaining,
+        "free_limit": FREE_ANALYSIS_LIMIT,
         "is_subscribed": is_subscribed,
-        "can_analyze": is_subscribed or analyses_count < free_limit
+        "can_analyze": can_analyze,
+        "current_month": usage.get("current_month", _get_current_month())
     }
 
 
@@ -150,6 +205,82 @@ async def extend_free_trial(current_user: dict = Depends(get_current_user)):
     )
     
     return {"message": "3 bonus analyses unlocked!", "analyses_remaining": max(0, FREE_ANALYSIS_LIMIT - new_count)}
+
+
+@api_router.post("/credits/purchase")
+async def purchase_credits(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create Stripe checkout for credit pack (25 credits for $3)"""
+    user_id = current_user['user_id']
+    
+    subscription = await db.subscriptions.find_one({"user_id": user_id})
+    is_subscribed = subscription and subscription.get('subscription_status') == 'active'
+    
+    if not is_subscribed:
+        raise HTTPException(status_code=400, detail="Credits are for Pro members. Please subscribe first.")
+    
+    try:
+        body = await request.json()
+        origin_url = body.get('origin_url', '')
+    except:
+        origin_url = ''
+    
+    stripe_key = os.environ.get('STRIPE_API_KEY', '')
+    if not stripe_key:
+        raise HTTPException(status_code=500, detail="Payment not configured")
+    
+    try:
+        checkout = StripeCheckout(api_key=stripe_key, webhook_url="")
+        session_req = CheckoutSessionRequest(
+            amount=CREDIT_PACK_PRICE,
+            currency="usd",
+            success_url=f"{origin_url}/dashboard?credits=purchased",
+            cancel_url=f"{origin_url}/dashboard?credits=cancelled",
+            metadata={"user_id": user_id, "type": "credit_pack", "credits": str(CREDIT_PACK_AMOUNT)},
+        )
+        session = await checkout.create_checkout_session(session_req)
+        return {"url": session.url, "session_id": session.session_id}
+    except Exception as e:
+        logger.error(f"Stripe credit purchase error: {e}")
+        raise HTTPException(status_code=500, detail="Error creating checkout")
+
+
+@api_router.post("/credits/cashapp-request")
+async def cashapp_credit_request(current_user: dict = Depends(get_current_user)):
+    """Request credits via CashApp payment"""
+    user_id = current_user['user_id']
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    
+    await db.support_messages.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "email": user.get("email", "") if user else "",
+        "subject": "Credit Pack Purchase — CashApp",
+        "message": f"User requested 25 credit pack ($3) via CashApp. Please verify payment and add credits.",
+        "status": "unread",
+        "type": "credit_purchase",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"message": "Request submitted! Send $3 to $BetrSlip on CashApp and we'll add 25 credits within 24h."}
+
+
+@api_router.post("/admin/users/{user_id}/add-credits")
+async def admin_add_credits(user_id: str, request: Request, admin_user: dict = Depends(get_admin_user)):
+    """Admin: add bonus credits to a user"""
+    try:
+        body = await request.json()
+        credits = int(body.get('credits', CREDIT_PACK_AMOUNT))
+    except:
+        credits = CREDIT_PACK_AMOUNT
+    
+    await db.user_usage.update_one(
+        {"user_id": user_id},
+        {"$inc": {"bonus_credits": credits}},
+        upsert=True
+    )
+    return {"message": f"Added {credits} bonus credits to user"}
 
 
 # ===== LIVE GAMES STREAMING =====
@@ -389,17 +520,30 @@ async def analyze_bet_slip(
         )
     
     # Check usage limits
-    usage = await db.user_usage.find_one({"user_id": user_id})
+    usage = await _get_usage_with_monthly_reset(user_id)
     subscription = await db.subscriptions.find_one({"user_id": user_id})
     
     is_subscribed = subscription and subscription.get('subscription_status') == 'active'
-    analyses_count = usage.get('analyses_count', 0) if usage else 0
+    analyses_count = usage.get('analyses_count', 0)
+    monthly_count = usage.get('monthly_analyses_count', 0)
+    bonus_credits = usage.get('bonus_credits', 0)
+    is_admin_user = await is_admin(user_id, db)
     
-    if not is_subscribed and analyses_count >= FREE_ANALYSIS_LIMIT:
-        raise HTTPException(
-            status_code=402,
-            detail="Free analysis limit reached. Please subscribe to continue."
-        )
+    if is_admin_user:
+        pass  # Admin has unlimited access
+    elif is_subscribed:
+        effective_limit = PRO_MONTHLY_LIMIT + bonus_credits
+        if monthly_count >= effective_limit:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Monthly limit reached ({effective_limit} analyses/month). Purchase a credit pack for more!"
+            )
+    else:
+        if analyses_count >= FREE_ANALYSIS_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail="Free analysis limit reached. Please subscribe to continue."
+            )
     
     # Encode image for AI
     base64_image = base64.b64encode(contents).decode('utf-8')
@@ -575,10 +719,13 @@ Be BRUTALLY honest. If a bet is bad, say so clearly. Most parlays lose. Your job
     
     await db.analyses.insert_one(analysis_record)
     
-    # Increment usage
+    # Increment usage (both total and monthly)
     await db.user_usage.update_one(
         {"user_id": user_id},
-        {"$inc": {"analyses_count": 1}},
+        {
+            "$inc": {"analyses_count": 1, "monthly_analyses_count": 1},
+            "$setOnInsert": {"current_month": _get_current_month(), "bonus_credits": 0}
+        },
         upsert=True
     )
     
@@ -1076,7 +1223,19 @@ async def stripe_webhook(request: Request):
         
         if webhook_response.payment_status == 'paid':
             user_id = webhook_response.metadata.get('user_id')
-            if user_id:
+            purchase_type = webhook_response.metadata.get('type', 'subscription')
+            
+            if user_id and purchase_type == 'credit_pack':
+                # Credit pack purchase
+                credits = int(webhook_response.metadata.get('credits', CREDIT_PACK_AMOUNT))
+                await db.user_usage.update_one(
+                    {"user_id": user_id},
+                    {"$inc": {"bonus_credits": credits}},
+                    upsert=True
+                )
+                logger.info(f"Added {credits} credits to user {user_id} via Stripe")
+            elif user_id:
+                # Regular subscription
                 await update_subscription_status(db, user_id, 'active')
         
         return {"status": "processed"}

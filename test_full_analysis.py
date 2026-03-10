@@ -11,7 +11,7 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
 class FullAnalysisTest:
-    def __init__(self, base_url="https://betr-login-restore.preview.emergentagent.com"):
+    def __init__(self, base_url="https://credit-system-51.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None

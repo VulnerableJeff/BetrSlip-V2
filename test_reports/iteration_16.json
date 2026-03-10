@@ -1,0 +1,94 @@
+{
+  "summary": "Iteration 16 - Monthly Usage Limit & Credit System Regression Testing PASSED. All core features verified: 1) Pro users see '100/100 analyses this month' banner with progress bar on Dashboard. 2) Admin panel Users tab shows action buttons: Grant Pro, Reset Usage, +25 Credits, Ban, Delete when user row is expanded. 3) GET /api/usage returns monthly tracking fields (monthly_used, monthly_limit, bonus_credits, analyses_remaining, current_month). 4) POST /api/credits/purchase returns Stripe checkout URL for Pro users. 5) Admin endpoints verified: grant-subscription, reset-usage, add-credits, ban, unban all return 200. Fixed STRIPE_SECRET_KEY typo to STRIPE_API_KEY and updated create_session to create_checkout_session to match API.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: GET /api/health returns 200",
+    "Backend: GET /api/usage returns monthly tracking fields for Pro user",
+    "Backend: GET /api/usage shows monthly_limit=100 for Pro users",
+    "Backend: GET /api/usage includes bonus_credits field",
+    "Backend: POST /api/credits/purchase returns Stripe checkout URL",
+    "Backend: POST /api/credits/purchase requires authentication",
+    "Backend: GET /api/admin/users returns user list with subscription info",
+    "Backend: POST /api/admin/users/{id}/grant-subscription works",
+    "Backend: POST /api/admin/users/{id}/reset-usage works",
+    "Backend: POST /api/admin/users/{id}/add-credits works",
+    "Backend: POST /api/admin/users/{id}/ban and /unban work",
+    "Frontend: Login as admin works",
+    "Frontend: Dashboard shows Pro badge in header",
+    "Frontend: Dashboard shows '100/100 analyses this month' banner",
+    "Frontend: Dashboard shows progress bar for monthly usage",
+    "Frontend: Admin panel loads via Admin button in header",
+    "Frontend: Admin panel Users tab shows user list (6 users)",
+    "Frontend: Admin panel expanded user shows action buttons: Revoke Pro, Reset Usage, +25 Credits, Ban, Delete",
+    "Frontend: Buy Credits button hidden when analyses_remaining > 20 (expected behavior)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_monthly_usage_credits.py",
+    "/app/test_reports/pytest/pytest_monthly_usage.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Dashboard.js Lines 301-348 correctly shows Pro usage banner with monthly_limit + bonus_credits tracking",
+    "Dashboard.js Line 324 correctly hides Buy Credits button when analyses_remaining > 20",
+    "Admin.js Lines 194-207 handleAddCredits function correctly adds 25 bonus credits",
+    "Admin.js Lines 1041-1050 correctly displays +25 Credits button in expanded user section",
+    "server.py Line 230 - Fixed STRIPE_SECRET_KEY to STRIPE_API_KEY to match .env",
+    "server.py Line 252 - Fixed create_session to create_checkout_session to match Stripe API"
+  ],
+
+  "updated_files": [
+    "/app/backend/server.py",
+    "/app/backend/tests/test_monthly_usage_credits.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (13/13 pytest tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "admin_user": "hundojeff@icloud.com / Boo-boo600$"
+  },
+
+  "seed_data_creation": "No new seed data created",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Monthly Usage Limit system verified in iteration 16: 1) Pro users have 100 analyses/month limit tracked via monthly_used and monthly_limit fields in GET /api/usage. 2) Bonus credits tracked via bonus_credits field. 3) Buy Credits button shows when analyses_remaining <= 20 and initiates Stripe checkout for $3/25 credits. 4) Admin panel action buttons all functional: Grant Pro, Reset Usage, +25 Credits, Ban, Delete. 5) Fixed two bugs: STRIPE_SECRET_KEY typo and wrong Stripe API method. Environment has 6 users (2 Pro, 4 free).",
+
+  "mocked_apis_note": {
+    "has_mocked_apis": false,
+    "note": "All APIs use real backend and Stripe integration"
+  },
+
+  "bugs_fixed": [
+    {
+      "file": "/app/backend/server.py",
+      "line": 230,
+      "issue": "Used STRIPE_SECRET_KEY but .env has STRIPE_API_KEY",
+      "fix": "Changed to os.environ.get('STRIPE_API_KEY', '')"
+    },
+    {
+      "file": "/app/backend/server.py",
+      "line": 252,
+      "issue": "Called checkout.create_session() but API uses create_checkout_session()",
+      "fix": "Updated to use create_checkout_session() with correct CheckoutSessionRequest format"
+    }
+  ]
+}

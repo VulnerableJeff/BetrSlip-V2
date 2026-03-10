@@ -191,6 +191,21 @@ const Admin = () => {
     }
   };
 
+  const handleAddCredits = async (userId, credits = 25) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/admin/users/${userId}/add-credits`,
+        { credits },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Added ${credits} credits to user`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error adding credits');
+    }
+  };
+
   const handleGrantSubscription = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -1021,6 +1036,17 @@ const Admin = () => {
                         >
                           <RefreshCw className="w-3 h-3 mr-1" />
                           Reset Usage
+                        </Button>
+
+                        {/* Add Credits */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAddCredits(user.id, 25)}
+                          className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                        >
+                          <Zap className="w-3 h-3 mr-1" />
+                          +25 Credits
                         </Button>
 
                         {/* Ban/Unban */}

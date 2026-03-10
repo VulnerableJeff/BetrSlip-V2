@@ -298,6 +298,55 @@ const Dashboard = ({ onLogout }) => {
         </div>
       )}
 
+      {/* Monthly Usage Banner for Pro Users */}
+      {usage && usage.is_subscribed && (
+        <div className={`border-b ${usage.analyses_remaining <= 10 ? 'bg-gradient-to-r from-amber-950/40 to-orange-950/40 border-amber-500/30' : 'bg-slate-900/30 border-slate-800/50'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Crown className="w-4 h-4 text-yellow-400" />
+                <p className="text-sm text-slate-300">
+                  <span className="text-white font-bold">{usage.analyses_remaining}</span>
+                  <span className="text-slate-500">/{usage.monthly_limit + (usage.bonus_credits || 0)}</span>
+                  <span className="text-slate-400 ml-1">analyses this month</span>
+                  {usage.bonus_credits > 0 && (
+                    <span className="text-amber-400 text-xs ml-2">(+{usage.bonus_credits} bonus)</span>
+                  )}
+                </p>
+                {/* Mini progress bar */}
+                <div className="hidden sm:block w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${usage.analyses_remaining <= 10 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${Math.max(2, (usage.analyses_remaining / (usage.monthly_limit + (usage.bonus_credits || 0))) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              {usage.analyses_remaining <= 20 && (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const res = await axios.post(`${BACKEND_URL}/api/credits/purchase`, 
+                        { origin_url: window.location.origin },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                      );
+                      window.location.href = res.data.url;
+                    } catch (err) {
+                      toast.error(err.response?.data?.detail || 'Error purchasing credits');
+                    }
+                  }}
+                  className="text-xs bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-bold"
+                  data-testid="buy-credits-btn"
+                >
+                  +25 Credits — $3
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Win Streak Banner */}
       <WinStreakBanner />
 

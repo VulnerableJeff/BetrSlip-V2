@@ -13,7 +13,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://betr-login-restore.preview.emergentagent.com"
+    BASE_URL = "https://credit-system-51.preview.emergentagent.com"
 
 # Admin credentials from backend/.env
 ADMIN_EMAIL = "hundojeff@icloud.com"
