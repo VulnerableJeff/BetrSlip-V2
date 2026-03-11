@@ -368,6 +368,145 @@ async def delete_announcement(announcement_id: str, admin_user: dict = Depends(g
     return {"message": "Announcement deactivated"}
 
 
+# ===== EMAIL NOTIFICATIONS =====
+class EmailPreferenceUpdate(BaseModel):
+    email_preference: str  # "simple" or "full"
+
+@api_router.get("/user/email-settings")
+async def get_email_settings(current_user: dict = Depends(get_current_user)):
+    """Get user's email notification settings"""
+    user_id = current_user['user_id']
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email_preference": 1, "email_unsubscribed": 1})
+    
+    return {
+        "email_preference": user.get("email_preference", "full") if user else "full",
+        "email_unsubscribed": user.get("email_unsubscribed", False) if user else False
+    }
+
+@api_router.post("/user/email-settings")
+async def update_email_settings(settings: EmailPreferenceUpdate, current_user: dict = Depends(get_current_user)):
+    """Update user's email notification settings"""
+    user_id = current_user['user_id']
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"email_preference": settings.email_preference}}
+    )
+    
+    return {"message": "Email settings updated", "email_preference": settings.email_preference}
+
+@api_router.post("/user/unsubscribe")
+async def unsubscribe_emails(current_user: dict = Depends(get_current_user)):
+    """Unsubscribe from email notifications"""
+    user_id = current_user['user_id']
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"email_unsubscribed": True}}
+    )
+    
+    return {"message": "Successfully unsubscribed from emails"}
+
+@api_router.post("/user/resubscribe")
+async def resubscribe_emails(current_user: dict = Depends(get_current_user)):
+    """Resubscribe to email notifications"""
+    user_id = current_user['user_id']
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"email_unsubscribed": False}}
+    )
+    
+    return {"message": "Successfully resubscribed to emails"}
+
+@api_router.post("/admin/send-test-email")
+async def admin_send_test_email(request: Request, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Send a test daily pick email"""
+    from services.email_service import get_email_service
+    from services.daily_email_scheduler import get_email_scheduler
+    
+    try:
+        body = await request.json()
+        test_email = body.get('email', admin_user.get('email'))
+    except:
+        test_email = admin_user.get('email')
+    
+    email_service = get_email_service()
+    if not email_service.is_configured():
+        raise HTTPException(status_code=500, detail="Email service not configured. Add EMAIL_ADDRESS and EMAIL_PASSWORD to .env")
+    
+    scheduler = get_email_scheduler(db)
+    pick = await scheduler.get_todays_pick()
+    top_picks = await scheduler.get_top_picks()
+    
+    if not pick:
+        raise HTTPException(status_code=404, detail="No picks available to send")
+    
+    success = email_service.send_daily_pick_email(
+        to_email=test_email,
+        pick=pick,
+        top_picks=top_picks,
+        email_type="full"
+    )
+    
+    if success:
+        return {"message": f"Test email sent to {test_email}", "pick_title": pick.get("title")}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send test email. Check email credentials.")
+
+@api_router.post("/admin/send-daily-emails")
+async def admin_trigger_daily_emails(admin_user: dict = Depends(get_admin_user)):
+    """Admin: Manually trigger daily emails to all Pro users"""
+    from services.daily_email_scheduler import get_email_scheduler
+    
+    scheduler = get_email_scheduler(db)
+    result = await scheduler.send_daily_emails()
+    
+    return result
+
+@api_router.get("/admin/email-stats")
+async def admin_get_email_stats(admin_user: dict = Depends(get_admin_user)):
+    """Admin: Get email sending statistics"""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    
+    today = datetime.now(ZoneInfo('America/New_York')).date()
+    today_start = datetime.combine(today, datetime.min.time())
+    week_ago = today_start - timedelta(days=7)
+    
+    # Today's emails
+    today_sent = await db.email_logs.count_documents({
+        "sent_at": {"$gte": today_start.isoformat()},
+        "status": "sent"
+    })
+    
+    # This week's emails
+    week_sent = await db.email_logs.count_documents({
+        "sent_at": {"$gte": week_ago.isoformat()},
+        "status": "sent"
+    })
+    
+    # Total Pro users
+    active_subs = await db.subscriptions.count_documents({"subscription_status": "active"})
+    
+    # Unsubscribed users
+    unsubscribed = await db.users.count_documents({"email_unsubscribed": True})
+    
+    # Recent email logs
+    recent_logs = await db.email_logs.find(
+        {},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(10).to_list(10)
+    
+    return {
+        "today_sent": today_sent,
+        "week_sent": week_sent,
+        "total_pro_users": active_subs,
+        "unsubscribed_users": unsubscribed,
+        "recent_logs": recent_logs
+    }
+
+
 # ===== LIVE GAMES STREAMING =====
 @api_router.get("/live-games")
 async def get_live_games():
@@ -1553,9 +1692,26 @@ async def delayed_startup_tasks():
             await smart_service.generate_smart_picks(force=True)
     except Exception as e:
         logger.warning(f"Initial picks generation failed: {e}")
+    
+    # STEP 4: Start daily email scheduler
+    try:
+        from services.daily_email_scheduler import get_email_scheduler
+        scheduler = get_email_scheduler(db)
+        scheduler.start()
+        logger.info("Daily email scheduler started")
+    except Exception as e:
+        logger.warning(f"Email scheduler startup failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    # Stop email scheduler
+    try:
+        from services.daily_email_scheduler import get_email_scheduler
+        scheduler = get_email_scheduler(db)
+        scheduler.stop()
+    except:
+        pass
+    
     for task in _background_tasks:
         task.cancel()
         try:

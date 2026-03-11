@@ -65,20 +65,29 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - **Types**: Info (purple), Warning (amber), Success (green)
 - **Admin Announcements tab** — View, create, and delete announcements
 
+### Daily Pick Email Notifications (Mar 11, 2026)
+- **Automatic daily emails at 8:00 AM ET** to all Pro users
+- **Email content options**: Simple (Bet of the Day only) or Full (Bet of Day + Top 3 Picks)
+- **User preferences**: Pro users can choose email type or unsubscribe via bell icon in header
+- **Admin Emails tab**: Stats (sent today/week, pro users, unsubscribed), "Test Email" and "Send to All Pro" buttons
+- **Gmail SMTP**: Configured via EMAIL_ADDRESS and EMAIL_PASSWORD env vars
+- **Email logs**: Track sent emails in email_logs collection
+
 ### Referral System — Pre-existing
 - Already built with referral codes and tracking
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
+- Email: betrslip@gmail.com (needs Gmail App Password for 2FA accounts)
 
 ## Prioritized Backlog
 
 ### P1 (User Mentioned)
 - Tiered subscriptions: $5/$10/$20 (postponed by user)
-- Daily pick email notifications
 
 ### P2 (Nice to Have)
 - User testimonials/ratings system
 - Bet tracker / P&L dashboard for users
 - Custom share card branding per tier
 - Credit purchase history for users
+- Push notifications for high-value picks

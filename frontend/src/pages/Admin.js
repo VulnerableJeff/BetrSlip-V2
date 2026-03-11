@@ -54,6 +54,11 @@ const Admin = () => {
     dismissible: true,
     show_modal: false
   });
+
+  // Email Stats State
+  const [emailStats, setEmailStats] = useState(null);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [sendingDailyEmails, setSendingDailyEmails] = useState(false);
   
   // Stream Form State
   const [streamForm, setStreamForm] = useState({
@@ -101,7 +106,8 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/cashapp-requests`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/live-streams`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/support-messages`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/announcements`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/announcements`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/email-stats`, { headers })
       ]);
 
       // Check if any request got 403 (not admin)
@@ -126,6 +132,7 @@ const Admin = () => {
         setSupportUnread(results[8].value.data.unread_count || 0);
       }
       if (results[9].status === 'fulfilled') setAnnouncements(results[9].value.data.announcements || []);
+      if (results[10].status === 'fulfilled') setEmailStats(results[10].value.data);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
@@ -544,6 +551,44 @@ const Admin = () => {
     }
   };
 
+  // Email Functions
+  const handleSendTestEmail = async () => {
+    setSendingTestEmail(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${BACKEND_URL}/api/admin/send-test-email`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send test email');
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
+  const handleSendDailyEmails = async () => {
+    if (!window.confirm('Send daily pick emails to ALL Pro users now?')) return;
+    
+    setSendingDailyEmails(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${BACKEND_URL}/api/admin/send-daily-emails`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Sent ${res.data.sent} emails (${res.data.failed} failed)`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send emails');
+    } finally {
+      setSendingDailyEmails(false);
+    }
+  };
+
   const handleUpdateOutcome = async (pickId, outcome) => {
     try {
       const token = localStorage.getItem('token');
@@ -822,6 +867,17 @@ const Admin = () => {
           >
             <Megaphone className="w-4 h-4" />
             Announcements
+          </button>
+          <button
+            onClick={() => setActiveTab('emails')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'emails'
+                ? 'bg-cyan-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            Emails
           </button>
         </div>
       </div>
@@ -2346,6 +2402,116 @@ const Admin = () => {
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Emails Tab */}
+      {activeTab === 'emails' && (
+        <div className="max-w-4xl mx-auto">
+          {/* Email Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20 p-4">
+              <div className="text-center">
+                <p className="text-slate-400 text-xs">Sent Today</p>
+                <p className="text-2xl font-black text-cyan-400">{emailStats?.today_sent || 0}</p>
+              </div>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 p-4">
+              <div className="text-center">
+                <p className="text-slate-400 text-xs">This Week</p>
+                <p className="text-2xl font-black text-blue-400">{emailStats?.week_sent || 0}</p>
+              </div>
+            </Card>
+            <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 p-4">
+              <div className="text-center">
+                <p className="text-slate-400 text-xs">Pro Users</p>
+                <p className="text-2xl font-black text-emerald-400">{emailStats?.total_pro_users || 0}</p>
+              </div>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20 p-4">
+              <div className="text-center">
+                <p className="text-slate-400 text-xs">Unsubscribed</p>
+                <p className="text-2xl font-black text-red-400">{emailStats?.unsubscribed_users || 0}</p>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="bg-slate-900/60 border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-cyan-500/20">
+                  <Mail className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Daily Pick Emails</h2>
+                  <p className="text-slate-500 text-xs">Automatic daily emails at 8:00 AM ET</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSendTestEmail}
+                  disabled={sendingTestEmail}
+                  className="bg-slate-700 hover:bg-slate-600"
+                  data-testid="send-test-email-btn"
+                >
+                  {sendingTestEmail ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Mail className="w-4 h-4 mr-2" />
+                  )}
+                  Test Email
+                </Button>
+                <Button
+                  onClick={handleSendDailyEmails}
+                  disabled={sendingDailyEmails}
+                  className="bg-cyan-500 hover:bg-cyan-600"
+                  data-testid="send-daily-emails-btn"
+                >
+                  {sendingDailyEmails ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Send to All Pro
+                </Button>
+              </div>
+            </div>
+
+            {/* Recent Email Logs */}
+            <div className="divide-y divide-slate-800/50">
+              {(!emailStats?.recent_logs || emailStats.recent_logs.length === 0) ? (
+                <div className="p-12 text-center">
+                  <Mail className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                  <p className="text-slate-400">No emails sent yet</p>
+                  <p className="text-slate-600 text-sm mt-1">Daily emails will be sent at 8:00 AM ET</p>
+                </div>
+              ) : (
+                emailStats.recent_logs.map((log, i) => (
+                  <div key={i} className="p-4 hover:bg-slate-800/20 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${log.status === 'sent' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        <div>
+                          <p className="text-white text-sm">{log.email}</p>
+                          <p className="text-slate-500 text-xs">{log.type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          log.status === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {log.status}
+                        </span>
+                        <p className="text-slate-500 text-xs mt-1">
+                          {new Date(log.sent_at).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))

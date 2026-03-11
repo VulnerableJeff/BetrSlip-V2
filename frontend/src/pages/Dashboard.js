@@ -21,6 +21,7 @@ import DailyBetCard from '@/components/DailyBetCard';
 import WinStreakBanner from '@/components/WinStreakBanner';
 import FreeTrialExtension from '@/components/FreeTrialExtension';
 import SystemAnnouncement from '@/components/SystemAnnouncement';
+import EmailSettings from '@/components/EmailSettings';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
@@ -60,6 +61,7 @@ const Dashboard = ({ onLogout }) => {
   const [result, setResult] = useState(null);
   const [usage, setUsage] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [showAnalysisNotification, setShowAnalysisNotification] = useState(false);
   const [hasSeenNotification, setHasSeenNotification] = useState(
@@ -191,6 +193,12 @@ const Dashboard = ({ onLogout }) => {
         usage={usage}
       />
 
+      {/* Email Settings Modal */}
+      <EmailSettings 
+        isOpen={showEmailSettings}
+        onClose={() => setShowEmailSettings(false)}
+      />
+
       {/* Header */}
       <header className="border-b border-slate-800 bg-brand-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -251,6 +259,17 @@ const Dashboard = ({ onLogout }) => {
                 >
                   <Crown className="w-5 h-5 sm:mr-2" />
                   <span className="hidden sm:inline">Upgrade</span>
+                </Button>
+              )}
+              {/* Email Settings - Pro users only */}
+              {usage?.is_subscribed && (
+                <Button
+                  variant="ghost"
+                  className="text-slate-300 hover:text-white hover:bg-violet-500/10"
+                  onClick={() => setShowEmailSettings(true)}
+                  data-testid="email-settings-btn"
+                >
+                  <Bell className="w-5 h-5" />
                 </Button>
               )}
               <Button
