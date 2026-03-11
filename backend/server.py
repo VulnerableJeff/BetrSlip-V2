@@ -1830,8 +1830,11 @@ async def admin_get_top_bets_stats(admin_user: dict = Depends(get_admin_user)):
 async def stripe_webhook(request: Request):
     try:
         body = await request.body()
+        signature = request.headers.get("Stripe-Signature")
+        webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+        
         stripe_checkout = StripeCheckout(api_key=_get_stripe_key(), webhook_url="")
-        webhook_response = await stripe_checkout.process_webhook(body, request.headers.get("Stripe-Signature"))
+        webhook_response = await stripe_checkout.process_webhook(body, signature, webhook_secret if webhook_secret else None)
         
         if webhook_response.payment_status == 'paid':
             user_id = webhook_response.metadata.get('user_id')
@@ -1845,10 +1848,11 @@ async def stripe_webhook(request: Request):
                     {"$inc": {"bonus_credits": credits}},
                     upsert=True
                 )
-                logger.info(f"Added {credits} credits to user {user_id} via Stripe")
+                logger.info(f"Added {credits} credits to user {user_id} via Stripe webhook")
             elif user_id:
                 # Regular subscription
                 await update_subscription_status(db, user_id, 'active')
+                logger.info(f"Activated subscription for user {user_id} via Stripe webhook")
         
         return {"status": "processed"}
     except Exception as e:

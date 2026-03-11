@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown, Gift, Bell, Settings, Star } from 'lucide-react';
+import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown, Gift, Bell, Settings, Star, Mail } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 import SubscriptionModal from '@/components/SubscriptionModal';
@@ -285,11 +285,12 @@ const Dashboard = ({ onLogout }) => {
               {usage?.is_subscribed && (
                 <Button
                   variant="ghost"
-                  className="text-slate-300 hover:text-white hover:bg-violet-500/10"
+                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
                   onClick={() => setShowEmailSettings(true)}
                   data-testid="email-settings-btn"
+                  title="Email settings"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Mail className="w-5 h-5" />
                 </Button>
               )}
               {/* Push Notifications */}
