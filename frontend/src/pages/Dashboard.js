@@ -24,6 +24,8 @@ import SystemAnnouncement from '@/components/SystemAnnouncement';
 import EmailSettings from '@/components/EmailSettings';
 import PushNotifications from '@/components/PushNotifications';
 import SubmitTestimonial from '@/components/SubmitTestimonial';
+import WeeklyLeaderboard from '@/components/WeeklyLeaderboard';
+import LogBetModal from '@/components/LogBetModal';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
@@ -65,6 +67,8 @@ const Dashboard = ({ onLogout }) => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [showTestimonialModal, setShowTestimonialModal] = useState(false);
+  const [showLogBetModal, setShowLogBetModal] = useState(false);
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [userEmail, setUserEmail] = useState('');
   const [showAnalysisNotification, setShowAnalysisNotification] = useState(false);
   const [hasSeenNotification, setHasSeenNotification] = useState(
@@ -206,6 +210,13 @@ const Dashboard = ({ onLogout }) => {
       <SubmitTestimonial 
         isOpen={showTestimonialModal}
         onClose={() => setShowTestimonialModal(false)}
+      />
+
+      {/* Log Bet Modal */}
+      <LogBetModal 
+        isOpen={showLogBetModal}
+        onClose={() => setShowLogBetModal(false)}
+        onSuccess={() => setLeaderboardKey(prev => prev + 1)}
       />
 
       {/* Header */}
@@ -1072,6 +1083,14 @@ const Dashboard = ({ onLogout }) => {
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <ReferralProgram />
           <NotificationSettings />
+        </div>
+
+        {/* Weekly Leaderboard */}
+        <div className="mt-6">
+          <WeeklyLeaderboard 
+            key={leaderboardKey}
+            onLogBet={() => setShowLogBetModal(true)} 
+          />
         </div>
 
         {/* Support Contact - Floating */}

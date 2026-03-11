@@ -697,6 +697,204 @@ async def get_pending_notifications(current_user: dict = Depends(get_current_use
     return {"notifications": notifications}
 
 
+# ===== WEEKLY LEADERBOARD =====
+class BetResultSubmit(BaseModel):
+    bet_type: str  # "analysis", "daily_pick", "custom"
+    result: str  # "win", "loss", "push"
+    amount_wagered: Optional[float] = None
+    amount_won: Optional[float] = None
+    odds: Optional[str] = None
+    description: Optional[str] = None
+
+@api_router.post("/bets/log")
+async def log_bet_result(bet: BetResultSubmit, current_user: dict = Depends(get_current_user)):
+    """Log a bet result for leaderboard tracking"""
+    user_id = current_user['user_id']
+    
+    # Get current week start (Monday)
+    from zoneinfo import ZoneInfo
+    now = datetime.now(ZoneInfo('America/New_York'))
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_id = week_start.strftime('%Y-W%W')
+    
+    # Calculate profit
+    profit = 0
+    if bet.result == "win" and bet.amount_won:
+        profit = bet.amount_won - (bet.amount_wagered or 0)
+    elif bet.result == "loss" and bet.amount_wagered:
+        profit = -bet.amount_wagered
+    
+    # Log the bet
+    bet_id = str(uuid.uuid4())
+    await db.bet_results.insert_one({
+        "id": bet_id,
+        "user_id": user_id,
+        "week_id": week_id,
+        "bet_type": bet.bet_type,
+        "result": bet.result,
+        "amount_wagered": bet.amount_wagered,
+        "amount_won": bet.amount_won,
+        "profit": profit,
+        "odds": bet.odds,
+        "description": bet.description,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Update weekly stats
+    await db.weekly_stats.update_one(
+        {"user_id": user_id, "week_id": week_id},
+        {
+            "$inc": {
+                "total_bets": 1,
+                "wins": 1 if bet.result == "win" else 0,
+                "losses": 1 if bet.result == "loss" else 0,
+                "pushes": 1 if bet.result == "push" else 0,
+                "total_profit": profit,
+                "total_wagered": bet.amount_wagered or 0
+            },
+            "$setOnInsert": {
+                "user_id": user_id,
+                "week_id": week_id,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+        },
+        upsert=True
+    )
+    
+    return {"message": "Bet logged successfully", "id": bet_id, "profit": profit}
+
+@api_router.get("/leaderboard/weekly")
+async def get_weekly_leaderboard():
+    """Get the weekly leaderboard - public endpoint"""
+    from zoneinfo import ZoneInfo
+    
+    # Get current week
+    now = datetime.now(ZoneInfo('America/New_York'))
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_id = week_start.strftime('%Y-W%W')
+    
+    # Get top performers this week
+    pipeline = [
+        {"$match": {"week_id": week_id, "total_bets": {"$gte": 3}}},  # Min 3 bets
+        {"$addFields": {
+            "win_rate": {"$cond": [
+                {"$eq": ["$total_bets", 0]}, 
+                0, 
+                {"$multiply": [{"$divide": ["$wins", "$total_bets"]}, 100]}
+            ]},
+            "roi": {"$cond": [
+                {"$eq": ["$total_wagered", 0]}, 
+                0, 
+                {"$multiply": [{"$divide": ["$total_profit", "$total_wagered"]}, 100]}
+            ]}
+        }},
+        {"$sort": {"total_profit": -1}},
+        {"$limit": 10}
+    ]
+    
+    stats = await db.weekly_stats.aggregate(pipeline).to_list(10)
+    
+    # Get user emails and anonymize
+    leaderboard = []
+    for i, stat in enumerate(stats):
+        user = await db.users.find_one({"id": stat["user_id"]}, {"_id": 0, "email": 1})
+        email = user.get("email", "user") if user else "user"
+        # Anonymize: show first 3 chars + ***
+        display_name = email.split("@")[0][:3] + "***" if len(email) > 3 else "user***"
+        
+        leaderboard.append({
+            "rank": i + 1,
+            "display_name": display_name,
+            "wins": stat.get("wins", 0),
+            "losses": stat.get("losses", 0),
+            "total_bets": stat.get("total_bets", 0),
+            "win_rate": round(stat.get("win_rate", 0), 1),
+            "total_profit": round(stat.get("total_profit", 0), 2),
+            "roi": round(stat.get("roi", 0), 1)
+        })
+    
+    # Get week date range for display
+    week_end = week_start + timedelta(days=6)
+    
+    return {
+        "week_id": week_id,
+        "week_start": week_start.strftime('%b %d'),
+        "week_end": week_end.strftime('%b %d, %Y'),
+        "leaderboard": leaderboard,
+        "min_bets_required": 3
+    }
+
+@api_router.get("/user/betting-stats")
+async def get_user_betting_stats(current_user: dict = Depends(get_current_user)):
+    """Get current user's betting stats"""
+    user_id = current_user['user_id']
+    from zoneinfo import ZoneInfo
+    
+    # Get current week
+    now = datetime.now(ZoneInfo('America/New_York'))
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_id = week_start.strftime('%Y-W%W')
+    
+    # Get this week's stats
+    weekly = await db.weekly_stats.find_one(
+        {"user_id": user_id, "week_id": week_id},
+        {"_id": 0}
+    )
+    
+    # Get all-time stats
+    all_time_pipeline = [
+        {"$match": {"user_id": user_id}},
+        {"$group": {
+            "_id": None,
+            "total_bets": {"$sum": "$total_bets"},
+            "wins": {"$sum": "$wins"},
+            "losses": {"$sum": "$losses"},
+            "total_profit": {"$sum": "$total_profit"},
+            "total_wagered": {"$sum": "$total_wagered"}
+        }}
+    ]
+    all_time_result = await db.weekly_stats.aggregate(all_time_pipeline).to_list(1)
+    all_time = all_time_result[0] if all_time_result else {}
+    
+    # Get recent bets
+    recent_bets = await db.bet_results.find(
+        {"user_id": user_id},
+        {"_id": 0, "user_id": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Get current rank
+    rank = None
+    if weekly and weekly.get("total_bets", 0) >= 3:
+        higher_profit_count = await db.weekly_stats.count_documents({
+            "week_id": week_id,
+            "total_profit": {"$gt": weekly.get("total_profit", 0)},
+            "total_bets": {"$gte": 3}
+        })
+        rank = higher_profit_count + 1
+    
+    return {
+        "this_week": {
+            "wins": weekly.get("wins", 0) if weekly else 0,
+            "losses": weekly.get("losses", 0) if weekly else 0,
+            "total_bets": weekly.get("total_bets", 0) if weekly else 0,
+            "total_profit": round(weekly.get("total_profit", 0), 2) if weekly else 0,
+            "win_rate": round((weekly.get("wins", 0) / weekly.get("total_bets", 1)) * 100, 1) if weekly and weekly.get("total_bets", 0) > 0 else 0,
+            "rank": rank
+        },
+        "all_time": {
+            "wins": all_time.get("wins", 0),
+            "losses": all_time.get("losses", 0),
+            "total_bets": all_time.get("total_bets", 0),
+            "total_profit": round(all_time.get("total_profit", 0), 2),
+            "win_rate": round((all_time.get("wins", 0) / all_time.get("total_bets", 1)) * 100, 1) if all_time.get("total_bets", 0) > 0 else 0
+        },
+        "recent_bets": recent_bets
+    }
+
+
 # ===== LIVE GAMES STREAMING =====
 @api_router.get("/live-games")
 async def get_live_games():
