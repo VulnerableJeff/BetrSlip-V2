@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Zap, Upload, BarChart3, Shield, Sparkles, AlertCircle, Target, TrendingUp, CheckCircle, Camera, ArrowRight, Trophy, Flame, Crown, X, Users, Activity, Star } from 'lucide-react';
 
 import { BACKEND_URL } from '@/config/api';
+import TestimonialsSection from '@/components/TestimonialsSection';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -755,6 +756,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
 
       {/* Footer */}
       <footer className="bg-slate-950 py-8 border-t border-slate-800/50">

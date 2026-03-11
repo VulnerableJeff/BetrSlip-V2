@@ -60,6 +60,9 @@ const Admin = () => {
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [sendingDailyEmails, setSendingDailyEmails] = useState(false);
   
+  // Testimonials State
+  const [testimonials, setTestimonials] = useState([]);
+  
   // Stream Form State
   const [streamForm, setStreamForm] = useState({
     title: '',
@@ -107,7 +110,8 @@ const Admin = () => {
         axios.get(`${BACKEND_URL}/api/admin/live-streams`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/support-messages`, { headers }),
         axios.get(`${BACKEND_URL}/api/admin/announcements`, { headers }),
-        axios.get(`${BACKEND_URL}/api/admin/email-stats`, { headers })
+        axios.get(`${BACKEND_URL}/api/admin/email-stats`, { headers }),
+        axios.get(`${BACKEND_URL}/api/admin/testimonials`, { headers })
       ]);
 
       // Check if any request got 403 (not admin)
@@ -133,6 +137,7 @@ const Admin = () => {
       }
       if (results[9].status === 'fulfilled') setAnnouncements(results[9].value.data.announcements || []);
       if (results[10].status === 'fulfilled') setEmailStats(results[10].value.data);
+      if (results[11].status === 'fulfilled') setTestimonials(results[11].value.data.testimonials || []);
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error('Admin access required');
@@ -612,6 +617,43 @@ const Admin = () => {
     setPickForm(prev => ({ ...prev, risk_factors: [...prev.risk_factors, ''] }));
   };
 
+  // Testimonial Handlers
+  const handleApproveTestimonial = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${BACKEND_URL}/api/admin/testimonials/${id}/approve`, {}, 
+        { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Testimonial approved');
+      fetchData();
+    } catch (error) {
+      toast.error('Error approving testimonial');
+    }
+  };
+
+  const handleRejectTestimonial = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${BACKEND_URL}/api/admin/testimonials/${id}/reject`, {},
+        { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Testimonial rejected');
+      fetchData();
+    } catch (error) {
+      toast.error('Error rejecting testimonial');
+    }
+  };
+
+  const handleDeleteTestimonial = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/admin/testimonials/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Testimonial deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Error deleting testimonial');
+    }
+  };
+
   const updateReasoning = (index, value) => {
     const newReasons = [...pickForm.reasoning];
     newReasons[index] = value;
@@ -878,6 +920,21 @@ const Admin = () => {
           >
             <Mail className="w-4 h-4" />
             Emails
+          </button>
+          <button
+            onClick={() => setActiveTab('testimonials')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'testimonials'
+                ? 'bg-yellow-500 text-black'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Star className="w-4 h-4" />
+            Reviews {testimonials.filter(t => t.status === 'pending').length > 0 && (
+              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {testimonials.filter(t => t.status === 'pending').length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -2511,6 +2568,110 @@ const Admin = () => {
                         <p className="text-slate-500 text-xs mt-1">
                           {new Date(log.sent_at).toLocaleString()}
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Testimonials Tab */}
+      {activeTab === 'testimonials' && (
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-slate-900/60 border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-yellow-500/20">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">User Testimonials</h2>
+                  <p className="text-slate-500 text-xs">Review and approve user testimonials</p>
+                </div>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-400">
+                  {testimonials.filter(t => t.status === 'pending').length} Pending
+                </span>
+                <span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400">
+                  {testimonials.filter(t => t.status === 'approved').length} Approved
+                </span>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-800/50">
+              {testimonials.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Star className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                  <p className="text-slate-400">No testimonials yet</p>
+                  <p className="text-slate-600 text-sm mt-1">Pro users can submit testimonials from their dashboard</p>
+                </div>
+              ) : (
+                testimonials.map(testimonial => (
+                  <div key={testimonial.id} className="p-4 hover:bg-slate-800/20 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          {/* Rating Stars */}
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3.5 h-3.5 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}`}
+                              />
+                            ))}
+                          </div>
+                          {/* Status Badge */}
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${
+                            testimonial.status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
+                            testimonial.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {testimonial.status}
+                          </span>
+                          {testimonial.win_amount && (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-violet-500/20 text-violet-400">
+                              {testimonial.win_amount}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-white text-sm">"{testimonial.message}"</p>
+                        <p className="text-slate-500 text-xs mt-2">
+                          {testimonial.user_email} - {new Date(testimonial.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        {testimonial.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveTestimonial(testimonial.id)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-xs"
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRejectTestimonial(testimonial.id)}
+                              className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteTestimonial(testimonial.id)}
+                          className="text-slate-400 hover:text-red-400"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>

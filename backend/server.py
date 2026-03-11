@@ -507,6 +507,196 @@ async def admin_get_email_stats(admin_user: dict = Depends(get_admin_user)):
     }
 
 
+# ===== USER TESTIMONIALS =====
+class TestimonialSubmit(BaseModel):
+    rating: int  # 1-5 stars
+    message: str
+    win_amount: Optional[str] = None  # e.g., "$500", "3x parlay"
+
+@api_router.post("/testimonials")
+async def submit_testimonial(testimonial: TestimonialSubmit, current_user: dict = Depends(get_current_user)):
+    """Submit a testimonial (Pro users only)"""
+    user_id = current_user['user_id']
+    
+    # Check if user is Pro
+    subscription = await db.subscriptions.find_one({"user_id": user_id})
+    if not subscription or subscription.get('subscription_status') != 'active':
+        raise HTTPException(status_code=403, detail="Only Pro members can submit testimonials")
+    
+    # Get user info
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    
+    # Create testimonial
+    testimonial_id = str(uuid.uuid4())
+    await db.testimonials.insert_one({
+        "id": testimonial_id,
+        "user_id": user_id,
+        "user_email": user.get("email", "").split("@")[0] + "***",  # Anonymize
+        "rating": min(5, max(1, testimonial.rating)),
+        "message": testimonial.message[:500],  # Limit message length
+        "win_amount": testimonial.win_amount,
+        "status": "pending",  # pending, approved, rejected
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Testimonial submitted for review", "id": testimonial_id}
+
+@api_router.get("/testimonials/approved")
+async def get_approved_testimonials():
+    """Get all approved testimonials (public)"""
+    testimonials = await db.testimonials.find(
+        {"status": "approved"},
+        {"_id": 0, "user_id": 0}
+    ).sort("created_at", -1).limit(20).to_list(20)
+    
+    return {"testimonials": testimonials}
+
+@api_router.get("/admin/testimonials")
+async def admin_get_testimonials(admin_user: dict = Depends(get_admin_user)):
+    """Admin: Get all testimonials"""
+    testimonials = await db.testimonials.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return {"testimonials": testimonials}
+
+@api_router.post("/admin/testimonials/{testimonial_id}/approve")
+async def admin_approve_testimonial(testimonial_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Approve a testimonial"""
+    await db.testimonials.update_one(
+        {"id": testimonial_id},
+        {"$set": {"status": "approved"}}
+    )
+    return {"message": "Testimonial approved"}
+
+@api_router.post("/admin/testimonials/{testimonial_id}/reject")
+async def admin_reject_testimonial(testimonial_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Reject a testimonial"""
+    await db.testimonials.update_one(
+        {"id": testimonial_id},
+        {"$set": {"status": "rejected"}}
+    )
+    return {"message": "Testimonial rejected"}
+
+@api_router.delete("/admin/testimonials/{testimonial_id}")
+async def admin_delete_testimonial(testimonial_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Delete a testimonial"""
+    await db.testimonials.delete_one({"id": testimonial_id})
+    return {"message": "Testimonial deleted"}
+
+
+# ===== PUSH NOTIFICATIONS =====
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict
+
+@api_router.post("/push/subscribe")
+async def subscribe_push(subscription: PushSubscription, current_user: dict = Depends(get_current_user)):
+    """Subscribe to push notifications"""
+    user_id = current_user['user_id']
+    
+    await db.push_subscriptions.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": user_id,
+            "endpoint": subscription.endpoint,
+            "keys": subscription.keys,
+            "subscribed_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": True
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Push notifications enabled"}
+
+@api_router.post("/push/unsubscribe")
+async def unsubscribe_push(current_user: dict = Depends(get_current_user)):
+    """Unsubscribe from push notifications"""
+    user_id = current_user['user_id']
+    
+    await db.push_subscriptions.update_one(
+        {"user_id": user_id},
+        {"$set": {"is_active": False}}
+    )
+    
+    return {"message": "Push notifications disabled"}
+
+@api_router.get("/push/status")
+async def get_push_status(current_user: dict = Depends(get_current_user)):
+    """Get push notification status"""
+    user_id = current_user['user_id']
+    
+    sub = await db.push_subscriptions.find_one(
+        {"user_id": user_id},
+        {"_id": 0, "is_active": 1}
+    )
+    
+    return {"enabled": sub.get("is_active", False) if sub else False}
+
+@api_router.post("/admin/push/send")
+async def admin_send_push(request: Request, admin_user: dict = Depends(get_admin_user)):
+    """Admin: Send push notification to all subscribers"""
+    try:
+        body = await request.json()
+        title = body.get('title', 'BetrSlip Alert')
+        message = body.get('message', 'New high-value pick available!')
+        url = body.get('url', '/dashboard')
+    except:
+        title = 'BetrSlip Alert'
+        message = 'New high-value pick available!'
+        url = '/dashboard'
+    
+    # Get all active subscriptions
+    subscriptions = await db.push_subscriptions.find(
+        {"is_active": True},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Store notification for delivery
+    notification_id = str(uuid.uuid4())
+    await db.push_notifications.insert_one({
+        "id": notification_id,
+        "title": title,
+        "message": message,
+        "url": url,
+        "subscriber_count": len(subscriptions),
+        "sent_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {
+        "message": f"Push notification queued for {len(subscriptions)} subscribers",
+        "id": notification_id,
+        "subscribers": len(subscriptions)
+    }
+
+@api_router.get("/push/pending")
+async def get_pending_notifications(current_user: dict = Depends(get_current_user)):
+    """Get pending push notifications for this user"""
+    user_id = current_user['user_id']
+    
+    # Get user's last check time
+    sub = await db.push_subscriptions.find_one({"user_id": user_id})
+    if not sub or not sub.get('is_active'):
+        return {"notifications": []}
+    
+    last_check = sub.get('last_checked', '2000-01-01T00:00:00')
+    
+    # Get notifications since last check
+    notifications = await db.push_notifications.find(
+        {"sent_at": {"$gt": last_check}},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(5).to_list(5)
+    
+    # Update last check time
+    await db.push_subscriptions.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_checked": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"notifications": notifications}
+
+
 # ===== LIVE GAMES STREAMING =====
 @api_router.get("/live-games")
 async def get_live_games():

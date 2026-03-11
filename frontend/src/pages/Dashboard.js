@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown, Gift, Bell, Settings } from 'lucide-react';
+import { Upload, LogOut, History, TrendingUp, BarChart3, AlertCircle, CheckCircle2, HelpCircle, Thermometer, Activity, Sparkles, Clock, AlertTriangle, Lightbulb, BookOpen, Target, ShieldAlert, Shield, Crown, Gift, Bell, Settings, Star } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import InfoTooltip from '@/components/InfoTooltip';
 import SubscriptionModal from '@/components/SubscriptionModal';
@@ -22,6 +22,8 @@ import WinStreakBanner from '@/components/WinStreakBanner';
 import FreeTrialExtension from '@/components/FreeTrialExtension';
 import SystemAnnouncement from '@/components/SystemAnnouncement';
 import EmailSettings from '@/components/EmailSettings';
+import PushNotifications from '@/components/PushNotifications';
+import SubmitTestimonial from '@/components/SubmitTestimonial';
 
 import { BACKEND_URL } from '@/config/api';
 const API = `${BACKEND_URL}/api`;
@@ -62,6 +64,7 @@ const Dashboard = ({ onLogout }) => {
   const [usage, setUsage] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [showAnalysisNotification, setShowAnalysisNotification] = useState(false);
   const [hasSeenNotification, setHasSeenNotification] = useState(
@@ -199,6 +202,12 @@ const Dashboard = ({ onLogout }) => {
         onClose={() => setShowEmailSettings(false)}
       />
 
+      {/* Submit Testimonial Modal */}
+      <SubmitTestimonial 
+        isOpen={showTestimonialModal}
+        onClose={() => setShowTestimonialModal(false)}
+      />
+
       {/* Header */}
       <header className="border-b border-slate-800 bg-brand-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -270,6 +279,20 @@ const Dashboard = ({ onLogout }) => {
                   data-testid="email-settings-btn"
                 >
                   <Bell className="w-5 h-5" />
+                </Button>
+              )}
+              {/* Push Notifications */}
+              <PushNotifications />
+              {/* Submit Testimonial - Pro users only */}
+              {usage?.is_subscribed && (
+                <Button
+                  variant="ghost"
+                  className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
+                  onClick={() => setShowTestimonialModal(true)}
+                  data-testid="submit-testimonial-btn"
+                  title="Share your win"
+                >
+                  <Star className="w-5 h-5" />
                 </Button>
               )}
               <Button
