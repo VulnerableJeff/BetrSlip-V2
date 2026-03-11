@@ -87,6 +87,16 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - **Browser notifications** via Notification API when permission granted
 - **Admin can send push notifications** to all subscribers
 
+### Weekly Leaderboard (Mar 11, 2026)
+- **Log Bet Results**: Users can log wins/losses/pushes with amounts wagered and won
+- **Profit Tracking**: Calculates profit automatically (win: amount_won - wagered, loss: -wagered)
+- **Weekly Rankings**: Top 10 users ranked by total profit
+- **Minimum 3 bets** required to qualify for leaderboard
+- **Your Rank section**: Shows user's current rank, W-L record, win rate, profit
+- **Resets every Monday**: Weekly stats reset at the start of each week
+- **Anonymized usernames**: Shows "hun***" format for privacy
+- **ROI calculation**: Return on investment percentage displayed
+
 ### Referral System — Pre-existing
 - Already built with referral codes and tracking
 
@@ -100,6 +110,6 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - Tiered subscriptions: $5/$10/$20 (postponed by user)
 
 ### P2 (Nice to Have)
-- Bet tracker / P&L dashboard for users
+- Bet tracker / P&L dashboard for users (enhanced view)
 - Custom share card branding per tier
 - Credit purchase history for users
