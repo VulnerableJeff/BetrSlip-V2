@@ -73,12 +73,26 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - **Gmail SMTP**: Configured via EMAIL_ADDRESS and EMAIL_PASSWORD env vars
 - **Email logs**: Track sent emails in email_logs collection
 
+### User Testimonials (Mar 11, 2026)
+- **Pro users can submit testimonials** via star icon in dashboard header
+- **"Share Your Win" modal** with 5-star rating, win amount, and experience message
+- **Landing page "What Our Winners Say" section** displays approved testimonials
+- **Testimonials show**: 5-star ratings, win amount badges, anonymized usernames (user***)
+- **Admin Reviews tab**: Approve/Reject/Delete testimonials with pending/approved counts
+
+### Push Notifications (Mar 11, 2026)
+- **In-app notification system** for high-value picks and alerts
+- **Bell icon in dashboard header** with notification dropdown
+- **Enable/Disable toggle** - users can opt in/out
+- **Browser notifications** via Notification API when permission granted
+- **Admin can send push notifications** to all subscribers
+
 ### Referral System — Pre-existing
 - Already built with referral codes and tracking
 
 ## Credentials
 - Admin: hundojeff@icloud.com / Boo-boo600$
-- Email: betrslip@gmail.com (needs Gmail App Password for 2FA accounts)
+- Email: betrslip@gmail.com
 
 ## Prioritized Backlog
 
@@ -86,8 +100,6 @@ Sports betting analytics platform ("BetrSlip") — React + FastAPI + MongoDB app
 - Tiered subscriptions: $5/$10/$20 (postponed by user)
 
 ### P2 (Nice to Have)
-- User testimonials/ratings system
 - Bet tracker / P&L dashboard for users
 - Custom share card branding per tier
 - Credit purchase history for users
-- Push notifications for high-value picks
