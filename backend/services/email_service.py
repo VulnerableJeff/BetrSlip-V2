@@ -15,30 +15,32 @@ from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
-# Email configuration
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-
 def _get_email_config():
     """Get email configuration from environment"""
     return {
-        "email": os.environ.get("EMAIL_ADDRESS", ""),
+        "smtp_server": os.environ.get("EMAIL_SMTP_SERVER", "smtp-relay.brevo.com"),
+        "smtp_port": int(os.environ.get("EMAIL_SMTP_PORT", "587")),
+        "login": os.environ.get("EMAIL_ADDRESS", ""),
         "password": os.environ.get("EMAIL_PASSWORD", ""),
+        "from_address": os.environ.get("EMAIL_FROM_ADDRESS", "noreply@betrslip.com"),
     }
 
 
 class EmailService:
-    """Service for sending emails via Gmail SMTP"""
+    """Service for sending emails via SMTP"""
     
     def __init__(self):
         config = _get_email_config()
-        self.email = config["email"]
+        self.smtp_server = config["smtp_server"]
+        self.smtp_port = config["smtp_port"]
+        self.login = config["login"]
         self.password = config["password"]
+        self.from_address = config["from_address"]
         self.from_name = "BetrSlip"
     
     def is_configured(self) -> bool:
         """Check if email is properly configured"""
-        return bool(self.email and self.password)
+        return bool(self.login and self.password)
     
     def _create_simple_pick_html(self, pick: Dict) -> str:
         """Create simple email with just Bet of the Day"""
@@ -173,7 +175,7 @@ class EmailService:
 </html>"""
 
     def send_email(self, to_email: str, subject: str, html_content: str) -> bool:
-        """Send an email via Gmail SMTP"""
+        """Send an email via SMTP"""
         if not self.is_configured():
             logger.error("Email not configured - missing EMAIL_ADDRESS or EMAIL_PASSWORD")
             return False
@@ -182,7 +184,7 @@ class EmailService:
             # Create message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"{self.from_name} <{self.email}>"
+            msg["From"] = f"{self.from_name} <{self.from_address}>"
             msg["To"] = to_email
             
             # Attach HTML content
@@ -191,12 +193,12 @@ class EmailService:
             
             # Connect and send
             context = ssl.create_default_context()
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.ehlo()
                 server.starttls(context=context)
                 server.ehlo()
-                server.login(self.email, self.password)
-                server.sendmail(self.email, to_email, msg.as_string())
+                server.login(self.login, self.password)
+                server.sendmail(self.from_address, to_email, msg.as_string())
             
             logger.info(f"Email sent successfully to {to_email}")
             return True
