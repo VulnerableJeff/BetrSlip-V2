@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Mail, Bell, BellOff, Check } from 'lucide-react';
+import { Mail, Bell, BellOff, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -75,8 +75,8 @@ const EmailSettings = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <Card className="bg-slate-900 border-slate-700 p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <Card className="bg-slate-900 border-slate-700 p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-violet-500/20">
@@ -84,8 +84,12 @@ const EmailSettings = ({ isOpen, onClose }) => {
             </div>
             <h3 className="text-xl font-bold text-white">Email Notifications</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">
-            &times;
+          <button 
+            onClick={onClose} 
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            data-testid="close-email-settings"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 

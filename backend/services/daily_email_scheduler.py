@@ -34,7 +34,7 @@ class DailyEmailScheduler:
         today = datetime.now(ET_TZ).date()
         today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=ET_TZ)
         
-        # Find today's featured pick (highest confidence)
+        # Try to find today's featured pick first
         pick = await self.db.daily_picks.find_one(
             {
                 "is_featured": True,
@@ -47,6 +47,22 @@ class DailyEmailScheduler:
             # Fall back to most recent featured pick
             pick = await self.db.daily_picks.find_one(
                 {"is_featured": True},
+                {"_id": 0},
+                sort=[("created_at", -1)]
+            )
+        
+        if not pick:
+            # Fall back to any recent active pick
+            pick = await self.db.daily_picks.find_one(
+                {"is_active": True},
+                {"_id": 0},
+                sort=[("created_at", -1)]
+            )
+        
+        if not pick:
+            # Fall back to most recent pick regardless of status
+            pick = await self.db.daily_picks.find_one(
+                {},
                 {"_id": 0},
                 sort=[("created_at", -1)]
             )
