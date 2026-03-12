@@ -1,46 +1,40 @@
 """
 Email Service for BetrSlip
-Handles sending daily pick emails to Pro users via Gmail SMTP
+Handles sending daily pick emails to Pro users via Brevo API
 """
 
 import os
-import ssl
 import logging
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import httpx
 from typing import Optional, List, Dict
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
 def _get_email_config():
     """Get email configuration from environment"""
     return {
-        "smtp_server": os.environ.get("EMAIL_SMTP_SERVER", "smtp-relay.brevo.com"),
-        "smtp_port": int(os.environ.get("EMAIL_SMTP_PORT", "587")),
-        "login": os.environ.get("EMAIL_ADDRESS", ""),
-        "password": os.environ.get("EMAIL_PASSWORD", ""),
-        "from_address": os.environ.get("EMAIL_FROM_ADDRESS", "noreply@betrslip.com"),
+        "api_key": os.environ.get("EMAIL_PASSWORD", ""),  # Using PASSWORD field for API key
+        "from_email": os.environ.get("EMAIL_FROM_ADDRESS", "labellefences@gmail.com"),
+        "from_name": "BetrSlip",
     }
 
 
 class EmailService:
-    """Service for sending emails via SMTP"""
+    """Service for sending emails via Brevo API"""
     
     def __init__(self):
         config = _get_email_config()
-        self.smtp_server = config["smtp_server"]
-        self.smtp_port = config["smtp_port"]
-        self.login = config["login"]
-        self.password = config["password"]
-        self.from_address = config["from_address"]
-        self.from_name = "BetrSlip"
+        self.api_key = config["api_key"]
+        self.from_email = config["from_email"]
+        self.from_name = config["from_name"]
     
     def is_configured(self) -> bool:
         """Check if email is properly configured"""
-        return bool(self.login and self.password)
+        return bool(self.api_key)
     
     def _create_simple_pick_html(self, pick: Dict) -> str:
         """Create simple email with just Bet of the Day"""
@@ -175,37 +169,35 @@ class EmailService:
 </html>"""
 
     def send_email(self, to_email: str, subject: str, html_content: str) -> bool:
-        """Send an email via SMTP"""
+        """Send an email via Brevo API"""
         if not self.is_configured():
-            logger.error("Email not configured - missing EMAIL_ADDRESS or EMAIL_PASSWORD")
+            logger.error("Email not configured - missing API key")
             return False
         
         try:
-            # Create message
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"{self.from_name} <{self.from_address}>"
-            msg["To"] = to_email
+            payload = {
+                "sender": {"name": self.from_name, "email": self.from_email},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_content
+            }
             
-            # Attach HTML content
-            html_part = MIMEText(html_content, "html")
-            msg.attach(html_part)
+            headers = {
+                "accept": "application/json",
+                "api-key": self.api_key,
+                "content-type": "application/json"
+            }
             
-            # Connect and send
-            context = ssl.create_default_context()
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=context)
-                server.ehlo()
-                server.login(self.login, self.password)
-                server.sendmail(self.from_address, to_email, msg.as_string())
+            with httpx.Client() as client:
+                response = client.post(BREVO_API_URL, json=payload, headers=headers, timeout=30)
+                
+                if response.status_code == 201:
+                    logger.info(f"Email sent successfully to {to_email}")
+                    return True
+                else:
+                    logger.error(f"Brevo API error: {response.status_code} - {response.text}")
+                    return False
             
-            logger.info(f"Email sent successfully to {to_email}")
-            return True
-            
-        except smtplib.SMTPAuthenticationError as e:
-            logger.error(f"SMTP Authentication failed: {e}")
-            return False
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {e}")
             return False
