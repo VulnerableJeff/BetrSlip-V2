@@ -1,0 +1,9 @@
+# Backend specific ignores
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+.env
+*.env
+.env.*
